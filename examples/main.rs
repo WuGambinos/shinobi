@@ -32,18 +32,20 @@ async fn main() {
     let start_pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     let test_pos = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
     let grid = load_fen(start_pos, &mut position.state);
-    //position.from_grid(grid);
+    position.from_grid(grid);
+    position.print_bitboard(position.main_bitboard);
 
-    position.bitboard_sides[Side::White as usize] |= BitBoard(1u64 << (SquareLabels::E2 as u64));
-    println!();
-    println!();
-    position.print_white_bitboard();
 
-    println!();
-    println!();
-    position.print_black_bitboard();
+    //position.side_bitboards[Side::White as usize].set_bit(SquareLabels::E2);
+    /* println!();
+     println!();
+     position.print_white_bitboard();
 
-    //position.make_move();
+     println!();
+     println!();
+     position.print_black_bitboard();
+    */
+
 
     /*
     loop {

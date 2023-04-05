@@ -4,6 +4,8 @@ use std::ops::{
 };
 use std::*;
 
+use crate::SquareLabels;
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Square(usize);
 
@@ -15,9 +17,14 @@ impl BitBoard {
         (*self & BitBoard(1u64 << square)).0
     }
 
-    pub fn set_bit(&mut self, square: u64) {
-        self.0 |= 1u64 << square;
+    pub fn set_bit(&mut self, square: SquareLabels) {
+        self.0 |= 1u64 << (square as u64);
     }
+
+    pub fn clear_bit(&mut self, square: SquareLabels) {
+        self.0 &= !(1u64 << (square as u64));
+    }
+
     pub fn print(&self) {
         for rank in (0..8).rev() {
             for file in 0..8 {

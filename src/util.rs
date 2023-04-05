@@ -38,7 +38,7 @@ pub fn get_square_from_mouse_position(pos: (f32, f32)) -> {
 */
 
 pub fn draw_white_pieces(position: Position, pieces: &[Texture2D], draw_param: &DrawTextureParams) {
-    let white_bitboards = position.bitboard_pieces[Side::White as usize];
+    let white_bitboards = position.piece_bitboards[Side::White as usize];
     let mut j = 0;
 
     for (i, board) in white_bitboards.iter().enumerate() {
@@ -77,7 +77,7 @@ pub fn draw_white_pieces(position: Position, pieces: &[Texture2D], draw_param: &
 }
 
 pub fn draw_black_pieces(position: Position, pieces: &[Texture2D], draw_param: &DrawTextureParams) {
-    let black_bitboards = position.bitboard_pieces[Side::Black as usize];
+    let black_bitboards = position.piece_bitboards[Side::Black as usize];
     let mut j = 0;
 
     for (i, board) in black_bitboards.iter().enumerate() {

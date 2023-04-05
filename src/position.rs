@@ -51,11 +51,14 @@ impl State {
 
 #[derive(Debug, Clone)]
 pub struct Position {
+    // BitBoard that shows combined states of white and black bitboards
+    pub main_bitboard: BitBoard,
+
     /// Board for each side
-    pub bitboard_sides: [BitBoard; 2],
+    pub side_bitboards: [BitBoard; 2],
 
     /// BitBoards for all pieces and each side
-    pub bitboard_pieces: [[BitBoard; 6]; 2],
+    pub piece_bitboards: [[BitBoard; 6]; 2],
 
     /// State contains all relveant information for evalution
     pub state: State,
@@ -64,8 +67,9 @@ pub struct Position {
 impl Position {
     pub fn new() -> Position {
         Position {
-            bitboard_sides: [BitBoard(0); 2],
-            bitboard_pieces: [[BitBoard(0); 6]; 2],
+            main_bitboard: BitBoard(0),
+            side_bitboards: [BitBoard(0); 2],
+            piece_bitboards: [[BitBoard(0); 6]; 2],
             state: State::new(),
         }
     }
@@ -94,11 +98,13 @@ impl Position {
 
             if ch.is_ascii() {
                 if ch.is_uppercase() {
-                    self.bitboard_sides[Side::White as usize] |= mask;
-                    self.bitboard_pieces[Side::White as usize][piece] |= mask;
+                    self.side_bitboards[Side::White as usize] |= mask;
+                    self.piece_bitboards[Side::White as usize][piece] |= mask;
+                    self.main_bitboard |= mask;
                 } else if ch.is_lowercase() {
-                    self.bitboard_sides[Side::Black as usize] |= mask;
-                    self.bitboard_pieces[Side::Black as usize][piece] |= mask;
+                    self.side_bitboards[Side::Black as usize] |= mask;
+                    self.piece_bitboards[Side::Black as usize][piece] |= mask;
+                    self.main_bitboard |= mask;
                 }
             }
         }
@@ -112,14 +118,14 @@ impl Position {
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
 
         // Update piece bitboard
-        self.bitboard_pieces[self.state.turn as usize][Pieces::Pawn as usize] ^= from_to_bitboard;
+        self.piece_bitboards[self.state.turn as usize][Pieces::Pawn as usize] ^= from_to_bitboard;
 
         // Update white or black bitboard
-        self.bitboard_sides[self.state.turn as usize] ^= from_to_bitboard;
+        self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
     }
 
     pub fn print_black_piece_bitboards(&self) {
-        for (i, bitboard) in self.bitboard_pieces[Side::Black as usize]
+        for (i, bitboard) in self.piece_bitboards[Side::Black as usize]
             .iter()
             .enumerate()
         {
@@ -142,10 +148,10 @@ impl Position {
     }
 
     pub fn print_black_bitboard(&self) {
-        self.bitboard_sides[Side::Black as usize].print();
+        self.side_bitboards[Side::Black as usize].print();
     }
 
     pub fn print_white_bitboard(&self) {
-        self.bitboard_sides[Side::White as usize].print();
+        self.side_bitboards[Side::White as usize].print();
     }
 }
