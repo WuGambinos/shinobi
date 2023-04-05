@@ -30,10 +30,10 @@ impl BitBoard {
             for file in 0..8 {
                 let square = rank * 8 + file;
                 let bit = self.get_bit(square);
-                if bit != 0 {
-                    print!(" {} ", 1);
-                } else {
+                if bit == 0 {
                     print!(" {} ", 0);
+                } else {
+                    print!(" {} ", 1);
                 }
             }
             println!();
@@ -70,7 +70,7 @@ impl BitOr for BitBoard {
 
 impl BitOrAssign for BitBoard {
     fn bitor_assign(&mut self, rhs: BitBoard) {
-        self.0 |= rhs.0
+        self.0 |= rhs.0;
     }
 }
 
@@ -83,7 +83,7 @@ impl BitAnd for BitBoard {
 
 impl BitAndAssign for BitBoard {
     fn bitand_assign(&mut self, rhs: BitBoard) {
-        self.0 &= rhs.0
+        self.0 &= rhs.0;
     }
 }
 
@@ -96,7 +96,7 @@ impl BitXor for BitBoard {
 
 impl BitXorAssign for BitBoard {
     fn bitxor_assign(&mut self, rhs: BitBoard) {
-        self.0 ^= rhs.0
+        self.0 ^= rhs.0;
     }
 }
 

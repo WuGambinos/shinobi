@@ -33,19 +33,18 @@ async fn main() {
     let test_pos = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
     let grid = load_fen(start_pos, &mut position.state);
     position.from_grid(grid);
+    position.make_move(SquareLabels::D2);
+
+    println!("MAIN BITBOARD");
     position.print_bitboard(position.main_bitboard);
 
+    println!("WHITE BITBOARD");
+    println!();
+    position.print_white_bitboard();
 
-    //position.side_bitboards[Side::White as usize].set_bit(SquareLabels::E2);
-    /* println!();
-     println!();
-     position.print_white_bitboard();
-
-     println!();
-     println!();
-     position.print_black_bitboard();
-    */
-
+    println!("BLACK BITBOARD");
+    println!();
+    position.print_black_bitboard();
 
     /*
     loop {

@@ -2,6 +2,7 @@ use crate::BitBoard;
 use crate::Pieces;
 use crate::Side;
 use crate::Square;
+use crate::SquareLabels;
 
 pub struct Castling(u8);
 impl Castling {
@@ -79,20 +80,12 @@ impl Position {
             let mask = BitBoard(1u64 << i);
 
             let piece = match ch {
-                'P' => Pieces::Pawn as usize,
-                'B' => Pieces::Bishop as usize,
-                'N' => Pieces::Knight as usize,
-                'R' => Pieces::Rook as usize,
-                'Q' => Pieces::Queen as usize,
-                'K' => Pieces::King as usize,
-
-                'p' => Pieces::Pawn as usize,
-                'b' => Pieces::Bishop as usize,
-                'n' => Pieces::Knight as usize,
-                'r' => Pieces::Rook as usize,
-                'q' => Pieces::Queen as usize,
-                'k' => Pieces::King as usize,
-
+                'P' | 'p' => Pieces::Pawn as usize,
+                'B' | 'b' => Pieces::Bishop as usize,
+                'N' | 'n' => Pieces::Knight as usize,
+                'R' | 'r' => Pieces::Rook as usize,
+                'Q' | 'q' => Pieces::Queen as usize,
+                'K' | 'k' => Pieces::King as usize,
                 _ => 0,
             };
 
@@ -110,11 +103,11 @@ impl Position {
         }
     }
 
-    pub fn clear_square(&mut self, square: u64) {}
+    pub fn clear_square(&mut self, square: SquareLabels) {}
 
-    pub fn make_move(&mut self) {
-        let from_bitboard: BitBoard = BitBoard(1) << 11;
-        let to_bitboard: BitBoard = BitBoard(1) << 19;
+    pub fn make_move(&mut self, square: SquareLabels) {
+        let from_bitboard: BitBoard = BitBoard(1) << (square as usize);
+        let to_bitboard: BitBoard = BitBoard(1) << (SquareLabels::D3 as usize);
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
 
         // Update piece bitboard
@@ -122,6 +115,9 @@ impl Position {
 
         // Update white or black bitboard
         self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
+
+        // Update main_bitboard
+        self.main_bitboard ^= from_to_bitboard;
     }
 
     pub fn print_black_piece_bitboards(&self) {
