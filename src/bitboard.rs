@@ -2,6 +2,7 @@ use std::ops::{
     Add, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, Mul, Not, Shl, Shr,
     Sub,
 };
+use std::*;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Square(usize);
@@ -16,6 +17,24 @@ impl BitBoard {
 
     pub fn set_bit(&mut self, square: u64) {
         self.0 |= 1u64 << square;
+    }
+    pub fn print(&self) {
+        for rank in (0..8).rev() {
+            for file in 0..8 {
+                let square = rank * 8 + file;
+                let bit = self.get_bit(square);
+                if bit != 0 {
+                    print!(" {} ", 1);
+                } else {
+                    print!(" {} ", 0);
+                }
+            }
+            println!();
+        }
+
+        println!();
+        println!(" A  B  C  D  E  F  G  H ");
+        println!();
     }
 }
 

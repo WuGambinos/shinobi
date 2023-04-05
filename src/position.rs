@@ -132,37 +132,20 @@ impl Position {
                 5 => println!("KING"),
                 _ => (),
             }
-            self.print_bitboard(*bitboard);
+            //self.print_bitboard(*bitboard);
+            bitboard.print();
         }
     }
 
     pub fn print_bitboard(&self, bitboard: BitBoard) {
-        let board = bitboard;
-        println!("BOARD NUM: {}", board.0);
-        println!("BINARY: {:#064b}", board.0);
-        println!();
-        println!("A B C D E F G H");
-        for rank in 0..8 {
-            for file in 0..8 {
-                let square = rank * 8 + file;
-
-                let bit = board.get_bit(square);
-
-                if bit != 0 {
-                    print!(" {} ", 1);
-                } else {
-                    print!(" {} ", 0);
-                }
-            }
-            println!();
-        }
+        bitboard.print();
     }
 
     pub fn print_black_bitboard(&self) {
-        self.print_bitboard(self.bitboard_sides[Side::Black as usize]);
+        self.bitboard_sides[Side::Black as usize].print();
     }
 
     pub fn print_white_bitboard(&self) {
-        self.print_bitboard(self.bitboard_sides[Side::White as usize]);
+        self.bitboard_sides[Side::White as usize].print();
     }
 }
