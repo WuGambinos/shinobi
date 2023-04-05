@@ -110,7 +110,7 @@ impl Position {
         }
     }
 
-    pub fn make_move(&mut self, from_square: SquareLabels, to_square: SquareLabels) {
+    pub fn make_move(&mut self, piece: Pieces, from_square: SquareLabels, to_square: SquareLabels) {
         let from_bitboard: BitBoard = BitBoard(1) << (from_square as usize);
         let to_bitboard: BitBoard = BitBoard(1) << (to_square as usize);
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
@@ -122,7 +122,7 @@ impl Position {
                 // Check piece target_square is empty
                 if self.side_bitboards[Side::White as usize].get_bit(from_square as u64) != 0 {
                     // Update piece bitboard
-                    self.piece_bitboards[self.state.turn as usize][Pieces::Pawn as usize] ^=
+                    self.piece_bitboards[self.state.turn as usize][piece as usize] ^=
                         from_to_bitboard;
 
                     // Update white or black bitboard
@@ -136,7 +136,7 @@ impl Position {
             } else {
                 if self.side_bitboards[Side::Black as usize].get_bit(from_square as u64) != 0 {
                     // Update piece bitboard
-                    self.piece_bitboards[self.state.turn as usize][Pieces::Pawn as usize] ^=
+                    self.piece_bitboards[self.state.turn as usize][piece as usize] ^=
                         from_to_bitboard;
 
                     // Update white or black bitboard

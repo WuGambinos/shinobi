@@ -40,6 +40,8 @@ pub fn handle_movement(
     println!("{:?} PIECE BITBOARD", turn);
     println!();
 
+    println!("SELECTED PIECE: {:?}", selected_piece);
+
     let bit = old_position.side_bitboards[turn as usize].get_bit(target_square as u64);
     if from_square.unwrap() != target_square && bit == 0 {
         position.piece_bitboards[turn as usize][selected_piece.unwrap() as usize]
@@ -59,7 +61,9 @@ pub fn drag_and_drop(
 ) {
     if is_mouse_button_pressed(MouseButton::Left) {
         *from_square = Some(get_square_from_mouse_position(mouse_position()));
-        let boards = position.piece_bitboards[Side::White as usize];
+        let boards = position.piece_bitboards[position.state.turn as usize];
+
+        *selected_piece = None;
 
         for piece in Pieces::iter() {
             let res = boards[piece as usize].get_bit(from_square.unwrap() as u64);
@@ -79,13 +83,14 @@ pub fn drag_and_drop(
 
         if selected_piece.is_some() {
             println!(
-                "FROM: {:?} TARGET: {:?}",
+                "PIECE: {:?} FROM: {:?} TARGET: {:?}",
+                selected_piece,
                 from_square.unwrap(),
                 target_square
             );
             let old_turn: Side = position.state.turn;
             let mut old_position: Position = position.clone();
-            position.make_move(from_square.unwrap(), target_square);
+            position.make_move(selected_piece.unwrap(), from_square.unwrap(), target_square);
 
             handle_movement(
                 &mut old_position,
