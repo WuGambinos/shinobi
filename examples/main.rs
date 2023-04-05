@@ -30,13 +30,24 @@ async fn main() {
 
     let start_pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     let test_pos = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
-    let grid = load_fen(start_pos, &mut position.state);
+    let grid = load_fen(start_pos,&mut position.state);
     position.from_grid(grid);
-    position.make_move();
 
+    println!();
+    println!();
+    position.print_white_bitboard();
+
+    println!();
+    println!();
+    position.print_black_bitboard();
+    //position.make_move();
+
+    /*
     loop {
         draw_squares();
         draw_pieces(position.clone(), &piece_textures, &draw_param);
+        drag_and_drop(&position, &piece_textures, &draw_param);
         next_frame().await;
     }
+    */
 }

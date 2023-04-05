@@ -6,8 +6,18 @@ use std::ops::{
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Square(usize);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BitBoard(pub u64);
+
+impl BitBoard {
+    pub fn get_bit(&self, square: u64) -> u64 {
+        (*self & BitBoard(1u64 << square)).0
+    }
+
+    pub fn set_bit(&mut self, square: u64) {
+        self.0 |= 1u64 << square;
+    }
+}
 
 impl Shr<usize> for BitBoard {
     type Output = BitBoard;

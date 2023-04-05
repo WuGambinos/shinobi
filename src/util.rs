@@ -1,4 +1,6 @@
 use macroquad::color::Color;
+use macroquad::input::is_mouse_button_pressed;
+use macroquad::input::*;
 use macroquad::prelude::{draw_texture_ex, load_texture, DrawTextureParams, Texture2D};
 use std::fs;
 use std::path::PathBuf;
@@ -13,6 +15,27 @@ use crate::LIGHT;
 use crate::NUM_SQUARES;
 use crate::SQUARE_SIZE;
 use crate::{draw_rectangle, B_IMG_POS, W_IMG_POS};
+
+pub fn drag_and_drop(
+    position: &mut Position,
+    pieces_textures: &[Texture2D],
+    draw_param: &DrawTextureParams,
+) {
+    if is_mouse_button_pressed(MouseButton::Left) {
+    } else if is_mouse_button_down(MouseButton::Left) {
+    } else if is_mouse_button_released(MouseButton::Left) {
+    }
+}
+
+/*
+pub fn get_square_from_mouse_position(pos: (f32, f32)) -> {
+    let x = ((pos.0) / SQUARE_SIZE) as i32;
+    let y = ((pos.1 / SQUARE_SIZE) as i32 - 7).abs();
+
+    let square = ((8 * y) + x) as u8;
+    (square, self.get_square(square))
+}
+*/
 
 pub fn draw_white_pieces(position: Position, pieces: &[Texture2D], draw_param: &DrawTextureParams) {
     let white_bitboards = position.bitboard_pieces[Side::White as usize];

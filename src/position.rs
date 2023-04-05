@@ -104,6 +104,8 @@ impl Position {
         }
     }
 
+    pub fn clear_square(&mut self, square: u64) {}
+
     pub fn make_move(&mut self) {
         let from_bitboard: BitBoard = BitBoard(1) << 11;
         let to_bitboard: BitBoard = BitBoard(1) << 19;
@@ -139,23 +141,21 @@ impl Position {
         println!("BOARD NUM: {}", board.0);
         println!("BINARY: {:#064b}", board.0);
         println!();
-
-        let binary_str = format!("{:064b}", board.0);
-        let binary_chars = binary_str.chars().collect::<Vec<char>>();
-
         println!("A B C D E F G H");
-        println!();
-        for i in 0..8 {
-            for j in (0..8).rev() {
-                // calculate index of character in binary_chars vector
-                let idx = i * 8 + j;
-                // get chacter at index
-                let c = binary_chars[idx];
-                print!("{} ", c);
+        for rank in 0..8 {
+            for file in 0..8 {
+                let square = rank * 8 + file;
+
+                let bit = board.get_bit(square);
+
+                if bit != 0 {
+                    print!(" {} ", 1);
+                } else {
+                    print!(" {} ", 0);
+                }
             }
             println!();
         }
-        println!();
     }
 
     pub fn print_black_bitboard(&self) {
