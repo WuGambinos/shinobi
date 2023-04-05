@@ -7,6 +7,8 @@ edition = "2021"
 
 [dependencies]
 macroquad = "0.3.25"
+strum = "0.24.1"
+strum_macros = "0.24.3"
 
 [[examples]]
 name = "main"

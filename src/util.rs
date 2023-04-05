@@ -7,8 +7,11 @@ use std::path::PathBuf;
 
 use crate::bitboard::BitBoard;
 use crate::Castling;
+use crate::IntoEnumIterator;
+use crate::Pieces;
 use crate::Position;
 use crate::Side;
+use crate::SquareLabels;
 use crate::State;
 use crate::DARK;
 use crate::LIGHT;
@@ -18,24 +21,67 @@ use crate::{draw_rectangle, B_IMG_POS, W_IMG_POS};
 
 pub fn drag_and_drop(
     position: &mut Position,
+    selected_piece: &mut Option<Pieces>,
     pieces_textures: &[Texture2D],
     draw_param: &DrawTextureParams,
 ) {
     if is_mouse_button_pressed(MouseButton::Left) {
+        let square = get_square_from_mouse_position(mouse_position());
+        let boards = position.piece_bitboards[Side::White as usize];
+
+        for piece in Pieces::iter() {
+            let res = boards[piece as usize].get_bit(square as u64);
+            if res != 0 {
+                *selected_piece = Some(piece);
+            }
+        }
+
+        position.side_bitboards[Side::White as usize].clear_bit(square);
+        position.piece_bitboards[Side::White as usize][selected_piece.unwrap() as usize]
+            .clear_bit(square);
     } else if is_mouse_button_down(MouseButton::Left) {
+        piece_follow_mouse(&position, *selected_piece, pieces_textures, draw_param);
     } else if is_mouse_button_released(MouseButton::Left) {
     }
 }
 
-/*
-pub fn get_square_from_mouse_position(pos: (f32, f32)) -> {
+pub fn piece_follow_mouse(
+    position: &Position,
+    piece: Option<Pieces>,
+    pieces: &[Texture2D],
+    draw_param: &DrawTextureParams,
+) {
+    if let Some(p) = piece {
+        let piece_offset: usize = match position.state.turn {
+            Side::White => W_IMG_POS,
+            Side::Black => B_IMG_POS,
+        };
+
+        let piece_index: usize = match p {
+            Pieces::Pawn => piece_offset + 3,
+            Pieces::Bishop => piece_offset,
+            Pieces::Knight => piece_offset + 2,
+            Pieces::Rook => piece_offset + 5,
+            Pieces::Queen => piece_offset + 4,
+            Pieces::King => piece_offset + 1,
+        };
+
+        draw_texture_ex(
+            pieces[piece_index],
+            mouse_position().0 - SQUARE_SIZE / 2.,
+            mouse_position().1 - SQUARE_SIZE / 2.,
+            Color::new(1.0, 1.0, 1.0, 1.0),
+            draw_param.clone(),
+        );
+    }
+}
+pub fn get_square_from_mouse_position(pos: (f32, f32)) -> SquareLabels {
     let x = ((pos.0) / SQUARE_SIZE) as i32;
     let y = ((pos.1 / SQUARE_SIZE) as i32 - 7).abs();
 
-    let square = ((8 * y) + x) as u8;
-    (square, self.get_square(square))
+    let square = ((8 * y) + x) as u64;
+    SquareLabels::from(square)
 }
-*/
 
 pub fn draw_white_pieces(position: Position, pieces: &[Texture2D], draw_param: &DrawTextureParams) {
     let white_bitboards = position.piece_bitboards[Side::White as usize];

@@ -12,5 +12,6 @@ pub use macroquad::color::Color;
 pub use constants::*;
 pub use util::*;
 pub use position::*;
-
+pub use strum::IntoEnumIterator;
+pub use strum_macros::EnumIter;
 

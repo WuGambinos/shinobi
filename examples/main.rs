@@ -26,6 +26,7 @@ async fn main() {
         pivot: None,
     };
 
+    let mut piece: Option<Pieces> = None;
     let mut position = Position::new();
     let castling_rights = position.state.castling_rights;
 
@@ -33,8 +34,8 @@ async fn main() {
     let test_pos = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
     let grid = load_fen(start_pos, &mut position.state);
     position.from_grid(grid);
-    position.make_move(SquareLabels::D2);
 
+    position.make_move(SquareLabels::D2, SquareLabels::D3);
     println!("MAIN BITBOARD");
     position.print_bitboard(position.main_bitboard);
 
@@ -46,12 +47,22 @@ async fn main() {
     println!();
     position.print_black_bitboard();
 
-    /*
+    position.make_move(SquareLabels::D7, SquareLabels::D6);
+    println!("MAIN BITBOARD");
+    position.print_bitboard(position.main_bitboard);
+
+    println!("WHITE BITBOARD");
+    println!();
+    position.print_white_bitboard();
+
+    println!("BLACK BITBOARD");
+    println!();
+    position.print_black_bitboard();
+
     loop {
         draw_squares();
         draw_pieces(position.clone(), &piece_textures, &draw_param);
-        drag_and_drop(&position, &piece_textures, &draw_param);
+        drag_and_drop(&mut position,&mut piece, &piece_textures, &draw_param);
         next_frame().await;
     }
-    */
 }
