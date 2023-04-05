@@ -21,27 +21,86 @@ use crate::{draw_rectangle, B_IMG_POS, W_IMG_POS};
 
 pub fn drag_and_drop(
     position: &mut Position,
+    from_square: &mut Option<SquareLabels>,
     selected_piece: &mut Option<Pieces>,
     pieces_textures: &[Texture2D],
     draw_param: &DrawTextureParams,
 ) {
     if is_mouse_button_pressed(MouseButton::Left) {
-        let square = get_square_from_mouse_position(mouse_position());
+        *from_square = Some(get_square_from_mouse_position(mouse_position()));
         let boards = position.piece_bitboards[Side::White as usize];
 
         for piece in Pieces::iter() {
-            let res = boards[piece as usize].get_bit(square as u64);
+            let res = boards[piece as usize].get_bit(from_square.unwrap() as u64);
             if res != 0 {
                 *selected_piece = Some(piece);
             }
         }
 
-        position.side_bitboards[Side::White as usize].clear_bit(square);
-        position.piece_bitboards[Side::White as usize][selected_piece.unwrap() as usize]
-            .clear_bit(square);
+        //position.side_bitboards[Side::White as usize].clear_bit(from_square.unwrap());
+        if let Some(selected_p) = selected_piece {
+            position.piece_bitboards[position.state.turn as usize][*selected_p as usize]
+                .clear_bit(from_square.unwrap());
+        }
+
     } else if is_mouse_button_down(MouseButton::Left) {
         piece_follow_mouse(&position, *selected_piece, pieces_textures, draw_param);
     } else if is_mouse_button_released(MouseButton::Left) {
+        let target_square = get_square_from_mouse_position(mouse_position());
+
+        if selected_piece.is_some() {
+            println!(
+                "FROM: {:?} TARGET: {:?}",
+                from_square.unwrap(),
+                target_square
+            );
+            let old_turn = position.state.turn;
+            position.make_move(from_square.unwrap(), target_square);
+
+            if old_turn  == Side::White {
+
+            println!("MAIN BITBOARD");
+            println!();
+            position.main_bitboard.print();
+
+            println!();
+            println!("WHITE BITBOARD");
+            println!();
+            position.side_bitboards[Side::White as usize].print();
+
+            println!();
+            println!("WHITE PIECE BITBOARD");
+            println!();
+            position.piece_bitboards[old_turn as usize][selected_piece.unwrap() as usize]
+                .clear_bit(from_square.unwrap());
+            position.piece_bitboards[Side::White as usize][selected_piece.unwrap() as usize]
+                .print();
+
+            }
+            else {
+
+            println!("MAIN BITBOARD");
+            println!();
+            position.main_bitboard.print();
+
+            println!();
+            println!("Black BITBOARD");
+            println!();
+            position.side_bitboards[Side::Black as usize].print();
+
+            println!();
+            println!("BLACK PIECE BITBOARD");
+            println!();
+            position.piece_bitboards[old_turn as usize][selected_piece.unwrap() as usize]
+                .clear_bit(from_square.unwrap());
+            position.piece_bitboards[Side::Black as usize][selected_piece.unwrap() as usize]
+                .print();
+
+            }
+
+
+
+        }
     }
 }
 
@@ -87,15 +146,16 @@ pub fn draw_white_pieces(position: Position, pieces: &[Texture2D], draw_param: &
     let white_bitboards = position.piece_bitboards[Side::White as usize];
     let mut j = 0;
 
-    for (i, board) in white_bitboards.iter().enumerate() {
-        let piece_index: usize = match i {
-            0 => W_IMG_POS + 3,
-            1 => W_IMG_POS,
-            2 => W_IMG_POS + 2,
-            3 => W_IMG_POS + 5,
-            4 => W_IMG_POS + 4,
-            5 => W_IMG_POS + 1,
-            _ => 1,
+    for piece in Pieces::iter() {
+        let piece_offset = W_IMG_POS;
+
+        let piece_index: usize = match piece {
+            Pieces::Pawn => piece_offset + 3,
+            Pieces::Bishop => piece_offset,
+            Pieces::Knight => piece_offset + 2,
+            Pieces::Rook => piece_offset + 5,
+            Pieces::Queen => piece_offset + 4,
+            Pieces::King => piece_offset + 1,
         };
 
         while j < 64 {
@@ -105,7 +165,7 @@ pub fn draw_white_pieces(position: Position, pieces: &[Texture2D], draw_param: &
             let x = (file as f32) * SQUARE_SIZE;
             let y = (7 - rank) as f32 * SQUARE_SIZE;
 
-            let pos = (*board >> j) & BitBoard(1);
+            let pos = ((white_bitboards[piece as usize]) >> j) & BitBoard(1);
 
             if pos.0 == 1 {
                 draw_texture_ex(
@@ -125,16 +185,16 @@ pub fn draw_white_pieces(position: Position, pieces: &[Texture2D], draw_param: &
 pub fn draw_black_pieces(position: Position, pieces: &[Texture2D], draw_param: &DrawTextureParams) {
     let black_bitboards = position.piece_bitboards[Side::Black as usize];
     let mut j = 0;
+    for piece in Pieces::iter() {
+        let piece_offset = B_IMG_POS;
 
-    for (i, board) in black_bitboards.iter().enumerate() {
-        let piece_index: usize = match i {
-            0 => B_IMG_POS + 3,
-            1 => B_IMG_POS,
-            2 => B_IMG_POS + 2,
-            3 => B_IMG_POS + 5,
-            4 => B_IMG_POS + 4,
-            5 => B_IMG_POS + 1,
-            _ => 1,
+        let piece_index: usize = match piece {
+            Pieces::Pawn => piece_offset + 3,
+            Pieces::Bishop => piece_offset,
+            Pieces::Knight => piece_offset + 2,
+            Pieces::Rook => piece_offset + 5,
+            Pieces::Queen => piece_offset + 4,
+            Pieces::King => piece_offset + 1,
         };
 
         while j < 64 {
@@ -144,7 +204,7 @@ pub fn draw_black_pieces(position: Position, pieces: &[Texture2D], draw_param: &
             let x = (file as f32) * SQUARE_SIZE;
             let y = (7 - rank) as f32 * SQUARE_SIZE;
 
-            let pos = (*board >> j) & BitBoard(1);
+            let pos = ((black_bitboards[piece as usize]) >> j) & BitBoard(1);
 
             if pos.0 == 1 {
                 draw_texture_ex(

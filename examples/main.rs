@@ -27,6 +27,7 @@ async fn main() {
     };
 
     let mut piece: Option<Pieces> = None;
+    let mut from_square: Option<SquareLabels> = None;
     let mut position = Position::new();
     let castling_rights = position.state.castling_rights;
 
@@ -35,19 +36,6 @@ async fn main() {
     let grid = load_fen(start_pos, &mut position.state);
     position.from_grid(grid);
 
-    position.make_move(SquareLabels::D2, SquareLabels::D3);
-    println!("MAIN BITBOARD");
-    position.print_bitboard(position.main_bitboard);
-
-    println!("WHITE BITBOARD");
-    println!();
-    position.print_white_bitboard();
-
-    println!("BLACK BITBOARD");
-    println!();
-    position.print_black_bitboard();
-
-    position.make_move(SquareLabels::D7, SquareLabels::D6);
     println!("MAIN BITBOARD");
     position.print_bitboard(position.main_bitboard);
 
@@ -62,7 +50,13 @@ async fn main() {
     loop {
         draw_squares();
         draw_pieces(position.clone(), &piece_textures, &draw_param);
-        drag_and_drop(&mut position,&mut piece, &piece_textures, &draw_param);
+        drag_and_drop(
+            &mut position,
+            &mut from_square,
+            &mut piece,
+            &piece_textures,
+            &draw_param,
+        );
         next_frame().await;
     }
 }
