@@ -14,7 +14,8 @@ pub struct BitBoard(pub u64);
 
 impl BitBoard {
     pub fn get_bit(&self, square: u64) -> u64 {
-        (*self & BitBoard(1u64 << square)).0
+        let res = (*self & BitBoard(1u64 << square)).0;
+        if res == 0 {0} else {1}
     }
 
     pub fn set_bit(&mut self, square: SquareLabels) {
@@ -30,11 +31,7 @@ impl BitBoard {
             for file in 0..8 {
                 let square = rank * 8 + file;
                 let bit = self.get_bit(square);
-                if bit == 0 {
-                    print!(" {} ", 0);
-                } else {
-                    print!(" {} ", 1);
-                }
+                print!(" {} ", bit);
             }
             println!();
         }

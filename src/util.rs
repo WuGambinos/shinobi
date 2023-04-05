@@ -19,6 +19,37 @@ use crate::NUM_SQUARES;
 use crate::SQUARE_SIZE;
 use crate::{draw_rectangle, B_IMG_POS, W_IMG_POS};
 
+pub fn handle_movement(
+    old_position: &mut Position,
+    position: &mut Position,
+    selected_piece: &mut Option<Pieces>,
+    from_square: &mut Option<SquareLabels>,
+    target_square: SquareLabels,
+    turn: Side,
+) {
+    println!("MAIN BITBOARD");
+    println!();
+    position.main_bitboard.print();
+
+    println!();
+    println!("{:?} BITBOARD", turn);
+    println!();
+    position.side_bitboards[turn as usize].print();
+
+    println!();
+    println!("{:?} PIECE BITBOARD", turn);
+    println!();
+
+    let bit = old_position.side_bitboards[turn as usize].get_bit(target_square as u64);
+    if from_square.unwrap() != target_square && bit == 0 {
+        position.piece_bitboards[turn as usize][selected_piece.unwrap() as usize]
+            .clear_bit(from_square.unwrap());
+    } else {
+        position.set_bit_on_piece_bitboard(selected_piece.unwrap(), turn, from_square.unwrap());
+    }
+    position.piece_bitboards[turn as usize][selected_piece.unwrap() as usize].print();
+}
+
 pub fn drag_and_drop(
     position: &mut Position,
     from_square: &mut Option<SquareLabels>,
@@ -37,7 +68,6 @@ pub fn drag_and_drop(
             }
         }
 
-        //position.side_bitboards[Side::White as usize].clear_bit(from_square.unwrap());
         if let Some(selected_p) = selected_piece {
             position.piece_bitboards[position.state.turn as usize][*selected_p as usize]
                 .clear_bit(from_square.unwrap());
@@ -45,7 +75,7 @@ pub fn drag_and_drop(
     } else if is_mouse_button_down(MouseButton::Left) {
         piece_follow_mouse(&position, *selected_piece, pieces_textures, draw_param);
     } else if is_mouse_button_released(MouseButton::Left) {
-        let target_square = get_square_from_mouse_position(mouse_position());
+        let target_square: SquareLabels = get_square_from_mouse_position(mouse_position());
 
         if selected_piece.is_some() {
             println!(
@@ -53,60 +83,18 @@ pub fn drag_and_drop(
                 from_square.unwrap(),
                 target_square
             );
-            let old_turn = position.state.turn;
+            let old_turn: Side = position.state.turn;
+            let mut old_position: Position = position.clone();
             position.make_move(from_square.unwrap(), target_square);
 
-            if old_turn == Side::White {
-                println!("MAIN BITBOARD");
-                println!();
-                position.main_bitboard.print();
-
-                println!();
-                println!("WHITE BITBOARD");
-                println!();
-                position.side_bitboards[Side::White as usize].print();
-
-                println!();
-                println!("WHITE PIECE BITBOARD");
-                println!();
-
-                if from_square.unwrap() != target_square {
-                    position.piece_bitboards[old_turn as usize][selected_piece.unwrap() as usize]
-                        .clear_bit(from_square.unwrap());
-                } else {
-                    position.piece_bitboards[old_turn as usize][selected_piece.unwrap() as usize]
-                        .set_bit(from_square.unwrap());
-                }
-                position.piece_bitboards[Side::White as usize][selected_piece.unwrap() as usize]
-                    .print();
-            } else {
-                println!("MAIN BITBOARD");
-                println!();
-                position.main_bitboard.print();
-
-                println!();
-                println!("Black BITBOARD");
-                println!();
-                position.side_bitboards[Side::Black as usize].print();
-
-                println!();
-                println!("BLACK PIECE BITBOARD");
-                println!();
-
-                // Only Move if not placing piece on origin square
-                if from_square.unwrap() != target_square {
-                    println!("REACHED: {:?} {:?}", from_square.unwrap(), target_square);
-                    position.piece_bitboards[old_turn as usize][selected_piece.unwrap() as usize]
-                        .clear_bit(from_square.unwrap());
-                }
-                // Put bit back in bitiboard
-                else {
-                    position.piece_bitboards[old_turn as usize][selected_piece.unwrap() as usize]
-                        .set_bit(from_square.unwrap());
-                }
-                position.piece_bitboards[Side::Black as usize][selected_piece.unwrap() as usize]
-                    .print();
-            }
+            handle_movement(
+                &mut old_position,
+                position,
+                selected_piece,
+                from_square,
+                target_square,
+                old_turn,
+            );
         }
     }
 }

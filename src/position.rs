@@ -115,8 +115,11 @@ impl Position {
         let to_bitboard: BitBoard = BitBoard(1) << (to_square as usize);
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
 
-        if from_square != to_square {
+        if from_square != to_square
+            && self.side_bitboards[self.state.turn as usize].get_bit(to_square as u64) == 0
+        {
             if self.state.turn == Side::White {
+                // Check piece target_square is empty
                 if self.side_bitboards[Side::White as usize].get_bit(from_square as u64) != 0 {
                     // Update piece bitboard
                     self.piece_bitboards[self.state.turn as usize][Pieces::Pawn as usize] ^=
@@ -146,6 +149,10 @@ impl Position {
                 }
             }
         }
+    }
+
+    pub fn set_bit_on_piece_bitboard(&mut self, piece: Pieces, side: Side, square: SquareLabels) {
+        self.piece_bitboards[side as usize][piece as usize].set_bit(square);
     }
 
     pub fn print_black_piece_bitboards(&self) {
