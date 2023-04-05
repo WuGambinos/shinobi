@@ -115,37 +115,37 @@ impl Position {
         let to_bitboard: BitBoard = BitBoard(1) << (to_square as usize);
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
 
-        if self.state.turn == Side::White {
-            if self.side_bitboards[Side::White as usize].get_bit(from_square as u64) != 0 {
-                // Update piece bitboard
-                self.piece_bitboards[self.state.turn as usize][Pieces::Pawn as usize] ^=
-                    from_to_bitboard;
+        if from_square != to_square {
+            if self.state.turn == Side::White {
+                if self.side_bitboards[Side::White as usize].get_bit(from_square as u64) != 0 {
+                    // Update piece bitboard
+                    self.piece_bitboards[self.state.turn as usize][Pieces::Pawn as usize] ^=
+                        from_to_bitboard;
 
-                // Update white or black bitboard
-                self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
+                    // Update white or black bitboard
+                    self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
 
-                // Update main_bitboard
-                self.main_bitboard ^= from_to_bitboard;
+                    // Update main_bitboard
+                    self.main_bitboard ^= from_to_bitboard;
 
-                self.state.change_turn();
-            }
-        } else {
-            if self.side_bitboards[Side::Black as usize].get_bit(from_square as u64) != 0 {
+                    self.state.change_turn();
+                }
+            } else {
+                if self.side_bitboards[Side::Black as usize].get_bit(from_square as u64) != 0 {
+                    // Update piece bitboard
+                    self.piece_bitboards[self.state.turn as usize][Pieces::Pawn as usize] ^=
+                        from_to_bitboard;
 
-                // Update piece bitboard
-                self.piece_bitboards[self.state.turn as usize][Pieces::Pawn as usize] ^=
-                    from_to_bitboard;
+                    // Update white or black bitboard
+                    self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
 
-                // Update white or black bitboard
-                self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
+                    // Update main_bitboard
+                    self.main_bitboard ^= from_to_bitboard;
 
-                // Update main_bitboard
-                self.main_bitboard ^= from_to_bitboard;
-
-                self.state.change_turn();
+                    self.state.change_turn();
+                }
             }
         }
-
     }
 
     pub fn print_black_piece_bitboards(&self) {

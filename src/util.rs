@@ -42,7 +42,6 @@ pub fn drag_and_drop(
             position.piece_bitboards[position.state.turn as usize][*selected_p as usize]
                 .clear_bit(from_square.unwrap());
         }
-
     } else if is_mouse_button_down(MouseButton::Left) {
         piece_follow_mouse(&position, *selected_piece, pieces_textures, draw_param);
     } else if is_mouse_button_released(MouseButton::Left) {
@@ -57,49 +56,57 @@ pub fn drag_and_drop(
             let old_turn = position.state.turn;
             position.make_move(from_square.unwrap(), target_square);
 
-            if old_turn  == Side::White {
+            if old_turn == Side::White {
+                println!("MAIN BITBOARD");
+                println!();
+                position.main_bitboard.print();
 
-            println!("MAIN BITBOARD");
-            println!();
-            position.main_bitboard.print();
+                println!();
+                println!("WHITE BITBOARD");
+                println!();
+                position.side_bitboards[Side::White as usize].print();
 
-            println!();
-            println!("WHITE BITBOARD");
-            println!();
-            position.side_bitboards[Side::White as usize].print();
+                println!();
+                println!("WHITE PIECE BITBOARD");
+                println!();
 
-            println!();
-            println!("WHITE PIECE BITBOARD");
-            println!();
-            position.piece_bitboards[old_turn as usize][selected_piece.unwrap() as usize]
-                .clear_bit(from_square.unwrap());
-            position.piece_bitboards[Side::White as usize][selected_piece.unwrap() as usize]
-                .print();
+                if from_square.unwrap() != target_square {
+                    position.piece_bitboards[old_turn as usize][selected_piece.unwrap() as usize]
+                        .clear_bit(from_square.unwrap());
+                } else {
+                    position.piece_bitboards[old_turn as usize][selected_piece.unwrap() as usize]
+                        .set_bit(from_square.unwrap());
+                }
+                position.piece_bitboards[Side::White as usize][selected_piece.unwrap() as usize]
+                    .print();
+            } else {
+                println!("MAIN BITBOARD");
+                println!();
+                position.main_bitboard.print();
 
+                println!();
+                println!("Black BITBOARD");
+                println!();
+                position.side_bitboards[Side::Black as usize].print();
+
+                println!();
+                println!("BLACK PIECE BITBOARD");
+                println!();
+
+                // Only Move if not placing piece on origin square
+                if from_square.unwrap() != target_square {
+                    println!("REACHED: {:?} {:?}", from_square.unwrap(), target_square);
+                    position.piece_bitboards[old_turn as usize][selected_piece.unwrap() as usize]
+                        .clear_bit(from_square.unwrap());
+                }
+                // Put bit back in bitiboard
+                else {
+                    position.piece_bitboards[old_turn as usize][selected_piece.unwrap() as usize]
+                        .set_bit(from_square.unwrap());
+                }
+                position.piece_bitboards[Side::Black as usize][selected_piece.unwrap() as usize]
+                    .print();
             }
-            else {
-
-            println!("MAIN BITBOARD");
-            println!();
-            position.main_bitboard.print();
-
-            println!();
-            println!("Black BITBOARD");
-            println!();
-            position.side_bitboards[Side::Black as usize].print();
-
-            println!();
-            println!("BLACK PIECE BITBOARD");
-            println!();
-            position.piece_bitboards[old_turn as usize][selected_piece.unwrap() as usize]
-                .clear_bit(from_square.unwrap());
-            position.piece_bitboards[Side::Black as usize][selected_piece.unwrap() as usize]
-                .print();
-
-            }
-
-
-
         }
     }
 }
