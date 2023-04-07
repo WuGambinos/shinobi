@@ -117,6 +117,7 @@ pub struct Position {
     pub knight_attacks: [BitBoard; 64],
     pub pawn_pushes: [[BitBoard; 64]; 2],
     pub pawn_attacks: [[BitBoard; 64]; 2],
+    pub king_attacks: [BitBoard; 64],
 
     /// State contains all relveant information for evalution
     pub state: State,
@@ -133,6 +134,7 @@ impl Position {
             knight_attacks: [BitBoard(0); 64],
             pawn_pushes: [[BitBoard(0); 64]; 2],
             pawn_attacks: [[BitBoard(0); 64]; 2],
+            king_attacks: [BitBoard(0); 64],
             state: State::new(),
         }
     }
@@ -230,36 +232,20 @@ impl Position {
         self.piece_bitboards[side as usize][piece as usize].set_bit(square);
     }
 
-    pub fn no_no_ea(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 17) & BitBoard(!(A_FILE));
-    }
-    pub fn no_ea_ea(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 10) & BitBoard(!(A_FILE | B_FILE));
-    }
-    pub fn so_ea_ea(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 6) & BitBoard(!(A_FILE | B_FILE));
-    }
-    pub fn so_so_ea(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 15) & BitBoard(!(A_FILE));
-    }
-    pub fn no_no_we(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 15) & BitBoard(!(H_FILE));
-    }
-    pub fn no_we_we(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 6) & BitBoard(!(G_FILE | H_FILE));
-    }
-    pub fn so_we_we(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 10) & BitBoard(!(G_FILE | H_FILE));
-    }
-    pub fn so_so_we(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 17) & BitBoard(!(H_FILE));
+    pub fn north_one(&self, bitboard: BitBoard) -> BitBoard {
+        return bitboard << 8;
     }
 
     pub fn south_one(&self, bitboard: BitBoard) -> BitBoard {
         return bitboard >> 8;
     }
-    pub fn north_one(&self, bitboard: BitBoard) -> BitBoard {
-        return bitboard << 8;
+
+    pub fn east_one(&self, bitboard: BitBoard) -> BitBoard {
+        return (bitboard << 1) & BitBoard(!A_FILE);
+    }
+
+    pub fn west_one(&self, bitboard: BitBoard) -> BitBoard {
+        return (bitboard >> 1) & BitBoard(!H_FILE);
     }
 
     pub fn north_east_one(&self, bitboard: BitBoard) -> BitBoard {
@@ -280,6 +266,31 @@ impl Position {
 
     pub fn white_single_push_target(&self, bitboard: BitBoard) -> BitBoard {
         return self.north_one(bitboard) & self.empty_bitboard;
+    }
+
+    pub fn north_north_east(&self, bitboard: BitBoard) -> BitBoard {
+        return (bitboard << 17) & BitBoard(!(A_FILE));
+    }
+    pub fn north_east_east(&self, bitboard: BitBoard) -> BitBoard {
+        return (bitboard << 10) & BitBoard(!(A_FILE | B_FILE));
+    }
+    pub fn south_east_east(&self, bitboard: BitBoard) -> BitBoard {
+        return (bitboard >> 6) & BitBoard(!(A_FILE | B_FILE));
+    }
+    pub fn south_south_east(&self, bitboard: BitBoard) -> BitBoard {
+        return (bitboard >> 15) & BitBoard(!(A_FILE));
+    }
+    pub fn north_north_west(&self, bitboard: BitBoard) -> BitBoard {
+        return (bitboard << 15) & BitBoard(!(H_FILE));
+    }
+    pub fn north_west_west(&self, bitboard: BitBoard) -> BitBoard {
+        return (bitboard << 6) & BitBoard(!(G_FILE | H_FILE));
+    }
+    pub fn south_west_west(&self, bitboard: BitBoard) -> BitBoard {
+        return (bitboard >> 10) & BitBoard(!(G_FILE | H_FILE));
+    }
+    pub fn south_south_west(&self, bitboard: BitBoard) -> BitBoard {
+        return (bitboard >> 17) & BitBoard(!(H_FILE));
     }
 
     pub fn white_double_push_target(&self, bitboard: BitBoard) -> BitBoard {
@@ -355,6 +366,19 @@ impl Position {
         attacks
     }
 
+    pub fn generate_king_moves(&self, square: SquareLabel) -> BitBoard {
+        let mut attacks: BitBoard = BitBoard(0);
+        let mut bitboard: BitBoard = BitBoard(0);
+
+        bitboard.set_bit(square);
+
+        attacks = self.east_one(bitboard) | self.west_one(bitboard);
+        bitboard |= attacks;
+        attacks |= self.north_one(bitboard) | self.south_one(bitboard);
+
+        return attacks;
+    }
+
     pub fn generate_pawn_moves(&self, side: Side, square: SquareLabel) -> BitBoard {
         self.generate_pawn_pushes(side, square) | self.generate_pawn_attacks(side, square)
     }
@@ -365,14 +389,14 @@ impl Position {
 
         bitboard.set_bit(square);
 
-        attacks |= self.no_no_ea(bitboard);
-        attacks |= self.no_ea_ea(bitboard);
-        attacks |= self.so_ea_ea(bitboard);
-        attacks |= self.so_so_ea(bitboard);
-        attacks |= self.no_no_we(bitboard);
-        attacks |= self.no_we_we(bitboard);
-        attacks |= self.so_we_we(bitboard);
-        attacks |= self.so_so_we(bitboard);
+        attacks |= self.north_north_east(bitboard);
+        attacks |= self.north_east_east(bitboard);
+        attacks |= self.south_east_east(bitboard);
+        attacks |= self.south_south_east(bitboard);
+        attacks |= self.north_north_west(bitboard);
+        attacks |= self.north_west_west(bitboard);
+        attacks |= self.south_west_west(bitboard);
+        attacks |= self.south_south_west(bitboard);
 
         attacks
     }
@@ -384,6 +408,8 @@ impl Position {
                 self.generate_pawn_moves(Side::White, square);
             self.pawn_pushes[Side::Black as usize][square as usize] =
                 self.generate_pawn_moves(Side::Black, square);
+
+            self.king_attacks[square as usize] = self.generate_knight_moves(square);
         }
     }
 

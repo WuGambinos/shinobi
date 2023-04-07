@@ -41,7 +41,8 @@ async fn main() {
     position.generate_moves();
     for square in SquareLabel::iter() {
         println!("PAWN SQUARE: {:?}", square);
-        let attacks = position.generate_pawn_moves(Side::Black, square);
+        //let attacks = position.generate_pawn_moves(Side::Black, square);
+        let attacks = position.generate_king_moves(square);
         attacks.print();
         println!();
     }
