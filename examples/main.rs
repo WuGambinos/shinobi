@@ -36,16 +36,43 @@ async fn main() {
     let grid = load_fen(start_pos, &mut position.state);
     position.from_grid(grid);
 
+    /*
+    println!("TURN: {:?}", position.state.turn);
+    position.make_move(Pieces::Pawn, SquareLabels::D2, SquareLabels::D4);
+
+    println!("TURN: {:?}", position.state.turn);
+    position.make_move(Pieces::Pawn, SquareLabels::D7, SquareLabels::D5);
+
+    println!("TURN: {:?}", position.state.turn);
+    position.make_move(Pieces::Knight, SquareLabels::B1, SquareLabels::D5);
+
     println!("MAIN BITBOARD");
     position.print_bitboard(position.main_bitboard);
 
     println!("WHITE BITBOARD");
     println!();
     position.print_white_bitboard();
+    */
+
+    let white_pieces = position.piece_bitboards[Side::White as usize];
+
+    for piece in Pieces::iter() {
+        println!("PIECE: {:?}", piece);
+        println!();
+        white_pieces[piece as usize].print();
+    }
+    let black_pieces = position.piece_bitboards[Side::Black as usize];
 
     println!("BLACK BITBOARD");
     println!();
     position.print_black_bitboard();
+
+    for piece in Pieces::iter() {
+        println!("PIECE: {:?}", piece);
+        println!();
+        black_pieces[piece as usize].print();
+    }
+
 
     loop {
         draw_squares();

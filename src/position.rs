@@ -3,6 +3,7 @@ use crate::Pieces;
 use crate::Side;
 use crate::Square;
 use crate::SquareLabels;
+use strum::IntoEnumIterator;
 
 pub struct Castling(u8);
 impl Castling {
@@ -31,7 +32,7 @@ impl CastlingRights {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct State {
     pub castling_rights: CastlingRights,
     pub en_passant_square: Option<Square>,
@@ -53,6 +54,42 @@ impl State {
         match self.turn {
             Side::White => self.turn = Side::Black,
             Side::Black => self.turn = Side::White,
+        }
+    }
+
+    fn enemy(&mut self) -> Side {
+        match self.turn {
+            Side::White => Side::Black,
+            Side::Black => Side::White,
+        }
+    }
+}
+
+pub struct Move {
+    from: SquareLabels,
+    to: SquareLabels,
+    piece: Pieces,
+    color: Side,
+    captured_piece: Pieces,
+    captured_color: Side,
+}
+
+impl Move {
+    fn new(
+        from: SquareLabels,
+        to: SquareLabels,
+        piece: Pieces,
+        color: Side,
+        captured_piece: Pieces,
+        captured_color: Side,
+    ) -> Move {
+        Move {
+            from,
+            to,
+            piece,
+            color,
+            captured_piece,
+            captured_color,
         }
     }
 }
@@ -110,17 +147,49 @@ impl Position {
         }
     }
 
+    pub fn get_piece_on_square(&self, square: SquareLabels, side: Side) -> Option<Pieces> {
+        let pieces = self.piece_bitboards[side as usize];
+
+        for piece in Pieces::iter() {
+            let board = pieces[piece as usize];
+
+            if board.get_bit(square as u64) == 1 {
+                return Some(piece);
+            }
+        }
+        return None;
+    }
+
     pub fn make_move(&mut self, piece: Pieces, from_square: SquareLabels, to_square: SquareLabels) {
         let from_bitboard: BitBoard = BitBoard(1) << (from_square as usize);
         let to_bitboard: BitBoard = BitBoard(1) << (to_square as usize);
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
+        let enemy: Side = self.state.enemy();
 
         if from_square != to_square
             && self.side_bitboards[self.state.turn as usize].get_bit(to_square as u64) == 0
         {
-            if self.state.turn == Side::White {
-                // Check piece target_square is empty
-                if self.side_bitboards[Side::White as usize].get_bit(from_square as u64) != 0 {
+            // Check from_square has piece on it
+            if self.side_bitboards[self.state.turn as usize].get_bit(from_square as u64) != 0 {
+                if self.side_bitboards[self.state.enemy() as usize].get_bit(to_square as u64) == 1 {
+                    // Update piece bitboard
+                    self.piece_bitboards[self.state.turn as usize][piece as usize] ^=
+                        from_to_bitboard;
+
+                    // Update white or black bitboard
+                    self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
+
+                    let enemy_piece = self.get_piece_on_square(to_square, enemy).unwrap();
+
+                    // Reset captured piece
+                    self.piece_bitboards[enemy as usize][enemy_piece as usize] ^= to_bitboard;
+
+                    // Update color bitboard for captured side
+                    self.side_bitboards[enemy as usize] ^= to_bitboard;
+
+                    // Update main_bitboard
+                    self.main_bitboard ^= from_to_bitboard;
+                } else {
                     // Update piece bitboard
                     self.piece_bitboards[self.state.turn as usize][piece as usize] ^=
                         from_to_bitboard;
@@ -130,23 +199,9 @@ impl Position {
 
                     // Update main_bitboard
                     self.main_bitboard ^= from_to_bitboard;
-
-                    self.state.change_turn();
                 }
-            } else {
-                if self.side_bitboards[Side::Black as usize].get_bit(from_square as u64) != 0 {
-                    // Update piece bitboard
-                    self.piece_bitboards[self.state.turn as usize][piece as usize] ^=
-                        from_to_bitboard;
 
-                    // Update white or black bitboard
-                    self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
-
-                    // Update main_bitboard
-                    self.main_bitboard ^= from_to_bitboard;
-
-                    self.state.change_turn();
-                }
+                self.state.change_turn();
             }
         }
     }

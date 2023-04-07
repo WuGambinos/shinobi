@@ -6,7 +6,7 @@ use std::*;
 
 use crate::SquareLabels;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Square(usize);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
