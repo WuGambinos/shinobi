@@ -3,6 +3,10 @@ use crate::Pieces;
 use crate::Side;
 use crate::Square;
 use crate::SquareLabels;
+use crate::A_FILE;
+use crate::B_FILE;
+use crate::G_FILE;
+use crate::H_FILE;
 use strum::IntoEnumIterator;
 
 pub struct Castling(u8);
@@ -105,6 +109,9 @@ pub struct Position {
     /// BitBoards for all pieces and each side
     pub piece_bitboards: [[BitBoard; 6]; 2],
 
+    // BitBoard for piece attacks
+    pub attack_bitboard: [[BitBoard; 6]; 2],
+
     /// State contains all relveant information for evalution
     pub state: State,
 }
@@ -115,6 +122,7 @@ impl Position {
             main_bitboard: BitBoard(0),
             side_bitboards: [BitBoard(0); 2],
             piece_bitboards: [[BitBoard(0); 6]; 2],
+            attack_bitboard: [[BitBoard(0); 6]; 2],
             state: State::new(),
         }
     }
@@ -208,6 +216,45 @@ impl Position {
 
     pub fn set_bit_on_piece_bitboard(&mut self, piece: Pieces, side: Side, square: SquareLabels) {
         self.piece_bitboards[side as usize][piece as usize].set_bit(square);
+    }
+
+    pub fn no_no_ea(b: BitBoard) -> BitBoard {
+        return (b << 17) & BitBoard(!(A_FILE));
+    }
+    pub fn no_ea_ea(b: BitBoard) -> BitBoard {
+        return (b << 10) & BitBoard(!(A_FILE | B_FILE));
+    }
+    pub fn so_ea_ea(b: BitBoard) -> BitBoard {
+        return (b >> 6) & BitBoard(!(A_FILE | B_FILE));
+    }
+    pub fn so_so_ea(b: BitBoard) -> BitBoard {
+        return (b >> 15) & BitBoard(!(A_FILE));
+    }
+    pub fn no_no_we(b: BitBoard) -> BitBoard {
+        return (b << 15) & BitBoard(!(H_FILE));
+    }
+    pub fn no_we_we(b: BitBoard) -> BitBoard {
+        return (b << 6) & BitBoard(!(G_FILE | H_FILE));
+    }
+    pub fn so_we_we(b: BitBoard) -> BitBoard {
+        return (b >> 10) & BitBoard(!(G_FILE | H_FILE));
+    }
+    pub fn so_so_we(b: BitBoard) -> BitBoard {
+        return (b >> 17) & BitBoard(!(H_FILE));
+    }
+
+    pub fn generate_knight_moves(board: &mut BitBoard) -> BitBoard {
+        let old_board = board.clone();
+        *board |= Self::no_no_ea(old_board);
+        *board |= Self::no_ea_ea(old_board);
+        *board |= Self::so_ea_ea(old_board);
+        *board |= Self::so_so_ea(old_board);
+        *board |= Self::no_no_we(old_board);
+        *board |= Self::no_we_we(old_board);
+        *board |= Self::so_we_we(old_board);
+        *board |= Self::so_so_we(old_board);
+
+        board.clone()
     }
 
     pub fn print_black_piece_bitboards(&self) {

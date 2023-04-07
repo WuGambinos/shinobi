@@ -36,6 +36,10 @@ async fn main() {
     let grid = load_fen(start_pos, &mut position.state);
     position.from_grid(grid);
 
+    let board = Position::generate_knight_moves(&mut position.piece_bitboards[Side::White as usize][Pieces::Knight as usize]);
+
+    board.print();
+
     /*
     println!("TURN: {:?}", position.state.turn);
     position.make_move(Pieces::Pawn, SquareLabels::D2, SquareLabels::D4);
@@ -52,7 +56,6 @@ async fn main() {
     println!("WHITE BITBOARD");
     println!();
     position.print_white_bitboard();
-    */
 
     let white_pieces = position.piece_bitboards[Side::White as usize];
 
@@ -72,6 +75,7 @@ async fn main() {
         println!();
         black_pieces[piece as usize].print();
     }
+    */
 
 
     loop {
