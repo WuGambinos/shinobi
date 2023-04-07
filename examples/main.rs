@@ -34,16 +34,12 @@ async fn main() {
     let start_pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     let test_pos = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
     let knights_only = "1n4n1/8/8/8/8/8/8/1N4N1 w - - 0 1";
-    let grid = load_fen(knights_only, &mut position.state);
-    position.from_grid(grid);
+    let grid = load_fen(start_pos, &mut position.state);
+    //position.from_grid(grid);
+    //
 
     position.generate_moves();
     for square in SquareLabel::iter() {
-        /*
-        println!("KNIGHT SQUARE: {:?}", square);
-        let attacks = position.knight_attacks[square as usize];
-        attacks.print();
-        */
         println!("PAWN SQUARE: {:?}", square);
         let attacks = position.generate_pawn_moves(Side::Black, square);
         attacks.print();
