@@ -26,19 +26,29 @@ async fn main() {
         pivot: None,
     };
 
-    let mut piece: Option<Pieces> = None;
-    let mut from_square: Option<SquareLabels> = None;
+    let mut piece: Option<Piece> = None;
+    let mut from_square: Option<SquareLabel> = None;
     let mut position = Position::new();
     let castling_rights = position.state.castling_rights;
 
     let start_pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     let test_pos = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
-    let grid = load_fen(start_pos, &mut position.state);
+    let knights_only = "1n4n1/8/8/8/8/8/8/1N4N1 w - - 0 1";
+    let grid = load_fen(knights_only, &mut position.state);
     position.from_grid(grid);
 
-    let board = Position::generate_knight_moves(&mut position.piece_bitboards[Side::White as usize][Pieces::Knight as usize]);
-
-    board.print();
+    position.generate_moves();
+    for square in SquareLabel::iter() {
+        /*
+        println!("KNIGHT SQUARE: {:?}", square);
+        let attacks = position.knight_attacks[square as usize];
+        attacks.print();
+        */
+        println!("PAWN SQUARE: {:?}", square);
+        let attacks = position.generate_pawn_moves(Side::Black, square);
+        attacks.print();
+        println!();
+    }
 
     /*
     println!("TURN: {:?}", position.state.turn);
@@ -76,7 +86,6 @@ async fn main() {
         black_pieces[piece as usize].print();
     }
     */
-
 
     loop {
         draw_squares();

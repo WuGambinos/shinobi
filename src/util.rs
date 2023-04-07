@@ -8,10 +8,10 @@ use std::path::PathBuf;
 use crate::bitboard::BitBoard;
 use crate::Castling;
 use crate::IntoEnumIterator;
-use crate::Pieces;
+use crate::Piece;
 use crate::Position;
 use crate::Side;
-use crate::SquareLabels;
+use crate::SquareLabel;
 use crate::State;
 use crate::DARK;
 use crate::LIGHT;
@@ -22,9 +22,9 @@ use crate::{draw_rectangle, B_IMG_POS, W_IMG_POS};
 pub fn handle_movement(
     old_position: &mut Position,
     position: &mut Position,
-    selected_piece: &mut Option<Pieces>,
-    from_square: &mut Option<SquareLabels>,
-    target_square: SquareLabels,
+    selected_piece: &mut Option<Piece>,
+    from_square: &mut Option<SquareLabel>,
+    target_square: SquareLabel,
     turn: Side,
 ) {
     println!("MAIN BITBOARD");
@@ -54,8 +54,8 @@ pub fn handle_movement(
 
 pub fn drag_and_drop(
     position: &mut Position,
-    from_square: &mut Option<SquareLabels>,
-    selected_piece: &mut Option<Pieces>,
+    from_square: &mut Option<SquareLabel>,
+    selected_piece: &mut Option<Piece>,
     pieces_textures: &[Texture2D],
     draw_param: &DrawTextureParams,
 ) {
@@ -65,7 +65,7 @@ pub fn drag_and_drop(
 
         *selected_piece = None;
 
-        for piece in Pieces::iter() {
+        for piece in Piece::iter() {
             let res = boards[piece as usize].get_bit(from_square.unwrap() as u64);
             if res != 0 {
                 *selected_piece = Some(piece);
@@ -79,7 +79,7 @@ pub fn drag_and_drop(
     } else if is_mouse_button_down(MouseButton::Left) {
         piece_follow_mouse(&position, *selected_piece, pieces_textures, draw_param);
     } else if is_mouse_button_released(MouseButton::Left) {
-        let target_square: SquareLabels = get_square_from_mouse_position(mouse_position());
+        let target_square: SquareLabel = get_square_from_mouse_position(mouse_position());
 
         if selected_piece.is_some() {
             println!(
@@ -106,7 +106,7 @@ pub fn drag_and_drop(
 
 pub fn piece_follow_mouse(
     position: &Position,
-    piece: Option<Pieces>,
+    piece: Option<Piece>,
     pieces: &[Texture2D],
     draw_param: &DrawTextureParams,
 ) {
@@ -117,12 +117,12 @@ pub fn piece_follow_mouse(
         };
 
         let piece_index: usize = match p {
-            Pieces::Pawn => piece_offset + 3,
-            Pieces::Bishop => piece_offset,
-            Pieces::Knight => piece_offset + 2,
-            Pieces::Rook => piece_offset + 5,
-            Pieces::Queen => piece_offset + 4,
-            Pieces::King => piece_offset + 1,
+            Piece::Pawn => piece_offset + 3,
+            Piece::Bishop => piece_offset,
+            Piece::Knight => piece_offset + 2,
+            Piece::Rook => piece_offset + 5,
+            Piece::Queen => piece_offset + 4,
+            Piece::King => piece_offset + 1,
         };
 
         draw_texture_ex(
@@ -134,28 +134,28 @@ pub fn piece_follow_mouse(
         );
     }
 }
-pub fn get_square_from_mouse_position(pos: (f32, f32)) -> SquareLabels {
+pub fn get_square_from_mouse_position(pos: (f32, f32)) -> SquareLabel {
     let x = ((pos.0) / SQUARE_SIZE) as i32;
     let y = ((pos.1 / SQUARE_SIZE) as i32 - 7).abs();
 
     let square = ((8 * y) + x) as u64;
-    SquareLabels::from(square)
+    SquareLabel::from(square)
 }
 
 pub fn draw_white_pieces(position: Position, pieces: &[Texture2D], draw_param: &DrawTextureParams) {
     let white_bitboards = position.piece_bitboards[Side::White as usize];
     let mut j = 0;
 
-    for piece in Pieces::iter() {
+    for piece in Piece::iter() {
         let piece_offset = W_IMG_POS;
 
         let piece_index: usize = match piece {
-            Pieces::Pawn => piece_offset + 3,
-            Pieces::Bishop => piece_offset,
-            Pieces::Knight => piece_offset + 2,
-            Pieces::Rook => piece_offset + 5,
-            Pieces::Queen => piece_offset + 4,
-            Pieces::King => piece_offset + 1,
+            Piece::Pawn => piece_offset + 3,
+            Piece::Bishop => piece_offset,
+            Piece::Knight => piece_offset + 2,
+            Piece::Rook => piece_offset + 5,
+            Piece::Queen => piece_offset + 4,
+            Piece::King => piece_offset + 1,
         };
 
         while j < 64 {
@@ -185,16 +185,16 @@ pub fn draw_white_pieces(position: Position, pieces: &[Texture2D], draw_param: &
 pub fn draw_black_pieces(position: Position, pieces: &[Texture2D], draw_param: &DrawTextureParams) {
     let black_bitboards = position.piece_bitboards[Side::Black as usize];
     let mut j = 0;
-    for piece in Pieces::iter() {
+    for piece in Piece::iter() {
         let piece_offset = B_IMG_POS;
 
         let piece_index: usize = match piece {
-            Pieces::Pawn => piece_offset + 3,
-            Pieces::Bishop => piece_offset,
-            Pieces::Knight => piece_offset + 2,
-            Pieces::Rook => piece_offset + 5,
-            Pieces::Queen => piece_offset + 4,
-            Pieces::King => piece_offset + 1,
+            Piece::Pawn => piece_offset + 3,
+            Piece::Bishop => piece_offset,
+            Piece::Knight => piece_offset + 2,
+            Piece::Rook => piece_offset + 5,
+            Piece::Queen => piece_offset + 4,
+            Piece::King => piece_offset + 1,
         };
 
         while j < 64 {
