@@ -40,10 +40,10 @@ async fn main() {
 
     //debug(&position);
 
-    println!("ROOK MAGIC[64] = [");
+    // println!("ROOK MAGIC[64] = [");
 
-    for square in 0..2 {
-        //println!("SQUARE: {}", square);
+    for square in 0..1 {
+        println!("SQUARE: {}", square);
         println!(" {:#X}", find_magic(square, ROOK_BITS[square as usize], 0));
     }
 
