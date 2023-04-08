@@ -1,5 +1,6 @@
 use crate::BitBoard;
 use crate::Piece;
+use crate::SMagic;
 use crate::Side;
 use crate::Square;
 use crate::SquareLabel;
@@ -69,35 +70,6 @@ impl State {
     }
 }
 
-pub struct Move {
-    from: SquareLabel,
-    to: SquareLabel,
-    piece: Piece,
-    color: Side,
-    captured_piece: Piece,
-    captured_color: Side,
-}
-
-impl Move {
-    fn new(
-        from: SquareLabel,
-        to: SquareLabel,
-        piece: Piece,
-        color: Side,
-        captured_piece: Piece,
-        captured_color: Side,
-    ) -> Move {
-        Move {
-            from,
-            to,
-            piece,
-            color,
-            captured_piece,
-            captured_color,
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Position {
     // BitBoard that shows combined states of white and black bitboards
@@ -119,6 +91,12 @@ pub struct Position {
     pub pawn_attacks: [[BitBoard; 64]; 2],
     pub king_attacks: [BitBoard; 64],
 
+    pub bishop_attacks: [[BitBoard; 512]; 64],
+    pub rook_attacks: [[BitBoard; 512]; 64],
+
+    pub bishop_tbl: [SMagic; 64],
+    pub rook_tbl: [SMagic; 64],
+
     /// State contains all relveant information for evalution
     pub state: State,
 }
@@ -135,6 +113,12 @@ impl Position {
             pawn_pushes: [[BitBoard(0); 64]; 2],
             pawn_attacks: [[BitBoard(0); 64]; 2],
             king_attacks: [BitBoard(0); 64],
+
+            bishop_attacks: [[BitBoard(0); 512]; 64],
+            rook_attacks: [[BitBoard(0); 512]; 64],
+
+            bishop_tbl: [SMagic::new(0, 0); 64],
+            rook_tbl: [SMagic::new(0, 0); 64],
             state: State::new(),
         }
     }
@@ -399,6 +383,9 @@ impl Position {
         attacks |= self.south_south_west(bitboard);
 
         attacks
+    }
+
+    pub fn geneate_biship_moves(&self, occ: u64, sqaure: SquareLabel) {
     }
 
     pub fn generate_moves(&mut self) {

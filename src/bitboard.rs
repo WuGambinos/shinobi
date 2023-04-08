@@ -1,13 +1,27 @@
+use crate::SquareLabel;
 use std::ops::{
     Add, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, Mul, Not, Shl, Shr,
     Sub,
 };
 use std::*;
 
-use crate::SquareLabel;
-
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Square(usize);
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub struct SMagic {
+    mask: BitBoard,
+    magic: BitBoard,
+}
+
+impl SMagic {
+    pub fn new(mask: u64, magic: u64) -> SMagic {
+        SMagic {
+            mask: BitBoard(mask),
+            magic: BitBoard(magic),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BitBoard(pub u64);
@@ -15,7 +29,11 @@ pub struct BitBoard(pub u64);
 impl BitBoard {
     pub fn get_bit(&self, square: u64) -> u64 {
         let res = (*self & BitBoard(1u64 << square)).0;
-        if res == 0 {0} else {1}
+        if res == 0 {
+            0
+        } else {
+            1
+        }
     }
 
     pub fn set_bit(&mut self, square: SquareLabel) {

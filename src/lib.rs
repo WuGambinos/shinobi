@@ -3,8 +3,10 @@ pub mod enums;
 pub mod constants;
 pub mod util;
 pub mod position;
+pub mod magic;
 
-
+pub use::rand::prelude::*;
+pub use magic::*;
 pub use bitboard::*;
 pub use enums::*;
 pub use macroquad::prelude::*;

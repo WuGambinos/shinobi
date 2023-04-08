@@ -38,52 +38,16 @@ async fn main() {
     //position.from_grid(grid);
     //
 
-    position.generate_moves();
-    for square in SquareLabel::iter() {
-        println!("PAWN SQUARE: {:?}", square);
-        //let attacks = position.generate_pawn_moves(Side::Black, square);
-        let attacks = position.generate_king_moves(square);
-        attacks.print();
-        println!();
+    //debug(&position);
+
+    println!("ROOK MAGIC[64] = [");
+
+    for square in 0..2 {
+        //println!("SQUARE: {}", square);
+        println!(" {:#X}", find_magic(square, ROOK_BITS[square as usize], 0));
     }
 
     /*
-    println!("TURN: {:?}", position.state.turn);
-    position.make_move(Pieces::Pawn, SquareLabels::D2, SquareLabels::D4);
-
-    println!("TURN: {:?}", position.state.turn);
-    position.make_move(Pieces::Pawn, SquareLabels::D7, SquareLabels::D5);
-
-    println!("TURN: {:?}", position.state.turn);
-    position.make_move(Pieces::Knight, SquareLabels::B1, SquareLabels::D5);
-
-    println!("MAIN BITBOARD");
-    position.print_bitboard(position.main_bitboard);
-
-    println!("WHITE BITBOARD");
-    println!();
-    position.print_white_bitboard();
-
-    let white_pieces = position.piece_bitboards[Side::White as usize];
-
-    for piece in Pieces::iter() {
-        println!("PIECE: {:?}", piece);
-        println!();
-        white_pieces[piece as usize].print();
-    }
-    let black_pieces = position.piece_bitboards[Side::Black as usize];
-
-    println!("BLACK BITBOARD");
-    println!();
-    position.print_black_bitboard();
-
-    for piece in Pieces::iter() {
-        println!("PIECE: {:?}", piece);
-        println!();
-        black_pieces[piece as usize].print();
-    }
-    */
-
     loop {
         draw_squares();
         draw_pieces(position.clone(), &piece_textures, &draw_param);
@@ -95,5 +59,34 @@ async fn main() {
             &draw_param,
         );
         next_frame().await;
+    }
+    */
+}
+
+fn debug(position: &Position) {
+    println!("MAIN BITBOARD");
+    position.print_bitboard(position.main_bitboard);
+
+    println!("WHITE BITBOARD");
+    println!();
+    position.print_white_bitboard();
+
+    let white_pieces = position.piece_bitboards[Side::White as usize];
+
+    for piece in Piece::iter() {
+        println!("PIECE: {:?}", piece);
+        println!();
+        white_pieces[piece as usize].print();
+    }
+    let black_pieces = position.piece_bitboards[Side::Black as usize];
+
+    println!("BLACK BITBOARD");
+    println!();
+    position.print_black_bitboard();
+
+    for piece in Piece::iter() {
+        println!("PIECE: {:?}", piece);
+        println!();
+        black_pieces[piece as usize].print();
     }
 }
