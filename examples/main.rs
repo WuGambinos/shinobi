@@ -11,6 +11,7 @@ fn window_conf() -> Conf {
     }
 }
 
+/*
 #[macroquad::main(window_conf)]
 async fn main() {
     let piece_textures: Vec<Texture2D> = get_images().await;
@@ -42,7 +43,7 @@ async fn main() {
 
     // println!("ROOK MAGIC[64] = [");
 
-    for square in 0..1 {
+    for square in 0..64 {
         println!("SQUARE: {}", square);
         println!(" {:#X}", find_magic(square, ROOK_BITS[square as usize], 0));
     }
@@ -61,6 +62,12 @@ async fn main() {
         next_frame().await;
     }
     */
+}
+*/
+fn main() {
+    for square in 0..64 {
+        println!("{:#X}", find_magic(square, ROOK_BITS[square as usize], 0));
+    }
 }
 
 fn debug(position: &Position) {

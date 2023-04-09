@@ -29,7 +29,7 @@ pub fn random_u64() -> u64 {
 }
 
 pub fn random_u64_fewbits() -> u64 {
-    return random_u64() & random_u64() & random_u64();
+    return  random_u64() & random_u64() & random_u64();
 }
 
 pub fn count_1s(b: u64) -> u64 {
@@ -50,15 +50,6 @@ pub fn pop_1st_bit(bb: &mut u64) -> u64 {
     let fold: u32 = ((b & 0xffffffff) ^ (b >> 32)) as u32;
     *bb &= bb.wrapping_sub(1);
 
-    /*println!(
-        "B: {:#X} FOLD: {:#X} RES: {:#X} M: {:#X} ",
-        b,
-        fold,
-        fold.wrapping_mul(0x783A_9B23) >> 26,
-        bb,
-    );
-    */
-
     return BIT_TABLE[((fold.wrapping_mul(0x783A_9B23)) >> 26) as usize];
 }
 
@@ -73,9 +64,6 @@ pub fn index_to_u64(index: u32, bits: u32, m: u64) -> u64 {
             result |= 1u64 << j;
         }
     }
-
-    println!();
-    println!();
 
     return result;
 }
@@ -167,7 +155,6 @@ pub fn rook_attack(square: u64, block: u64) -> u64 {
         }
     }
 
-    println!("RESULT 1: {:#X}", result);
     for r in (1..=(rank - 1)).rev() {
         let mask = 1u64 << (file + r * 8);
         result |= mask;
@@ -176,17 +163,14 @@ pub fn rook_attack(square: u64, block: u64) -> u64 {
         }
     }
 
-    println!("RESULT 2: {:#X}", result);
     for f in (file + 1)..8 {
         let mask = 1u64 << (f + rank * 8);
-        println!("MASK: {:#X}", mask);
         result |= mask;
         if block & mask != 0 {
             break;
         }
     }
 
-    println!("RESULT 3: {:#X}", result);
     for f in (1..=(file - 1)).rev() {
         let mask = 1u64 << (f + rank * 8);
         result |= mask;
@@ -194,8 +178,6 @@ pub fn rook_attack(square: u64, block: u64) -> u64 {
             break;
         }
     }
-
-    println!("RESULT 4: {:#X}", result);
 
     return result;
 }
@@ -292,16 +274,12 @@ pub fn find_magic(square: u64, m: u32, bishop: u64) -> u64 {
         } else {
             rook_attack(square, b[i])
         };
-
-        println!("A[i]: {:#X} B[i]: {:#X}", a[i], b[i]);
-
         i += 1;
     }
 
-    for k in 0..100000000 {
+    for _ in 0..100000000 {
         let magic = random_u64_fewbits();
-
-        if (count_1s(mask.wrapping_mul(magic)) & 0xFF00000000000000) < 6 {
+        if (count_1s(mask.wrapping_mul(magic) & 0xFF00000000000000)) < 6 {
             continue;
         }
 
