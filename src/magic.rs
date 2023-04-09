@@ -1,6 +1,9 @@
+use crate::BitBoard;
+use crate::Position;
+use crate::SMagic;
 use rand::prelude::*;
 
-pub const BISHOP_BITS: [u64; 64] = [
+pub const BISHOP_BITS: [u32; 64] = [
     6, 5, 5, 5, 5, 5, 5, 6, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 7, 7, 7, 7, 5, 5, 5, 5, 7, 9, 9, 7, 5, 5,
     5, 5, 7, 9, 9, 7, 5, 5, 5, 5, 7, 7, 7, 7, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 5, 5, 5, 5, 5, 5, 6,
 ];
@@ -17,6 +20,140 @@ pub const BIT_TABLE: [u64; 64] = [
     39, 48, 24, 59, 14, 12, 55, 38, 28, 58, 20, 37, 17, 36, 8,
 ];
 
+pub const BISHOP_MAGICS: [u64; 64] = [
+    0x4041620809010010,
+    0x10500101202102,
+    0x24202004108001A,
+    0x108260040011000,
+    0x401104000000000,
+    0x822011008062000,
+    0x10311808020A0002,
+    0x30420201014100,
+    0x852041082280110,
+    0xA00214011020,
+    0x84012241400A450,
+    0x1300822082000805,
+    0x1241C10284008C0,
+    0x100A2804C02224,
+    0x40202411C40A0,
+    0x6620202010410,
+    0x201080A020429090,
+    0x15010208280300,
+    0x422040102020202,
+    0x208020082830080,
+    0x804200202010014,
+    0x1110200110101000,
+    0x11000401015000,
+    0x2001000024010410,
+    0x84000880208C8,
+    0x2402280802080820,
+    0x2080C0006002602,
+    0x2008008008102,
+    0x803010000444000,
+    0x201020008405004,
+    0x2844204084821088,
+    0xC0484021010800,
+    0x20C10480014A024,
+    0x24040400031040,
+    0x2009040210010804,
+    0x8000200800090106,
+    0x1811010401420020,
+    0x1E05080121020200,
+    0x28820880040894,
+    0x10C108200023500,
+    0x50900808C22011,
+    0x6520881110110901,
+    0x7010801080200,
+    0x20B0012018043100,
+    0x1446082100404405,
+    0x4C81020081001200,
+    0x1888C80800800044,
+    0x510010101080020,
+    0x500400A290100000,
+    0xC001006110080008,
+    0x20100886140,
+    0x80002042020000,
+    0xA000101002088044,
+    0x8311100210010302,
+    0xC804084204040040,
+    0x9010102160188,
+    0x400621004A304004,
+    0x8000044C02011000,
+    0x1004090080480800,
+    0x1808008460810,
+    0xA489500090320880,
+    0x8002000450820200,
+    0x200850404280200,
+    0x602040414084202,
+];
+
+pub const ROOK_MAGICS: [u64; 64] = [
+    0x8a80104000800020,
+    0x140002000100040,
+    0x2801880a0017001,
+    0x100081001000420,
+    0x200020010080420,
+    0x3001c0002010008,
+    0x8480008002000100,
+    0x2080088004402900,
+    0x800098204000,
+    0x2024401000200040,
+    0x100802000801000,
+    0x120800800801000,
+    0x208808088000400,
+    0x2802200800400,
+    0x2200800100020080,
+    0x801000060821100,
+    0x80044006422000,
+    0x100808020004000,
+    0x12108a0010204200,
+    0x140848010000802,
+    0x481828014002800,
+    0x8094004002004100,
+    0x4010040010010802,
+    0x20008806104,
+    0x100400080208000,
+    0x2040002120081000,
+    0x21200680100081,
+    0x20100080080080,
+    0x2000a00200410,
+    0x20080800400,
+    0x80088400100102,
+    0x80004600042881,
+    0x4040008040800020,
+    0x440003000200801,
+    0x4200011004500,
+    0x188020010100100,
+    0x14800401802800,
+    0x2080040080800200,
+    0x124080204001001,
+    0x200046502000484,
+    0x480400080088020,
+    0x1000422010034000,
+    0x30200100110040,
+    0x100021010009,
+    0x2002080100110004,
+    0x202008004008002,
+    0x20020004010100,
+    0x2048440040820001,
+    0x101002200408200,
+    0x40802000401080,
+    0x4008142004410100,
+    0x2060820c0120200,
+    0x1001004080100,
+    0x20c020080040080,
+    0x2935610830022400,
+    0x44440041009200,
+    0x280001040802101,
+    0x2100190040002085,
+    0x80c0084100102001,
+    0x4024081001000421,
+    0x20030a0244872,
+    0x12001008414402,
+    0x2006104900a0804,
+    0x1004081002402,
+];
+
 pub fn random_u64() -> u64 {
     let mut rng = rand::thread_rng();
 
@@ -29,7 +166,7 @@ pub fn random_u64() -> u64 {
 }
 
 pub fn random_u64_fewbits() -> u64 {
-    return  random_u64() & random_u64() & random_u64();
+    return random_u64() & random_u64() & random_u64();
 }
 
 pub fn count_1s(b: u64) -> u64 {
@@ -96,8 +233,8 @@ pub fn rook_mask(square: u64) -> u64 {
 pub fn bishop_mask(square: u64) -> u64 {
     let mut result: u64 = 0;
 
-    let rank = square / 8;
-    let file = square % 8;
+    let rank: i32 = (square / 8) as i32;
+    let file: i32 = (square % 8) as i32;
 
     let mut r = rank + 1;
     let mut f = file + 1;
@@ -195,7 +332,7 @@ pub fn bishop_attack(square: u64, block: u64) -> u64 {
         let mask = 1u64 << (f + r * 8);
         result |= mask;
 
-        if block & mask == 1 {
+        if block & mask != 0 {
             break;
         }
         r += 1;
@@ -209,7 +346,7 @@ pub fn bishop_attack(square: u64, block: u64) -> u64 {
         let mask = 1u64 << (f + r * 8);
         result |= mask;
 
-        if block & mask == 1 {
+        if block & mask != 0 {
             break;
         }
         r += 1;
@@ -223,7 +360,7 @@ pub fn bishop_attack(square: u64, block: u64) -> u64 {
         let mask = 1u64 << (f + r * 8);
         result |= mask;
 
-        if block & mask == 1 {
+        if block & mask != 0 {
             break;
         }
 
@@ -238,7 +375,7 @@ pub fn bishop_attack(square: u64, block: u64) -> u64 {
         let mask = 1u64 << (f + r * 8);
         result |= mask;
 
-        if block & mask == 1 {
+        if block & mask != 0 {
             break;
         }
 
@@ -307,4 +444,58 @@ pub fn find_magic(square: u64, m: u32, bishop: u64) -> u64 {
 
     println!("*** FAILED ***\n");
     return 0;
+}
+
+pub fn init_slider_attacks(position: &mut Position, is_bishop: bool) {
+    // Iterate over board
+    for square in 0..64 {
+        let bishop_smagic: SMagic =
+            SMagic::new(bishop_mask(square), BISHOP_MAGICS[square as usize]);
+        let rook_smagic: SMagic = SMagic::new(rook_mask(square), ROOK_MAGICS[square as usize]);
+
+        // Fill rook and bishop Table
+        position.bishop_tbl[square as usize] = bishop_smagic;
+        position.rook_tbl[square as usize] = rook_smagic;
+
+        // Initalize current mask
+        let mask: u64 = if is_bishop {
+            bishop_mask(square)
+        } else {
+            rook_mask(square)
+        };
+
+        // Count attack mask bits
+        let bit_count: u32 = count_1s(mask) as u32;
+
+        // Occupancy variations count
+        let occupancy_variations = 1 << bit_count;
+
+        for count in 0..occupancy_variations {
+            if is_bishop {
+                let occupancy = index_to_u64(count, bit_count, mask);
+                let magic_index = occupancy.wrapping_mul(BISHOP_MAGICS[square as usize])
+                    >> 64 - BISHOP_BITS[square as usize];
+                position.bishop_attacks[square as usize][magic_index as usize] =
+                    BitBoard(bishop_attack(square, occupancy));
+            } else {
+                /*
+                let occupancy = index_to_u64(count, bit_count, mask);
+                let magic_index = occupancy.wrapping_mul(ROOK_MAGICS[square as usize])
+                    >> 64 - ROOK_BITS[square as usize];
+                position.rook_attacks[square as usize][magic_index as usize] =
+                    BitBoard(rook_attack(square, occupancy));
+                */
+            }
+        }
+    }
+}
+
+pub fn get_bishop_attacks(position: &Position, square: u64, occupancy: u64) -> u64 {
+    let mut occ = occupancy;
+
+    occ = occ & position.bishop_tbl[square as usize].mask.0;
+    occ = occ.wrapping_mul(position.bishop_tbl[square as usize].magic.0);
+    occ = occ >> 64 - BISHOP_BITS[square as usize];
+
+    return position.bishop_attacks[square as usize][occ as usize].0;
 }

@@ -10,8 +10,8 @@ pub struct Square(usize);
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct SMagic {
-    mask: BitBoard,
-    magic: BitBoard,
+    pub mask: BitBoard,
+    pub magic: BitBoard,
 }
 
 impl SMagic {

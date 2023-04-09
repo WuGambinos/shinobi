@@ -65,9 +65,27 @@ async fn main() {
 }
 */
 fn main() {
+
+    let mut position = Position::new();
+    init_slider_attacks(&mut position, true);
+    init_slider_attacks(&mut position, false);
+
+    let mut bishop_occupancy: BitBoard = BitBoard(0);
+    bishop_occupancy.set_bit(SquareLabel::G7);
+    bishop_occupancy.set_bit(SquareLabel::F6);
+    bishop_occupancy.set_bit(SquareLabel::C5);
+    bishop_occupancy.set_bit(SquareLabel::B2);
+    bishop_occupancy.set_bit(SquareLabel::G1);
+    bishop_occupancy.print();
+    let bishop_attacks = BitBoard(get_bishop_attacks(&mut position, SquareLabel::B2 as u64, bishop_occupancy.0));
+    bishop_attacks.print();
+
+    /*
     for square in 0..64 {
         println!("{:#X}", find_magic(square, ROOK_BITS[square as usize], 0));
+        //println!("{:#X}", find_magic(square, BISHOP_BITS[square as usize], 1));
     }
+    */
 }
 
 fn debug(position: &Position) {
