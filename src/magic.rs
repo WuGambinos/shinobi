@@ -169,18 +169,6 @@ pub fn random_u64_fewbits() -> u64 {
     return random_u64() & random_u64() & random_u64();
 }
 
-pub fn count_1s(b: u64) -> u64 {
-    let mut r = 0;
-    let mut num = b;
-
-    while num > 0 {
-        num &= num - 1;
-        r += 1;
-    }
-
-    return r;
-}
-
 pub fn pop_1st_bit(bb: &mut u64) -> u64 {
     let b = *bb ^ ((bb).wrapping_sub(1));
 
@@ -401,7 +389,7 @@ pub fn find_magic(square: u64, m: u32, bishop: u64) -> u64 {
     let mut b: [u64; 4096] = [0; 4096];
     let mut used: [u64; 4096] = [0; 4096];
 
-    let n = count_1s(mask);
+    let n = mask.count_ones();
 
     let mut i = 0;
     while i < (1 << n) {
@@ -416,7 +404,7 @@ pub fn find_magic(square: u64, m: u32, bishop: u64) -> u64 {
 
     for _ in 0..100000000 {
         let magic = random_u64_fewbits();
-        if (count_1s(mask.wrapping_mul(magic) & 0xFF00000000000000)) < 6 {
+        if ((mask.wrapping_mul(magic) & 0xFF00000000000000).count_ones()) < 6 {
             continue;
         }
 
@@ -465,7 +453,7 @@ pub fn init_slider_attacks(position: &mut Position, is_bishop: bool) {
         };
 
         // Count attack mask bits
-        let bit_count: u32 = count_1s(mask) as u32;
+        let bit_count: u32 = mask.count_ones() as u32;
 
         // Occupancy variations count
         let occupancy_variations = 1 << bit_count;
