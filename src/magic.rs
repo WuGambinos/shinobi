@@ -379,50 +379,59 @@ pub fn transform(b: u64, magic: u64, bits: u32) -> u32 {
 }
 
 pub fn find_magic(square: u64, m: u32, bishop: u64) -> u64 {
-    let mut mask = if bishop == 1 {
+    let mask = if bishop == 1 {
         bishop_mask(square)
     } else {
         rook_mask(square)
     };
 
-    let mut a: [u64; 4096] = [0; 4096];
-    let mut b: [u64; 4096] = [0; 4096];
-    let mut used: [u64; 4096] = [0; 4096];
+    let mut attacks: [u64; 4096] = [0; 4096];
+    let mut occupancies: [u64; 4096] = [0; 4096];
+    let mut used_attacks: [u64; 4096] = [0; 4096];
 
-    let n = mask.count_ones();
+    let ones = mask.count_ones();
+    let num_occupancy_permutations = 1 << ones;
 
-    let mut i = 0;
-    while i < (1 << n) {
-        b[i] = index_to_u64(i as u32, n as u32, mask);
-        a[i] = if bishop == 1 {
-            bishop_attack(square, b[i])
+    for i in 0..num_occupancy_permutations {
+        // Fill occupancies
+        occupancies[i] = index_to_u64(i as u32, ones as u32, mask);
+
+        // Fill attacks
+        attacks[i] = if bishop == 1 {
+            bishop_attack(square, occupancies[i])
         } else {
-            rook_attack(square, b[i])
+            rook_attack(square, occupancies[i])
         };
-        i += 1;
     }
 
     for _ in 0..100000000 {
+        // Possible magic number
         let magic = random_u64_fewbits();
+
+        // Skip bad candidates
         if ((mask.wrapping_mul(magic) & 0xFF00000000000000).count_ones()) < 6 {
             continue;
         }
 
-        for i in 0..4096 {
-            used[i] = 0;
-        }
+        used_attacks.fill(0);
 
-        i = 0;
+        let mut i = 0;
         let mut fail = 0;
-        while fail == 0 && (i < (1 << n)) {
-            let j: u32 = transform(b[i], magic, m);
 
-            if used[j as usize] == 0 {
-                used[j as usize] = a[i];
-            } else if used[j as usize] != a[i] {
+        while fail == 0 && i < num_occupancy_permutations {
+            // Get magic index
+            let magic_index: u32 = transform(occupancies[i], magic, m);
+
+            // If open index
+            if used_attacks[magic_index as usize] == 0 {
+                used_attacks[magic_index as usize] = attacks[i];
+            } 
+            // Collision
+            else if used_attacks[magic_index as usize] != attacks[i] {
                 fail = 1;
             }
 
+            // Valid magic number
             if fail == 0 {
                 return magic;
             }
