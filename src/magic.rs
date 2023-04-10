@@ -299,7 +299,7 @@ pub fn rook_attack(square: u64, block: u64) -> u64 {
         }
     }
 
-    for r in (1..=(rank - 1)).rev() {
+    for r in (0..=(rank - 1)).rev() {
         let mask = 1u64 << (file + r * 8);
         result |= mask;
         if block & (mask) != 0 {
@@ -315,7 +315,7 @@ pub fn rook_attack(square: u64, block: u64) -> u64 {
         }
     }
 
-    for f in (1..=(file - 1)).rev() {
+    for f in (0..=(file - 1)).rev() {
         let mask = 1u64 << (f + rank * 8);
         result |= mask;
         if block & mask != 0 {
@@ -413,7 +413,7 @@ pub fn find_magic(square: u64, m: u32, bishop: u64) -> u64 {
 
     for i in 0..num_occupancy_permutations {
         // Fill occupancies
-        occupancies[i] = index_to_u64(i as u32, ones as u32, mask);
+        occupancies[i] = index_to_u64(i as u32, ones, mask);
 
         // Fill attacks
         attacks[i] = if bishop == 1 {
@@ -481,7 +481,7 @@ pub fn init_slider_attacks(position: &mut Position, is_bishop: bool) {
         };
 
         // Count attack mask bits
-        let bit_count: u32 = mask.count_ones() as u32;
+        let bit_count: u32 = mask.count_ones();
 
         // Occupancy variations count
         let occupancy_variations = 1 << bit_count;
@@ -509,18 +509,18 @@ pub fn init_slider_attacks(position: &mut Position, is_bishop: bool) {
 pub fn get_bishop_attacks(position: &Position, square: u64, occupancy: u64) -> u64 {
     let mut occ = occupancy;
 
-    occ = occ & position.bishop_tbl[square as usize].mask.0;
+    occ &= position.bishop_tbl[square as usize].mask.0;
     occ = occ.wrapping_mul(position.bishop_tbl[square as usize].magic.0);
-    occ = occ >> 64 - BISHOP_BITS[square as usize];
+    occ >>= 64 - BISHOP_BITS[square as usize];
 
     return position.bishop_attacks[square as usize][occ as usize].0;
 }
 
 pub fn get_rook_attacks(position: &Position, square: u64, occupancy: u64) -> u64 {
     let mut occ = occupancy;
-    occ = occ & position.rook_tbl[square as usize].mask.0;
+    occ &= position.rook_tbl[square as usize].mask.0;
     occ = occ.wrapping_mul(position.rook_tbl[square as usize].magic.0);
-    occ = occ >> 64 - ROOK_BITS[square as usize];
+    occ >>= 64 - ROOK_BITS[square as usize];
 
     return position.rook_attacks[square as usize][occ as usize].0;
 }
