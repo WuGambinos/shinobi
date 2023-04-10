@@ -3,21 +3,40 @@ use crate::Position;
 use crate::SMagic;
 use rand::prelude::*;
 
+#[rustfmt::skip]
 pub const BISHOP_BITS: [u32; 64] = [
-    6, 5, 5, 5, 5, 5, 5, 6, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 7, 7, 7, 7, 5, 5, 5, 5, 7, 9, 9, 7, 5, 5,
-    5, 5, 7, 9, 9, 7, 5, 5, 5, 5, 7, 7, 7, 7, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 5, 5, 5, 5, 5, 5, 6,
+    6, 5, 5, 5, 5, 5, 5, 6, 
+    5, 5, 5, 5, 5, 5, 5, 5, 
+    5, 5, 7, 7, 7, 7, 5, 5,
+    5, 5, 7, 9, 9, 7, 5, 5,
+    5, 5, 7, 9, 9, 7, 5, 5,
+    5, 5, 7, 7, 7, 7, 5, 5, 
+    5, 5, 5, 5, 5, 5, 5, 5, 
+    6, 5, 5, 5, 5, 5, 5, 6,
 ];
 
+#[rustfmt::skip]
 pub const ROOK_BITS: [u32; 64] = [
-    12, 11, 11, 11, 11, 11, 11, 12, 11, 10, 10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 10, 11,
-    11, 10, 10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 10, 11, 11, 10, 10, 10, 10, 10, 10, 11,
-    11, 10, 10, 10, 10, 10, 10, 11, 12, 11, 11, 11, 11, 11, 11, 12,
+    12, 11, 11, 11, 11, 11, 11, 12,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11,
+    11, 10, 10, 10, 10, 10, 10, 11, 
+    12, 11, 11, 11, 11, 11, 11, 12,
 ];
 
+#[rustfmt::skip]
 pub const BIT_TABLE: [u64; 64] = [
-    63, 30, 3, 32, 25, 41, 22, 33, 15, 50, 42, 13, 11, 53, 19, 34, 61, 29, 2, 51, 21, 43, 45, 10,
-    18, 47, 1, 54, 9, 57, 0, 35, 62, 31, 40, 4, 49, 5, 52, 26, 60, 6, 23, 44, 46, 27, 56, 16, 7,
-    39, 48, 24, 59, 14, 12, 55, 38, 28, 58, 20, 37, 17, 36, 8,
+    63, 30, 3 , 32, 25, 41, 22, 33,
+    15, 50, 42, 13, 11, 53, 19, 34,
+    61, 29, 2 , 51, 21, 43, 45, 10,
+    18, 47, 1 , 54, 9 , 57, 0 , 35,
+    62, 31, 40, 4 , 49, 5 , 52, 26,
+    60, 6 , 23, 44, 46, 27, 56, 16,
+    7 , 39, 48, 24, 59, 14, 12, 55,
+    38, 28, 58, 20, 37, 17, 36, 8 ,
 ];
 
 pub const BISHOP_MAGICS: [u64; 64] = [
@@ -425,7 +444,7 @@ pub fn find_magic(square: u64, m: u32, bishop: u64) -> u64 {
             // If open index
             if used_attacks[magic_index as usize] == 0 {
                 used_attacks[magic_index as usize] = attacks[i];
-            } 
+            }
             // Collision
             else if used_attacks[magic_index as usize] != attacks[i] {
                 fail = 1;
@@ -472,16 +491,16 @@ pub fn init_slider_attacks(position: &mut Position, is_bishop: bool) {
                 let occupancy = index_to_u64(count, bit_count, mask);
                 let magic_index = occupancy.wrapping_mul(BISHOP_MAGICS[square as usize])
                     >> 64 - BISHOP_BITS[square as usize];
+
                 position.bishop_attacks[square as usize][magic_index as usize] =
                     BitBoard(bishop_attack(square, occupancy));
             } else {
-                /*
                 let occupancy = index_to_u64(count, bit_count, mask);
                 let magic_index = occupancy.wrapping_mul(ROOK_MAGICS[square as usize])
                     >> 64 - ROOK_BITS[square as usize];
+
                 position.rook_attacks[square as usize][magic_index as usize] =
                     BitBoard(rook_attack(square, occupancy));
-                */
             }
         }
     }
@@ -495,4 +514,13 @@ pub fn get_bishop_attacks(position: &Position, square: u64, occupancy: u64) -> u
     occ = occ >> 64 - BISHOP_BITS[square as usize];
 
     return position.bishop_attacks[square as usize][occ as usize].0;
+}
+
+pub fn get_rook_attacks(position: &Position, square: u64, occupancy: u64) -> u64 {
+    let mut occ = occupancy;
+    occ = occ & position.rook_tbl[square as usize].mask.0;
+    occ = occ.wrapping_mul(position.rook_tbl[square as usize].magic.0);
+    occ = occ >> 64 - ROOK_BITS[square as usize];
+
+    return position.rook_attacks[square as usize][occ as usize].0;
 }

@@ -92,7 +92,7 @@ pub struct Position {
     pub king_attacks: [BitBoard; 64],
 
     pub bishop_attacks: [[BitBoard; 512]; 64],
-    pub rook_attacks: [[BitBoard; 512]; 64],
+    pub rook_attacks: [[BitBoard; 4096]; 64],
 
     pub bishop_tbl: [SMagic; 64],
     pub rook_tbl: [SMagic; 64],
@@ -115,7 +115,7 @@ impl Position {
             king_attacks: [BitBoard(0); 64],
 
             bishop_attacks: [[BitBoard(0); 512]; 64],
-            rook_attacks: [[BitBoard(0); 512]; 64],
+            rook_attacks: [[BitBoard(0); 4096]; 64],
 
             bishop_tbl: [SMagic::new(0, 0); 64],
             rook_tbl: [SMagic::new(0, 0); 64],

@@ -71,14 +71,24 @@ fn main() {
     init_slider_attacks(&mut position, false);
 
     let mut bishop_occupancy: BitBoard = BitBoard(0);
+    /*
     bishop_occupancy.set_bit(SquareLabel::G7);
     bishop_occupancy.set_bit(SquareLabel::F6);
     bishop_occupancy.set_bit(SquareLabel::C5);
     bishop_occupancy.set_bit(SquareLabel::B2);
     bishop_occupancy.set_bit(SquareLabel::G1);
+    */
     bishop_occupancy.print();
-    let bishop_attacks = BitBoard(get_bishop_attacks(&mut position, SquareLabel::B2 as u64, bishop_occupancy.0));
+    
+    let bishop_attacks = BitBoard(get_bishop_attacks(&mut position, SquareLabel::D4 as u64, bishop_occupancy.0));
     bishop_attacks.print();
+
+    println!("ROOK");
+    let mut rook_occupancy: BitBoard = BitBoard(0);
+    rook_occupancy.print();
+    let rook_attacks = BitBoard(get_rook_attacks(&mut position, SquareLabel::D4 as u64, rook_occupancy.0));
+    rook_attacks.print();
+
 
     /*
     for square in 0..64 {
