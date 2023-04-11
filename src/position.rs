@@ -73,7 +73,24 @@ impl State {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
+pub struct Move {
+    pub piece: Piece,
+    pub from_square: SquareLabel,
+    pub target_square: SquareLabel,
+}
+
+impl Move {
+    fn new(piece: Piece, from_square: SquareLabel, target_square: SquareLabel) -> Move {
+        Move {
+            piece,
+            from_square,
+            target_square,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
 pub struct Position {
     // BitBoard that shows combined states of white and black bitboards
     pub main_bitboard: BitBoard,
@@ -416,6 +433,51 @@ impl Position {
 
             self.king_attacks[square as usize] = self.generate_knight_moves(square);
         }
+    }
+
+    pub fn create_moves_for_piece(
+        &self,
+        piece: Piece,
+        side: Side,
+        attacks: [BitBoard; 64],
+    ) -> Vec<Move> {
+        let mut moves: Vec<Move> = Vec::new();
+        for (from_square, attack) in attacks.iter().enumerate() {
+            if self.piece_bitboards[side as usize][piece as usize].get_bit(from_square as u64) == 1
+            {
+                let board = *attack & !self.side_bitboards[side as usize];
+                board.print();
+                for i in 0..64 {
+                    let bit = board.get_bit(i);
+                    if bit == 1 {
+                        let mv: Move = Move::new(
+                            piece,
+                            SquareLabel::from(from_square as u64),
+                            SquareLabel::from(i),
+                        );
+                        moves.push(mv);
+                    }
+                }
+            }
+        }
+        return moves;
+    }
+    pub fn create_move(&mut self) -> Vec<Move> {
+        let mut moves: Vec<Move> = Vec::new();
+        for piece in Piece::iter() {
+            match piece {
+                Piece::Knight => {
+                    moves.append(&mut self.create_moves_for_piece(
+                        piece,
+                        Side::White,
+                        self.knight_attacks,
+                    ));
+                }
+                _ => {}
+            }
+        }
+        println!("MOVES: {:#?}", moves);
+        moves
     }
 
     pub fn print_black_piece_bitboards(&self) {

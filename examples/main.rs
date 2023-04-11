@@ -1,3 +1,5 @@
+use std::fmt::Pointer;
+
 use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::mouse::MouseState;
 use shinobi::enums::*;
@@ -6,6 +8,7 @@ use shinobi::*;
 
 fn main() -> Result<(), String> {
     /* VIDEO SETUP */
+    /*
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
     let _image_context = sdl2::image::init(InitFlag::PNG)?;
@@ -29,6 +32,7 @@ fn main() -> Result<(), String> {
 
     let texture_creator = canvas.texture_creator();
     let mut event_pump = sdl_context.event_pump()?;
+    */
 
     /* CHESS STUFF */
     let mut position = Position::new();
@@ -36,7 +40,7 @@ fn main() -> Result<(), String> {
     let test_pos = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
     let knights_only = "1n4n1/8/8/8/8/8/8/1N4N1 w - - 0 1";
     let random_fen = "8/3QR2p/2p2Kp1/2B4p/7P/P4n1P/b3p3/1N2k3 w - - 0 1";
-    let grid = load_fen(random_fen, &mut position.state);
+    let grid = load_fen(start_pos, &mut position.state);
     position.from_grid(grid);
 
     let mut piece: Option<Piece> = None;
@@ -69,15 +73,20 @@ fn main() -> Result<(), String> {
         rook_occupancy.0,
     ));
     rook_attacks.print();
-    */
     println!("QUEEN");
     let occupancy: BitBoard = position.main_bitboard;
     occupancy.print();
 
     let queen_attacks = position.generate_queen_moves(SquareLabel::D7);
     queen_attacks.print();
+    */
 
     position.generate_moves();
+    //position.create_move();
+
+    let depth = 2;
+    println!("PERFT: {}", perft(&mut position, depth));
+
     /*
     let mut state = MouseState::from_sdl_state(0);
     'running: loop {
@@ -160,15 +169,22 @@ fn debug(position: &Position) {
 }
 
 fn perft(position: &mut Position, depth: u32) -> u32 {
-    if depth == 0 {
-        return 1;
+    let mut num_positions: u32 = 0;
+    position.generate_moves();
+    let moves = position.create_move();
+    if depth == 1 {
+        return moves.len() as u32;
     }
 
-    let mut num_positions: u32 = 0;
-    let moves = position.generate_moves();
+    for mv in moves {
+        let old_position: Position = *position;
+        position.make_move(mv.piece, mv.from_square, mv.target_square);
+        num_positions += perft(position, depth - 1);
 
-    return 0;
+        *position = old_position;
+    }
 
+    return num_positions;
 }
 /*
 pub fn perft(board: &mut Board, depth: u8) -> u32 {
