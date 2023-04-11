@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 macroquad = "0.3.25"
 rand = "0.8.5"
+sdl2 = "0.35.2"
 strum = "0.24.1"
 strum_macros = "0.24.3"
 

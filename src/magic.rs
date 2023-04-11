@@ -462,6 +462,16 @@ pub fn find_magic(square: u64, m: u32, bishop: u64) -> u64 {
     return 0;
 }
 
+pub fn print_magic_numbers(bishop: bool) {
+    for square in 0..64 {
+        if bishop {
+            println!("{:#X}", find_magic(square, BISHOP_BITS[square as usize], 1));
+        } else {
+            println!("{:#X}", find_magic(square, ROOK_BITS[square as usize], 0));
+        }
+    }
+}
+
 pub fn init_slider_attacks(position: &mut Position, is_bishop: bool) {
     // Iterate over board
     for square in 0..64 {
