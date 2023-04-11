@@ -2,10 +2,10 @@ use sdl2::*;
 
 pub const NUM_SQUARES: u8 = 64;
 pub const SQUARE_SIZE: i32 = 60;
-pub const SCALE: f32 = 1.;
+pub const SCALE: i32 = 1;
 pub const DARK: pixels::Color = pixels::Color::RGB(181, 136, 99);
 pub const LIGHT: pixels::Color = pixels::Color::RGB(240, 217, 181);
-pub const RADIUS: f32 = 5.;
+pub const RADIUS: i32 = 5;
 
 // Hexadecimal Constants
 pub const A_FILE: u64 = 0x0101_0101_0101_0101;

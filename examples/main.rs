@@ -1,3 +1,4 @@
+use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::mouse::MouseState;
 use shinobi::enums::*;
 use shinobi::util::*;
@@ -75,6 +76,9 @@ fn main() -> Result<(), String> {
 
     let queen_attacks = position.generate_queen_moves(SquareLabel::D7);
     queen_attacks.print();
+
+    position.generate_moves();
+    /*
     let mut state = MouseState::from_sdl_state(0);
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -101,9 +105,29 @@ fn main() -> Result<(), String> {
             &mut piece,
         )?;
 
+        draw_moves(&mut canvas, &queen_attacks)?;
+
         canvas.present();
     }
+    */
 
+    Ok(())
+}
+fn draw_moves(canvas: &mut WindowCanvas, attacks: &BitBoard) -> Result<(), String> {
+    for rank in 0..8 {
+        for file in 0..8 {
+            let square = rank * 8 + file;
+            let bit = attacks.get_bit(square);
+            if bit == 1 {
+                canvas.filled_circle(
+                    file as i16 * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
+                    (7 - rank as i16) * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
+                    5,
+                    Color::RED,
+                )?;
+            }
+        }
+    }
     Ok(())
 }
 
@@ -134,3 +158,36 @@ fn debug(position: &Position) {
         black_pieces[piece as usize].print();
     }
 }
+
+fn perft(position: &mut Position, depth: u32) -> u32 {
+    if depth == 0 {
+        return 1;
+    }
+
+    let mut num_positions: u32 = 0;
+    let moves = position.generate_moves();
+
+    return 0;
+
+}
+/*
+pub fn perft(board: &mut Board, depth: u8) -> u32 {
+    let moves = board.generate_legal_moves();
+    let mut num_positions: u32 = 0;
+
+    if depth == 1 {
+        return moves.len() as u32;
+    }
+
+    for mv in moves {
+        let mut piece = board.get_square(mv.start_square()).unwrap();
+        let old_board = *board;
+        board.make_move(&mut piece, mv);
+
+        num_positions += perft(board, depth - 1);
+
+        *board = old_board;
+    }
+    num_positions
+}
+*/

@@ -13,7 +13,7 @@ strum_macros = "0.24.3"
 [dependencies.sdl2]
 version = "0.35.2"
 default-features = false
-features = ["image"]
+features = ["image", "gfx"]
 
 [[examples]]
 name = "main"
