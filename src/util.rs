@@ -1,115 +1,44 @@
-use macroquad::color::Color;
-use macroquad::input::is_mouse_button_pressed;
-use macroquad::input::*;
-use macroquad::prelude::{draw_texture_ex, load_texture, DrawTextureParams, Texture2D};
 use std::fs;
 use std::path::PathBuf;
 
 use crate::bitboard::BitBoard;
 use crate::Castling;
+use crate::EventPump;
 use crate::IntoEnumIterator;
+use crate::LoadTexture;
 use crate::Piece;
 use crate::Position;
+use crate::Rect;
 use crate::Side;
 use crate::SquareLabel;
 use crate::State;
+use crate::TextureCreator;
+use crate::WindowCanvas;
+use crate::WindowContext;
+use crate::B_IMG_POS;
 use crate::DARK;
 use crate::LIGHT;
-use crate::NUM_SQUARES;
 use crate::SQUARE_SIZE;
-use crate::{draw_rectangle, B_IMG_POS, W_IMG_POS};
+use crate::W_IMG_POS;
+use sdl2::mouse::MouseButton::Left;
+use sdl2::mouse::MouseState;
 
-pub fn handle_movement(
-    old_position: &mut Position,
-    position: &mut Position,
-    selected_piece: &mut Option<Piece>,
-    from_square: &mut Option<SquareLabel>,
-    target_square: SquareLabel,
-    turn: Side,
-) {
-    println!("MAIN BITBOARD");
-    println!();
-    position.main_bitboard.print();
+pub fn get_square_from_mouse_position(pos_x: i32, pos_y: i32) -> SquareLabel {
+    let x = pos_x / SQUARE_SIZE;
+    let y = (pos_y / SQUARE_SIZE - 7).abs();
 
-    println!();
-    println!("{:?} BITBOARD", turn);
-    println!();
-    position.side_bitboards[turn as usize].print();
-
-    println!();
-    println!("{:?} PIECE BITBOARD", turn);
-    println!();
-
-    println!("SELECTED PIECE: {:?}", selected_piece);
-
-    let bit = old_position.side_bitboards[turn as usize].get_bit(target_square as u64);
-    if from_square.unwrap() != target_square && bit == 0 {
-        position.piece_bitboards[turn as usize][selected_piece.unwrap() as usize]
-            .clear_bit(from_square.unwrap());
-    } else {
-        position.set_bit_on_piece_bitboard(selected_piece.unwrap(), turn, from_square.unwrap());
-    }
-    position.piece_bitboards[turn as usize][selected_piece.unwrap() as usize].print();
-}
-
-pub fn drag_and_drop(
-    position: &mut Position,
-    from_square: &mut Option<SquareLabel>,
-    selected_piece: &mut Option<Piece>,
-    pieces_textures: &[Texture2D],
-    draw_param: &DrawTextureParams,
-) {
-    if is_mouse_button_pressed(MouseButton::Left) {
-        *from_square = Some(get_square_from_mouse_position(mouse_position()));
-        let boards = position.piece_bitboards[position.state.turn as usize];
-
-        *selected_piece = None;
-
-        for piece in Piece::iter() {
-            let res = boards[piece as usize].get_bit(from_square.unwrap() as u64);
-            if res != 0 {
-                *selected_piece = Some(piece);
-            }
-        }
-
-        if let Some(selected_p) = selected_piece {
-            position.piece_bitboards[position.state.turn as usize][*selected_p as usize]
-                .clear_bit(from_square.unwrap());
-        }
-    } else if is_mouse_button_down(MouseButton::Left) {
-        piece_follow_mouse(&position, *selected_piece, pieces_textures, draw_param);
-    } else if is_mouse_button_released(MouseButton::Left) {
-        let target_square: SquareLabel = get_square_from_mouse_position(mouse_position());
-
-        if selected_piece.is_some() {
-            println!(
-                "PIECE: {:?} FROM: {:?} TARGET: {:?}",
-                selected_piece,
-                from_square.unwrap(),
-                target_square
-            );
-            let old_turn: Side = position.state.turn;
-            let mut old_position: Position = position.clone();
-            position.make_move(selected_piece.unwrap(), from_square.unwrap(), target_square);
-
-            handle_movement(
-                &mut old_position,
-                position,
-                selected_piece,
-                from_square,
-                target_square,
-                old_turn,
-            );
-        }
-    }
+    let square = ((8 * y) + x) as u64;
+    SquareLabel::from(square)
 }
 
 pub fn piece_follow_mouse(
+    canvas: &mut WindowCanvas,
+    texture_creator: &TextureCreator<WindowContext>,
+    event_pump: &EventPump,
+    pieces: &Vec<PathBuf>,
     position: &Position,
     piece: Option<Piece>,
-    pieces: &[Texture2D],
-    draw_param: &DrawTextureParams,
-) {
+) -> Result<(), String> {
     if let Some(p) = piece {
         let piece_offset: usize = match position.state.turn {
             Side::White => W_IMG_POS,
@@ -125,150 +54,257 @@ pub fn piece_follow_mouse(
             Piece::King => piece_offset + 1,
         };
 
-        draw_texture_ex(
-            pieces[piece_index],
-            mouse_position().0 - SQUARE_SIZE / 2.,
-            mouse_position().1 - SQUARE_SIZE / 2.,
-            Color::new(1.0, 1.0, 1.0, 1.0),
-            draw_param.clone(),
+        let square: Rect = Rect::new(
+            event_pump.mouse_state().x() - SQUARE_SIZE / 2,
+            event_pump.mouse_state().y() - SQUARE_SIZE / 2,
+            60,
+            60,
         );
+
+        let texture = texture_creator.load_texture(pieces[piece_index].clone())?;
+        canvas.copy(&texture, None, square)?;
     }
-}
-pub fn get_square_from_mouse_position(pos: (f32, f32)) -> SquareLabel {
-    let x = ((pos.0) / SQUARE_SIZE) as i32;
-    let y = ((pos.1 / SQUARE_SIZE) as i32 - 7).abs();
-
-    let square = ((8 * y) + x) as u64;
-    SquareLabel::from(square)
+    Ok(())
 }
 
-pub fn draw_white_pieces(position: Position, pieces: &[Texture2D], draw_param: &DrawTextureParams) {
-    let white_bitboards = position.piece_bitboards[Side::White as usize];
-    let mut j = 0;
+pub fn drag_and_drop(
+    canvas: &mut WindowCanvas,
+    texture_creator: &TextureCreator<WindowContext>,
+    pieces: &Vec<PathBuf>,
+    event_pump: &EventPump,
+    old_state: &mut MouseState,
+    position: &mut Position,
+    from_square: &mut Option<SquareLabel>,
+    selected_piece: &mut Option<Piece>,
+) -> Result<(), String> {
+    // HELD DOWN
+    if old_state.is_mouse_button_pressed(Left)
+        && event_pump.mouse_state().is_mouse_button_pressed(Left)
+    {
+        piece_follow_mouse(
+            canvas,
+            texture_creator,
+            event_pump,
+            pieces,
+            position,
+            *selected_piece,
+        )?;
+    }
+    // Pressed
+    else if event_pump.mouse_state().is_mouse_button_pressed(Left) {
+        let state = event_pump.mouse_state();
 
-    for piece in Piece::iter() {
-        let piece_offset = W_IMG_POS;
+        *from_square = Some(get_square_from_mouse_position(state.x(), state.y()));
+        let boards = position.piece_bitboards[position.state.turn as usize];
 
-        let piece_index: usize = match piece {
-            Piece::Pawn => piece_offset + 3,
-            Piece::Bishop => piece_offset,
-            Piece::Knight => piece_offset + 2,
-            Piece::Rook => piece_offset + 5,
-            Piece::Queen => piece_offset + 4,
-            Piece::King => piece_offset + 1,
-        };
+        *selected_piece = None;
 
-        while j < 64 {
-            let rank = j / 8;
-            let file = j % 8;
-
-            let x = (file as f32) * SQUARE_SIZE;
-            let y = (7 - rank) as f32 * SQUARE_SIZE;
-
-            let pos = ((white_bitboards[piece as usize]) >> j) & BitBoard(1);
-
-            if pos.0 == 1 {
-                draw_texture_ex(
-                    pieces[piece_index],
-                    x,
-                    y,
-                    Color::new(1.0, 1.0, 1.0, 1.0),
-                    draw_param.clone(),
-                );
+        for piece in Piece::iter() {
+            let res = boards[piece as usize].get_bit(from_square.unwrap() as u64);
+            if res != 0 {
+                *selected_piece = Some(piece);
             }
-            j += 1;
         }
-        j = 0;
-    }
-}
 
-pub fn draw_black_pieces(position: Position, pieces: &[Texture2D], draw_param: &DrawTextureParams) {
-    let black_bitboards = position.piece_bitboards[Side::Black as usize];
-    let mut j = 0;
-    for piece in Piece::iter() {
-        let piece_offset = B_IMG_POS;
-
-        let piece_index: usize = match piece {
-            Piece::Pawn => piece_offset + 3,
-            Piece::Bishop => piece_offset,
-            Piece::Knight => piece_offset + 2,
-            Piece::Rook => piece_offset + 5,
-            Piece::Queen => piece_offset + 4,
-            Piece::King => piece_offset + 1,
-        };
-
-        while j < 64 {
-            let rank = j / 8;
-            let file = j % 8;
-
-            let x = (file as f32) * SQUARE_SIZE;
-            let y = (7 - rank) as f32 * SQUARE_SIZE;
-
-            let pos = ((black_bitboards[piece as usize]) >> j) & BitBoard(1);
-
-            if pos.0 == 1 {
-                draw_texture_ex(
-                    pieces[piece_index],
-                    x,
-                    y,
-                    Color::new(1.0, 1.0, 1.0, 1.0),
-                    draw_param.clone(),
-                );
-            }
-            j += 1;
+        if let Some(selected_p) = selected_piece {
+            position.piece_bitboards[position.state.turn as usize][*selected_p as usize]
+                .clear_bit(from_square.unwrap());
         }
-        j = 0;
+
+        *old_state = event_pump.mouse_state();
     }
+    // Release Button
+    else if !event_pump.mouse_state().is_mouse_button_pressed(Left) {
+        let target_square: SquareLabel = get_square_from_mouse_position(
+            event_pump.mouse_state().x(),
+            event_pump.mouse_state().y(),
+        );
+
+        if selected_piece.is_some() {
+            let old_turn: Side = position.state.turn;
+            let mut old_position: Position = position.clone();
+            position.make_move(selected_piece.unwrap(), from_square.unwrap(), target_square);
+
+            handle_movement(
+                &mut old_position,
+                position,
+                selected_piece,
+                from_square,
+                target_square,
+                old_turn,
+            );
+        }
+        *selected_piece = None;
+        *old_state = MouseState::from_sdl_state(0);
+    }
+
+    Ok(())
 }
 
-pub fn draw_pieces(position: Position, pieces: &[Texture2D], draw_param: &DrawTextureParams) {
-    draw_white_pieces(position.clone(), pieces, draw_param);
-    draw_black_pieces(position, pieces, draw_param)
-}
-
-pub fn draw_squares() {
-    for i in 0..NUM_SQUARES {
+pub fn draw_squares(canvas: &mut WindowCanvas) -> Result<(), String> {
+    for i in 0..64 {
         let rank = i / 8;
         let file = i % 8;
+
         let color = (rank + file) % 2;
 
+        let rect: Rect = Rect::new(
+            rank * SQUARE_SIZE,
+            file * SQUARE_SIZE,
+            SQUARE_SIZE as u32,
+            SQUARE_SIZE as u32,
+        );
         if color == 0 {
-            draw_rectangle(
-                (rank as f32) * SQUARE_SIZE,
-                (file as f32) * SQUARE_SIZE,
-                SQUARE_SIZE,
-                SQUARE_SIZE,
-                LIGHT,
-            );
+            canvas.set_draw_color(LIGHT);
+            canvas.fill_rect(rect)?;
         } else {
-            draw_rectangle(
-                (rank as f32) * SQUARE_SIZE,
-                (file as f32) * SQUARE_SIZE,
-                SQUARE_SIZE,
-                SQUARE_SIZE,
-                DARK,
-            );
+            canvas.set_draw_color(DARK);
+            canvas.fill_rect(rect)?;
         }
     }
+    Ok(())
 }
 
-pub async fn get_images() -> Vec<Texture2D> {
-    let mut images: Vec<Texture2D> = Vec::new();
-    let mut image_names: Vec<PathBuf> = fs::read_dir("./chess_assets")
+pub fn get_images() -> Vec<PathBuf> {
+    let mut image_paths: Vec<PathBuf> = fs::read_dir("./chess_assets")
         .unwrap()
         .map(|res| res.unwrap())
         .map(|de| de.path())
         .collect();
 
-    image_names.sort();
+    image_paths.sort();
 
-    for file in image_names {
-        let image: Texture2D = load_texture(file.to_str().unwrap()).await.unwrap();
-        images.push(image);
-        println!("{}", file.display());
+    image_paths
+}
+
+pub fn draw_pieces(
+    canvas: &mut WindowCanvas,
+    texture_creator: &TextureCreator<WindowContext>,
+    pieces: &Vec<PathBuf>,
+    position: &Position,
+) -> Result<(), String> {
+    draw_white_pieces(canvas, texture_creator, pieces, position)?;
+    draw_black_pieces(canvas, texture_creator, pieces, position)?;
+    Ok(())
+}
+
+pub fn draw_white_pieces(
+    canvas: &mut WindowCanvas,
+    texture_creator: &TextureCreator<WindowContext>,
+    pieces: &Vec<PathBuf>,
+    position: &Position,
+) -> Result<(), String> {
+    let black_bitboards = position.piece_bitboards[Side::White as usize];
+    let mut j = 0;
+
+    for piece in Piece::iter() {
+        let piece_offset = W_IMG_POS;
+        let piece_index: usize = match piece {
+            Piece::Pawn => piece_offset + 3,
+            Piece::Bishop => piece_offset,
+            Piece::Knight => piece_offset + 2,
+            Piece::Rook => piece_offset + 5,
+            Piece::Queen => piece_offset + 4,
+            Piece::King => piece_offset + 1,
+        };
+
+        while j < 64 {
+            let rank = j / 8;
+            let file = j % 8;
+
+            let x = (file) * (SQUARE_SIZE as i32);
+            let y = (7 - rank) * (SQUARE_SIZE as i32);
+
+            let pos = ((black_bitboards[piece as usize]) >> (j as usize)) & BitBoard(1);
+
+            if pos.0 == 1 {
+                let square: Rect = Rect::new(x, y, 60, 60);
+                let texture = texture_creator.load_texture(pieces[piece_index].clone())?;
+                canvas.copy(&texture, None, square)?;
+            }
+            j += 1;
+        }
+        j = 0;
     }
 
-    images
+    Ok(())
+}
+
+pub fn draw_black_pieces(
+    canvas: &mut WindowCanvas,
+    texture_creator: &TextureCreator<WindowContext>,
+    pieces: &Vec<PathBuf>,
+    position: &Position,
+) -> Result<(), String> {
+    let black_bitboards = position.piece_bitboards[Side::Black as usize];
+    let mut j = 0;
+
+    for piece in Piece::iter() {
+        let piece_offset = B_IMG_POS;
+        let piece_index: usize = match piece {
+            Piece::Pawn => piece_offset + 3,
+            Piece::Bishop => piece_offset,
+            Piece::Knight => piece_offset + 2,
+            Piece::Rook => piece_offset + 5,
+            Piece::Queen => piece_offset + 4,
+            Piece::King => piece_offset + 1,
+        };
+
+        while j < 64 {
+            let rank = j / 8;
+            let file = j % 8;
+
+            let x = (file) * (SQUARE_SIZE as i32);
+            let y = (7 - rank) * (SQUARE_SIZE as i32);
+
+            let pos = ((black_bitboards[piece as usize]) >> (j as usize)) & BitBoard(1);
+
+            if pos.0 == 1 {
+                let square: Rect = Rect::new(x, y, 60, 60);
+                let texture = texture_creator.load_texture(pieces[piece_index as usize].clone())?;
+                canvas.copy(&texture, None, square)?;
+            }
+            j += 1;
+        }
+        j = 0;
+    }
+
+    Ok(())
+}
+
+pub fn handle_movement(
+    old_position: &mut Position,
+    position: &mut Position,
+    selected_piece: &mut Option<Piece>,
+    from_square: &mut Option<SquareLabel>,
+    target_square: SquareLabel,
+    turn: Side,
+) {
+    /*
+    println!("MAIN BITBOARD");
+    println!();
+    position.main_bitboard.print();
+
+    println!();
+    println!("{:?} BITBOARD", turn);
+    println!();
+    position.side_bitboards[turn as usize].print();
+
+    println!();
+    println!("{:?} PIECE BITBOARD", turn);
+    println!();
+
+    println!("SELECTED PIECE: {:?}", selected_piece);
+    */
+
+    let bit = old_position.side_bitboards[turn as usize].get_bit(target_square as u64);
+    if from_square.unwrap() != target_square && bit == 0 {
+        position.piece_bitboards[turn as usize][selected_piece.unwrap() as usize]
+            .clear_bit(from_square.unwrap());
+    } else {
+        position.set_bit_on_piece_bitboard(selected_piece.unwrap(), turn, from_square.unwrap());
+    }
+    //position.piece_bitboards[turn as usize][selected_piece.unwrap() as usize].print();
 }
 
 pub fn print_board(position: [char; 64]) {
@@ -280,7 +316,6 @@ pub fn print_board(position: [char; 64]) {
         println!();
     }
 }
-
 pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
     let mut file = 0;
     let mut rank = 7;

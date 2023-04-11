@@ -1,19 +1,26 @@
 pub mod bitboard;
-pub mod enums;
 pub mod constants;
-pub mod util;
-pub mod position;
+pub mod enums;
 pub mod magic;
+pub mod position;
+pub mod util;
 
-pub use::rand::prelude::*;
-pub use magic::*;
+pub use ::rand::prelude::*;
 pub use bitboard::*;
-pub use enums::*;
-pub use macroquad::prelude::*;
-pub use macroquad::color::Color;
 pub use constants::*;
-pub use util::*;
+pub use enums::*;
+pub use magic::*;
 pub use position::*;
 pub use strum::IntoEnumIterator;
 pub use strum_macros::EnumIter;
+pub use util::*;
 
+pub use sdl2::event::Event;
+pub use sdl2::image::{InitFlag, LoadTexture};
+pub use sdl2::keyboard::Keycode;
+pub use sdl2::pixels::Color;
+pub use sdl2::rect::Rect;
+pub use sdl2::render::TextureCreator;
+pub use sdl2::render::WindowCanvas;
+pub use sdl2::video::WindowContext;
+pub use sdl2::EventPump;
