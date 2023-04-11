@@ -534,3 +534,8 @@ pub fn get_rook_attacks(position: &Position, square: u64, occupancy: u64) -> u64
 
     return position.rook_attacks[square as usize][occ as usize].0;
 }
+
+pub fn get_queen_attacks(position: &Position, square: u64, occupancy: u64) -> u64 {
+    return get_rook_attacks(position, square, occupancy)
+        | get_bishop_attacks(position, square, occupancy);
+}

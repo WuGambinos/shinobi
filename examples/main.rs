@@ -34,19 +34,19 @@ fn main() -> Result<(), String> {
     let start_pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     let test_pos = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
     let knights_only = "1n4n1/8/8/8/8/8/8/1N4N1 w - - 0 1";
-    let grid = load_fen(start_pos, &mut position.state);
+    let random_fen = "8/3QR2p/2p2Kp1/2B4p/7P/P4n1P/b3p3/1N2k3 w - - 0 1";
+    let grid = load_fen(random_fen, &mut position.state);
     position.from_grid(grid);
 
     let mut piece: Option<Piece> = None;
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
 
-    /*
     init_slider_attacks(&mut position, true);
     init_slider_attacks(&mut position, false);
 
-    println!("w
-    ;BISHOP");
+    /*
+    println!("BISHOP");
     let bishop_occupancy: BitBoard =
         position.piece_bitboards[Side::White as usize][Piece::Bishop as usize];
     bishop_occupancy.print();
@@ -69,7 +69,12 @@ fn main() -> Result<(), String> {
     ));
     rook_attacks.print();
     */
+    println!("QUEEN");
+    let occupancy: BitBoard = position.main_bitboard;
+    occupancy.print();
 
+    let queen_attacks = position.generate_queen_moves(SquareLabel::D7);
+    queen_attacks.print();
     let mut state = MouseState::from_sdl_state(0);
     'running: loop {
         for event in event_pump.poll_iter() {

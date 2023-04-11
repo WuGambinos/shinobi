@@ -1,3 +1,6 @@
+use crate::get_bishop_attacks;
+use crate::get_queen_attacks;
+use crate::get_rook_attacks;
 use crate::BitBoard;
 use crate::Piece;
 use crate::SMagic;
@@ -385,7 +388,22 @@ impl Position {
         attacks
     }
 
-    pub fn geneate_biship_moves(&self, occ: u64, sqaure: SquareLabel) {
+    pub fn generate_bishop_moves(&self, square: SquareLabel) -> BitBoard {
+        return BitBoard(get_bishop_attacks(
+            self,
+            square as u64,
+            self.main_bitboard.0,
+        )) & !self.side_bitboards[self.state.turn as usize];
+    }
+
+    pub fn generate_rook_moves(&self, square: SquareLabel) -> BitBoard {
+        return BitBoard(get_rook_attacks(self, square as u64, self.main_bitboard.0))
+            & !self.side_bitboards[self.state.turn as usize];
+    }
+
+    pub fn generate_queen_moves(&self, square: SquareLabel) -> BitBoard {
+        return BitBoard(get_queen_attacks(self, square as u64, self.main_bitboard.0))
+            & !self.side_bitboards[self.state.turn as usize];
     }
 
     pub fn generate_moves(&mut self) {
