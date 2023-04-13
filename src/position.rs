@@ -2,8 +2,8 @@ use crate::get_bishop_attacks;
 use crate::get_queen_attacks;
 use crate::get_rook_attacks;
 use crate::BitBoard;
-use crate::Piece;
 use crate::SMagic;
+use crate::Piece;
 use crate::Side;
 use crate::Square;
 use crate::SquareLabel;
@@ -111,9 +111,11 @@ pub struct Position {
     pub pawn_attacks: [[BitBoard; 64]; 2],
     pub king_attacks: [BitBoard; 64],
 
-    pub bishop_attacks: [[BitBoard; 512]; 64],
-    pub rook_attacks: [[BitBoard; 4096]; 64],
+    pub rook_attacks: [BitBoard; 102400],
+    pub bishop_attacks: [BitBoard; 5248],
 
+    //pub bishop_attacks: [[BitBoard; 512]; 64],
+    //pub rook_attacks: [[BitBoard; 4096]; 64],
     pub bishop_tbl: [SMagic; 64],
     pub rook_tbl: [SMagic; 64],
 
@@ -129,16 +131,23 @@ impl Position {
             side_bitboards: [BitBoard(0); 2],
             piece_bitboards: [[BitBoard(0); 6]; 2],
             //attack_bitboards: [[BitBoard(0); 6]; 2],
+            rook_attacks: [BitBoard(0); 102400],
+            bishop_attacks: [BitBoard(0); 5248],
+
             knight_attacks: [BitBoard(0); 64],
             pawn_pushes: [[BitBoard(0); 64]; 2],
             pawn_attacks: [[BitBoard(0); 64]; 2],
             king_attacks: [BitBoard(0); 64],
 
-            bishop_attacks: [[BitBoard(0); 512]; 64],
-            rook_attacks: [[BitBoard(0); 4096]; 64],
+            //bishop_attacks: [[BitBoard(0); 512]; 64],
+            //rook_attacks: [[BitBoard(0); 4096]; 64],
 
+            /*
             bishop_tbl: [SMagic::new(0, 0); 64],
             rook_tbl: [SMagic::new(0, 0); 64],
+            */
+            bishop_tbl: [SMagic::new(0, 0, 0, 0); 64],
+            rook_tbl: [SMagic::new(0, 0, 0, 0); 64],
             state: State::new(),
         }
     }

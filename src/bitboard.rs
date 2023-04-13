@@ -8,21 +8,6 @@ use std::*;
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Square(usize);
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct SMagic {
-    pub mask: BitBoard,
-    pub magic: BitBoard,
-}
-
-impl SMagic {
-    pub fn new(mask: u64, magic: u64) -> SMagic {
-        SMagic {
-            mask: BitBoard(mask),
-            magic: BitBoard(magic),
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BitBoard(pub u64);
 
