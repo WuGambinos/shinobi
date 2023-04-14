@@ -1,9 +1,10 @@
 use crate::get_bishop_attacks;
 use crate::get_queen_attacks;
 use crate::get_rook_attacks;
+use crate::init_slider_attacks;
 use crate::BitBoard;
-use crate::SMagic;
 use crate::Piece;
+use crate::SMagic;
 use crate::Side;
 use crate::Square;
 use crate::SquareLabel;
@@ -139,13 +140,6 @@ impl Position {
             pawn_attacks: [[BitBoard(0); 64]; 2],
             king_attacks: [BitBoard(0); 64],
 
-            //bishop_attacks: [[BitBoard(0); 512]; 64],
-            //rook_attacks: [[BitBoard(0); 4096]; 64],
-
-            /*
-            bishop_tbl: [SMagic::new(0, 0); 64],
-            rook_tbl: [SMagic::new(0, 0); 64],
-            */
             bishop_tbl: [SMagic::new(0, 0, 0, 0); 64],
             rook_tbl: [SMagic::new(0, 0, 0, 0); 64],
             state: State::new(),
@@ -432,13 +426,13 @@ impl Position {
             & !self.side_bitboards[self.state.turn as usize];
     }
 
-    pub fn generate_moves(&mut self) {
+    pub fn generate_moves(&mut self, side: Side) {
         for square in SquareLabel::iter() {
             self.knight_attacks[square as usize] = self.generate_knight_moves(square);
-            self.pawn_pushes[Side::White as usize][square as usize] =
-                self.generate_pawn_moves(Side::White, square);
-            self.pawn_pushes[Side::Black as usize][square as usize] =
-                self.generate_pawn_moves(Side::Black, square);
+            self.pawn_pushes[side as usize][square as usize] =
+                self.generate_pawn_pushes(side, square);
+
+            //self.queen_attacks[square as usize] = self.generate_queen_moves(square);
 
             self.king_attacks[square as usize] = self.generate_knight_moves(square);
         }
@@ -448,7 +442,7 @@ impl Position {
         &self,
         piece: Piece,
         side: Side,
-        attacks: [BitBoard; 64],
+        attacks: &[BitBoard],
     ) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::new();
         for (from_square, attack) in attacks.iter().enumerate() {
@@ -471,7 +465,7 @@ impl Position {
         }
         return moves;
     }
-    pub fn create_move(&mut self) -> Vec<Move> {
+    pub fn create_move(&mut self, side: Side) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::new();
         for piece in Piece::iter() {
             match piece {
@@ -479,7 +473,22 @@ impl Position {
                     moves.append(&mut self.create_moves_for_piece(
                         piece,
                         Side::White,
-                        self.knight_attacks,
+                        &self.knight_attacks,
+                    ));
+                }
+                Piece::Pawn => {
+                    moves.append(&mut self.create_moves_for_piece(
+                        piece,
+                        Side::White,
+                        &self.pawn_pushes[Side::White as usize],
+                    ));
+                }
+
+                Piece::Bishop => {
+                    moves.append(&mut self.create_moves_for_piece(
+                        piece,
+                        side,
+                        &self.bishop_attacks,
                     ));
                 }
                 _ => {}

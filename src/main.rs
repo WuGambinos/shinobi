@@ -189,8 +189,8 @@ fn debug(position: &Position) {
 
 fn perft(position: &mut Position, depth: u32) -> u32 {
     let mut num_positions: u32 = 0;
-    position.generate_moves();
-    let moves = position.create_move();
+    position.generate_moves(position.state.turn);
+    let moves = position.create_move(position.state.turn);
     if depth == 1 {
         return moves.len() as u32;
     }
