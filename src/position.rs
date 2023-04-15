@@ -1,7 +1,10 @@
+use std::fmt;
+
 use crate::get_bishop_attacks;
 use crate::get_queen_attacks;
 use crate::get_rook_attacks;
 use crate::init_slider_attacks;
+use crate::square_name;
 use crate::BitBoard;
 use crate::Piece;
 use crate::SMagic;
@@ -88,6 +91,25 @@ impl Move {
             from_square,
             target_square,
         }
+    }
+
+    fn from_square(&self) -> SquareLabel {
+        self.from_square
+    }
+
+    fn target_square(&self) -> SquareLabel {
+        self.target_square
+    }
+}
+
+impl std::fmt::Display for Move {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}{}",
+            square_name(self.from_square() as u8),
+            square_name(self.target_square() as u8)
+        )
     }
 }
 
@@ -449,7 +471,6 @@ impl Position {
             if self.piece_bitboards[side as usize][piece as usize].get_bit(from_square as u64) == 1
             {
                 let board = *attack & !self.side_bitboards[side as usize];
-                board.print();
                 for i in 0..64 {
                     let bit = board.get_bit(i);
                     if bit == 1 {
@@ -465,6 +486,34 @@ impl Position {
         }
         return moves;
     }
+
+    pub fn create_slider_moves(&self, slider_piece: Piece, side: Side) -> Vec<Move> {
+        let mut moves: Vec<Move> = Vec::new();
+
+        for from_square in SquareLabel::iter() {
+            if self.piece_bitboards[side as usize][slider_piece as usize]
+                .get_bit(from_square as u64)
+                == 1
+            {
+                let board = match slider_piece {
+                    Piece::Bishop => self.generate_bishop_moves(from_square),
+                    Piece::Rook => self.generate_rook_moves(from_square),
+                    Piece::Queen => self.generate_queen_moves(from_square),
+                    _ => panic!("NOT A SLIDER PIECE"),
+                };
+                for i in 0..64 {
+                    let bit = board.get_bit(i);
+                    if bit == 1 {
+                        let mv: Move = Move::new(slider_piece, from_square, SquareLabel::from(i));
+                        moves.push(mv);
+                    }
+                }
+            }
+        }
+
+        return moves;
+    }
+
     pub fn create_move(&mut self, side: Side) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::new();
         for piece in Piece::iter() {
@@ -472,29 +521,24 @@ impl Position {
                 Piece::Knight => {
                     moves.append(&mut self.create_moves_for_piece(
                         piece,
-                        Side::White,
+                        side,
                         &self.knight_attacks,
                     ));
                 }
                 Piece::Pawn => {
                     moves.append(&mut self.create_moves_for_piece(
                         piece,
-                        Side::White,
-                        &self.pawn_pushes[Side::White as usize],
+                        side,
+                        &self.pawn_pushes[side as usize],
                     ));
                 }
 
                 Piece::Bishop => {
-                    moves.append(&mut self.create_moves_for_piece(
-                        piece,
-                        side,
-                        &self.bishop_attacks,
-                    ));
+                    moves.append(&mut self.create_slider_moves(piece, side));
                 }
                 _ => {}
             }
         }
-        println!("MOVES: {:#?}", moves);
         moves
     }
 

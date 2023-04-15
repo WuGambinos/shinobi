@@ -356,3 +356,9 @@ pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
     }
     res
 }
+
+pub fn square_name(square: u8) -> String {
+    let rank = (square / 8) + 1;
+    let file = ((square % 8) + (b'a')) as char;
+    format!("{file}{rank}")
+}
