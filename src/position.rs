@@ -453,10 +453,7 @@ impl Position {
             self.knight_attacks[square as usize] = self.generate_knight_moves(square);
             self.pawn_pushes[side as usize][square as usize] =
                 self.generate_pawn_pushes(side, square);
-
-            //self.queen_attacks[square as usize] = self.generate_queen_moves(square);
-
-            self.king_attacks[square as usize] = self.generate_knight_moves(square);
+            self.king_attacks[square as usize] = self.generate_king_moves(square);
         }
     }
 
@@ -536,7 +533,14 @@ impl Position {
                 Piece::Bishop => {
                     moves.append(&mut self.create_slider_moves(piece, side));
                 }
-                _ => {}
+
+                Piece::Rook => moves.append(&mut self.create_slider_moves(piece, side)),
+
+                Piece::Queen => moves.append(&mut self.create_slider_moves(piece, side)),
+
+                Piece::King => {
+                    moves.append(&mut self.create_moves_for_piece(piece, side, &self.king_attacks));
+                }
             }
         }
         moves

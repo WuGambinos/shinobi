@@ -46,6 +46,7 @@ fn main() -> Result<(), String> {
     init_slider_attacks(&mut position, true);
     init_slider_attacks(&mut position, false);
 
+    /*
     println!("BISHOP");
     let bishop_occupancy: BitBoard =
         position.piece_bitboards[Side::White as usize][Piece::Bishop as usize];
@@ -74,6 +75,7 @@ fn main() -> Result<(), String> {
 
     let queen_attacks = position.generate_queen_moves(SquareLabel::D7);
     queen_attacks.print();
+    */
 
     /*
     position.generate_moves();
@@ -81,9 +83,7 @@ fn main() -> Result<(), String> {
     */
 
     let depth = 3;
-    /*
-    println!("PERFT: {}", perft(&mut position, depth));
-    */
+    //println!("PERFT: {}", perft(&mut position, depth));
     let mut res = perft_divide(&mut position, depth);
     print_perft_divide(&mut res.1);
 

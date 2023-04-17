@@ -20,7 +20,7 @@ def main():
     for i in range(len(track)):
         if track[i] != track2[i]:
             print(track[i], track2[i], end = " ")
-            print("DIFF:", abs(int(track2[i][6:]) - int(track[i][6:])))
+            print("DIFF:", int(track2[i][6:]) - int(track[i][6:]))
 
 
     print()
