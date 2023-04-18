@@ -92,13 +92,12 @@ fn main() -> Result<(), String> {
     position.create_move();
     */
 
-    /*
-    let depth = 3;
+    let depth = 2;
     //println!("PERFT: {}", perft(&mut position, depth));
     let mut res = perft_divide(&mut position, depth);
     print_perft_divide(&mut res.1);
-    */
 
+    /*
     let mut moves: Vec<Move> = Vec::new();
 
     let mut state = MouseState::from_sdl_state(0);
@@ -138,6 +137,7 @@ fn main() -> Result<(), String> {
 
         canvas.present();
     }
+    */
 
     Ok(())
 }

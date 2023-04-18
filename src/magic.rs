@@ -1,5 +1,6 @@
 use crate::BitBoard;
 use crate::Position;
+use crate::EMPTY_BITBOARD;
 use rand::prelude::*;
 
 #[rustfmt::skip]
@@ -893,7 +894,7 @@ fn index_to_u64(index: u32, bits: u32, m: u64) -> u64 {
     return result;
 }
 
-fn rook_mask(square: u64) -> u64 {
+fn rook_mask(square: u64) -> BitBoard {
     let mut result: u64 = 0;
 
     let rank: i32 = (square / 8) as i32;
@@ -915,10 +916,10 @@ fn rook_mask(square: u64) -> u64 {
         result |= 1u64 << (f + rank * 8);
     }
 
-    return result;
+    return BitBoard(result);
 }
 
-fn bishop_mask(square: u64) -> u64 {
+fn bishop_mask(square: u64) -> BitBoard {
     let mut result: u64 = 0;
 
     let rank: i32 = (square / 8) as i32;
@@ -963,43 +964,43 @@ fn bishop_mask(square: u64) -> u64 {
         f -= 1;
     }
 
-    return result;
+    return BitBoard(result);
 }
 
-fn rook_attack(square: u64, block: u64) -> u64 {
-    let mut result: u64 = 0;
+fn rook_attack(square: u64, block: BitBoard) -> BitBoard {
+    let mut result: BitBoard = BitBoard(0);
 
     let rank: i32 = (square / 8) as i32;
     let file: i32 = (square % 8) as i32;
 
     for r in (rank + 1)..8 {
-        let mask = 1u64 << (file + r * 8);
+        let mask = BitBoard(1u64 << (file + r * 8));
         result |= mask;
-        if block & (mask) != 0 {
+        if block & (mask) != EMPTY_BITBOARD {
             break;
         }
     }
 
     for r in (0..=(rank - 1)).rev() {
-        let mask = 1u64 << (file + r * 8);
+        let mask = BitBoard(1u64 << (file + r * 8));
         result |= mask;
-        if block & (mask) != 0 {
+        if block & (mask) != EMPTY_BITBOARD {
             break;
         }
     }
 
     for f in (file + 1)..8 {
-        let mask = 1u64 << (f + rank * 8);
+        let mask = BitBoard(1u64 << (f + rank * 8));
         result |= mask;
-        if block & mask != 0 {
+        if block & mask != EMPTY_BITBOARD {
             break;
         }
     }
 
     for f in (0..=(file - 1)).rev() {
-        let mask = 1u64 << (f + rank * 8);
+        let mask = BitBoard(1u64 << (f + rank * 8));
         result |= mask;
-        if block & mask != 0 {
+        if block & mask != EMPTY_BITBOARD {
             break;
         }
     }
@@ -1007,8 +1008,8 @@ fn rook_attack(square: u64, block: u64) -> u64 {
     return result;
 }
 
-fn bishop_attack(square: u64, block: u64) -> u64 {
-    let mut result: u64 = 0;
+fn bishop_attack(square: u64, block: BitBoard) -> BitBoard {
+    let mut result: BitBoard = BitBoard(0);
 
     let rank: i32 = (square / 8) as i32;
     let file: i32 = (square % 8) as i32;
@@ -1017,10 +1018,10 @@ fn bishop_attack(square: u64, block: u64) -> u64 {
     let mut f: i32 = file + 1;
 
     while r <= 7 && f <= 7 {
-        let mask = 1u64 << (f + r * 8);
+        let mask = BitBoard(1u64 << (f + r * 8));
         result |= mask;
 
-        if block & mask != 0 {
+        if block & mask != EMPTY_BITBOARD {
             break;
         }
         r += 1;
@@ -1031,10 +1032,10 @@ fn bishop_attack(square: u64, block: u64) -> u64 {
     f = file - 1;
 
     while r <= 7 && f >= 0 {
-        let mask = 1u64 << (f + r * 8);
+        let mask = BitBoard(1u64 << (f + r * 8));
         result |= mask;
 
-        if block & mask != 0 {
+        if block & mask != EMPTY_BITBOARD {
             break;
         }
         r += 1;
@@ -1045,10 +1046,10 @@ fn bishop_attack(square: u64, block: u64) -> u64 {
     f = file + 1;
 
     while r >= 0 && f <= 7 {
-        let mask = 1u64 << (f + r * 8);
+        let mask = BitBoard(1u64 << (f + r * 8));
         result |= mask;
 
-        if block & mask != 0 {
+        if block & mask != EMPTY_BITBOARD {
             break;
         }
 
@@ -1060,10 +1061,10 @@ fn bishop_attack(square: u64, block: u64) -> u64 {
     f = file - 1;
 
     while r >= 0 && f >= 0 {
-        let mask = 1u64 << (f + r * 8);
+        let mask = BitBoard(1u64 << (f + r * 8));
         result |= mask;
 
-        if block & mask != 0 {
+        if block & mask != EMPTY_BITBOARD {
             break;
         }
 
@@ -1074,17 +1075,17 @@ fn bishop_attack(square: u64, block: u64) -> u64 {
     return result;
 }
 
-fn generate_attack_map(is_bishop: bool, size: usize, square: u64, mask: u64) -> Vec<u64> {
-    let mut map = vec![0; size];
+fn generate_attack_map(is_bishop: bool, size: usize, square: u64, mask: BitBoard) -> Vec<BitBoard> {
+    let mut map = vec![EMPTY_BITBOARD; size];
 
-    let mut occpuancies = 0u64;
+    let mut occupancies = BitBoard(0);
     for attacks in map.iter_mut() {
         *attacks = if is_bishop {
-            bishop_attack(square, occpuancies)
+            bishop_attack(square, occupancies)
         } else {
-            rook_attack(square, occpuancies)
+            rook_attack(square, occupancies)
         };
-        occpuancies = occpuancies.wrapping_sub(mask) & mask;
+        occupancies = BitBoard(occupancies.0.wrapping_sub(mask.0) & mask.0);
     }
 
     map
@@ -1092,14 +1093,18 @@ fn generate_attack_map(is_bishop: bool, size: usize, square: u64, mask: u64) -> 
 
 struct MagicNumberCollision;
 
-fn is_collision_detected(actual: &[u64], hash: usize, attacks: u64) -> bool {
-    actual[hash] != 0 && actual[hash] != attacks
+fn is_collision_detected(actual: &[BitBoard], hash: usize, attacks: BitBoard) -> bool {
+    actual[hash] != EMPTY_BITBOARD && actual[hash] != attacks
 }
 
-fn try_magic_number(mask: u64, magic: u64, expected: &[u64]) -> Result<(), MagicNumberCollision> {
-    let shift = 64 - mask.count_ones();
+fn try_magic_number(
+    mask: BitBoard,
+    magic: u64,
+    expected: &[BitBoard],
+) -> Result<(), MagicNumberCollision> {
+    let shift = 64 - mask.0.count_ones();
 
-    let mut actual = vec![0; expected.len()];
+    let mut actual = vec![EMPTY_BITBOARD; expected.len()];
     let mut occupancies = 0u64;
 
     for &attacks in expected.iter() {
@@ -1109,7 +1114,7 @@ fn try_magic_number(mask: u64, magic: u64, expected: &[u64]) -> Result<(), Magic
             return Err(MagicNumberCollision);
         }
         actual[hash] = attacks;
-        occupancies = occupancies.wrapping_sub(mask) & mask;
+        occupancies = occupancies.wrapping_sub(mask.0) & mask.0;
     }
 
     Ok(())
@@ -1122,7 +1127,7 @@ pub fn find_magic(square: u64, is_bishop: bool) -> MagicEntry {
         rook_mask(square)
     };
 
-    let ones = mask.count_ones();
+    let ones = mask.0.count_ones();
     let size = 1 << ones;
     let expected = generate_attack_map(is_bishop, size, square, mask);
     for _ in 0..100_000_000 {
@@ -1130,7 +1135,7 @@ pub fn find_magic(square: u64, is_bishop: bool) -> MagicEntry {
         let magic = random_u64_fewbits();
 
         // Skip bad candidates
-        if ((mask.wrapping_mul(magic) & 0xFF00_0000_0000_0000).count_ones()) < 6 {
+        if ((mask.0.wrapping_mul(magic) & 0xFF00_0000_0000_0000).count_ones()) < 6 {
             continue;
         }
 
@@ -1138,7 +1143,7 @@ pub fn find_magic(square: u64, is_bishop: bool) -> MagicEntry {
             let shift = 64 - ones;
             let size: usize = expected.len();
 
-            return MagicEntry::new(mask, magic, shift, size);
+            return MagicEntry::new(mask.0, magic, shift, size);
         }
     }
 
@@ -1163,13 +1168,13 @@ pub fn init_slider_attacks(position: &mut Position, is_bishop: bool) {
 
         for count in 0..occupancy_variations {
             if is_bishop {
-                let occupancy = index_to_u64(count, bit_count, bishop_magic.mask);
-                let index = bishop_magic.get_index(BitBoard(occupancy));
-                position.bishop_attacks[index] = BitBoard(bishop_attack(square, occupancy));
+                let occupancy = BitBoard(index_to_u64(count, bit_count, bishop_magic.mask));
+                let index = bishop_magic.get_index(occupancy);
+                position.bishop_attacks[index] = bishop_attack(square, occupancy);
             } else {
-                let occupancy = index_to_u64(count, bit_count, rook_magic.mask);
-                let index = rook_magic.get_index(BitBoard(occupancy));
-                position.rook_attacks[index] = BitBoard(rook_attack(square, occupancy));
+                let occupancy = BitBoard(index_to_u64(count, bit_count, rook_magic.mask));
+                let index = rook_magic.get_index(occupancy);
+                position.rook_attacks[index] = rook_attack(square, occupancy);
             }
         }
     }

@@ -12,6 +12,7 @@ use crate::Side;
 use crate::Square;
 use crate::SquareLabel;
 use crate::A_FILE;
+use crate::EMPTY_BITBOARD;
 use crate::B_FILE;
 use crate::G_FILE;
 use crate::H_FILE;
@@ -149,18 +150,18 @@ pub struct Position {
 impl Position {
     pub fn new() -> Position {
         Position {
-            main_bitboard: BitBoard(0),
-            empty_bitboard: BitBoard(0),
-            side_bitboards: [BitBoard(0); 2],
-            piece_bitboards: [[BitBoard(0); 6]; 2],
-            //attack_bitboards: [[BitBoard(0); 6]; 2],
-            rook_attacks: [BitBoard(0); 102400],
-            bishop_attacks: [BitBoard(0); 5248],
+            main_bitboard: EMPTY_BITBOARD,
+            empty_bitboard: EMPTY_BITBOARD,
+            side_bitboards: [EMPTY_BITBOARD; 2],
+            piece_bitboards: [[EMPTY_BITBOARD; 6]; 2],
+            //attack_bitboards: [[BITBOARD_EMPTY; 6]; 2],
+            rook_attacks: [EMPTY_BITBOARD; 102400],
+            bishop_attacks: [EMPTY_BITBOARD; 5248],
 
-            knight_attacks: [BitBoard(0); 64],
-            pawn_pushes: [[BitBoard(0); 64]; 2],
-            pawn_attacks: [[BitBoard(0); 64]; 2],
-            king_attacks: [BitBoard(0); 64],
+            knight_attacks: [EMPTY_BITBOARD; 64],
+            pawn_pushes: [[EMPTY_BITBOARD; 64]; 2],
+            pawn_attacks: [[EMPTY_BITBOARD; 64]; 2],
+            king_attacks: [EMPTY_BITBOARD; 64],
 
             bishop_tbl: [SMagic::new(0, 0, 0, 0); 64],
             rook_tbl: [SMagic::new(0, 0, 0, 0); 64],
@@ -357,11 +358,11 @@ impl Position {
     }
 
     pub fn generate_pawn_pushes(&self, side: Side, square: SquareLabel) -> BitBoard {
-        let mut pushes: BitBoard = BitBoard(0);
+        let mut pushes: BitBoard = EMPTY_BITBOARD;
 
         match side {
             Side::White => {
-                let mut white_pawns: BitBoard = BitBoard(0);
+                let mut white_pawns: BitBoard = EMPTY_BITBOARD;
                 white_pawns.set_bit(square);
 
                 if self
@@ -378,7 +379,7 @@ impl Position {
                 return pushes;
             }
             Side::Black => {
-                let mut black_pawns: BitBoard = BitBoard(0);
+                let mut black_pawns: BitBoard = EMPTY_BITBOARD;
                 black_pawns.set_bit(square);
                 pushes |= self.black_single_push_target(black_pawns);
                 pushes |= self.black_double_push_target(black_pawns);
@@ -404,8 +405,8 @@ impl Position {
     }
 
     pub fn generate_pawn_attacks(&self, side: Side, square: SquareLabel) -> BitBoard {
-        let mut attacks: BitBoard = BitBoard(0);
-        let mut bitboard: BitBoard = BitBoard(0);
+        let mut attacks: BitBoard = EMPTY_BITBOARD;
+        let mut bitboard: BitBoard = EMPTY_BITBOARD;
 
         bitboard.set_bit(square);
 
@@ -424,8 +425,8 @@ impl Position {
     }
 
     pub fn generate_king_moves(&self, square: SquareLabel) -> BitBoard {
-        let mut attacks: BitBoard = BitBoard(0);
-        let mut bitboard: BitBoard = BitBoard(0);
+        let mut attacks: BitBoard = EMPTY_BITBOARD;
+        let mut bitboard: BitBoard = EMPTY_BITBOARD;
 
         bitboard.set_bit(square);
 
@@ -441,8 +442,8 @@ impl Position {
     }
 
     pub fn generate_knight_moves(&self, square: SquareLabel) -> BitBoard {
-        let mut attacks: BitBoard = BitBoard(0);
-        let mut bitboard: BitBoard = BitBoard(0);
+        let mut attacks: BitBoard = EMPTY_BITBOARD;
+        let mut bitboard: BitBoard = EMPTY_BITBOARD;
 
         bitboard.set_bit(square);
 
