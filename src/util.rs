@@ -3,9 +3,11 @@ use std::path::PathBuf;
 
 use crate::bitboard::BitBoard;
 use crate::Castling;
+use crate::Color;
 use crate::EventPump;
 use crate::IntoEnumIterator;
 use crate::LoadTexture;
+use crate::Move;
 use crate::Piece;
 use crate::Position;
 use crate::Rect;
@@ -20,6 +22,7 @@ use crate::DARK;
 use crate::LIGHT;
 use crate::SQUARE_SIZE;
 use crate::W_IMG_POS;
+use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::mouse::MouseButton::Left;
 use sdl2::mouse::MouseState;
 
@@ -71,6 +74,7 @@ pub fn drag_and_drop(
     canvas: &mut WindowCanvas,
     texture_creator: &TextureCreator<WindowContext>,
     pieces: &Vec<PathBuf>,
+    moves: &mut Vec<Move>,
     event_pump: &EventPump,
     old_state: &mut MouseState,
     position: &mut Position,
@@ -89,6 +93,22 @@ pub fn drag_and_drop(
             position,
             *selected_piece,
         )?;
+
+        if let Some(p) = *selected_piece {
+            // Draw Moves
+            for mv in moves {
+                if mv.piece == p && mv.from_square == from_square.unwrap() {
+                    let file = mv.target_square as i16 % 8;
+                    let rank = mv.target_square as i16 / 8;
+                    canvas.filled_circle(
+                        file as i16 * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
+                        (7 - rank as i16) * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
+                        5,
+                        Color::RED,
+                    )?;
+                }
+            }
+        }
     }
     // Pressed
     else if event_pump.mouse_state().is_mouse_button_pressed(Left) {
@@ -105,6 +125,9 @@ pub fn drag_and_drop(
                 *selected_piece = Some(piece);
             }
         }
+
+        position.generate_moves(position.state.turn);
+        *moves = position.create_move(position.state.turn);
 
         if let Some(selected_p) = selected_piece {
             position.piece_bitboards[position.state.turn as usize][*selected_p as usize]

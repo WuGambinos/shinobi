@@ -47,6 +47,16 @@ fn main() -> Result<(), String> {
     init_slider_attacks(&mut position, false);
 
     /*
+    position.piece_bitboards[Side::White as usize][Piece::Pawn as usize].0 = 0xaa5500;
+    position.empty_bitboard &= !position.piece_bitboards[Side::White as usize][Piece::Pawn as usize];
+    println!("EMPTY SQUARES");
+    position.empty_bitboard.print();
+    let board = position.white_pawns_able_double_push();
+    println!("WHITE PAWNS THAT CAN DOUBLE ");
+    board.print();
+    */
+
+    /*
     println!("BISHOP");
     let bishop_occupancy: BitBoard =
         position.piece_bitboards[Side::White as usize][Piece::Bishop as usize];
@@ -82,12 +92,15 @@ fn main() -> Result<(), String> {
     position.create_move();
     */
 
+    /*
     let depth = 3;
     //println!("PERFT: {}", perft(&mut position, depth));
     let mut res = perft_divide(&mut position, depth);
     print_perft_divide(&mut res.1);
+    */
 
-    /*
+    let mut moves: Vec<Move> = Vec::new();
+
     let mut state = MouseState::from_sdl_state(0);
     'running: loop {
         for event in event_pump.poll_iter() {
@@ -97,6 +110,14 @@ fn main() -> Result<(), String> {
                     keycode: Some(Keycode::Escape),
                     ..
                 } => break 'running,
+
+                Event::KeyDown {
+                    keycode: Some(Keycode::R),
+                    ..
+                } => {
+                    position = Position::new();
+                    position.from_grid(grid);
+                }
                 _ => {}
             }
         }
@@ -107,6 +128,7 @@ fn main() -> Result<(), String> {
             &mut canvas,
             &texture_creator,
             &images,
+            &mut moves,
             &event_pump,
             &mut state,
             &mut position,
@@ -114,11 +136,8 @@ fn main() -> Result<(), String> {
             &mut piece,
         )?;
 
-        //draw_moves(&mut canvas, &queen_attacks)?;
-
         canvas.present();
     }
-    */
 
     Ok(())
 }

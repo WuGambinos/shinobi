@@ -150,7 +150,7 @@ impl Position {
     pub fn new() -> Position {
         Position {
             main_bitboard: BitBoard(0),
-            empty_bitboard: BitBoard(u64::MAX),
+            empty_bitboard: BitBoard(0),
             side_bitboards: [BitBoard(0); 2],
             piece_bitboards: [[BitBoard(0); 6]; 2],
             //attack_bitboards: [[BitBoard(0); 6]; 2],
@@ -293,39 +293,57 @@ impl Position {
         return (bitboard >> 9) & BitBoard(!(H_FILE));
     }
 
-    pub fn white_single_push_target(&self, bitboard: BitBoard) -> BitBoard {
-        return self.north_one(bitboard) & self.empty_bitboard;
-    }
-
     pub fn north_north_east(&self, bitboard: BitBoard) -> BitBoard {
         return (bitboard << 17) & BitBoard(!(A_FILE));
     }
+
     pub fn north_east_east(&self, bitboard: BitBoard) -> BitBoard {
         return (bitboard << 10) & BitBoard(!(A_FILE | B_FILE));
     }
+
     pub fn south_east_east(&self, bitboard: BitBoard) -> BitBoard {
         return (bitboard >> 6) & BitBoard(!(A_FILE | B_FILE));
     }
+
     pub fn south_south_east(&self, bitboard: BitBoard) -> BitBoard {
         return (bitboard >> 15) & BitBoard(!(A_FILE));
     }
+
     pub fn north_north_west(&self, bitboard: BitBoard) -> BitBoard {
         return (bitboard << 15) & BitBoard(!(H_FILE));
     }
+
     pub fn north_west_west(&self, bitboard: BitBoard) -> BitBoard {
         return (bitboard << 6) & BitBoard(!(G_FILE | H_FILE));
     }
+
     pub fn south_west_west(&self, bitboard: BitBoard) -> BitBoard {
         return (bitboard >> 10) & BitBoard(!(G_FILE | H_FILE));
     }
+
     pub fn south_south_west(&self, bitboard: BitBoard) -> BitBoard {
         return (bitboard >> 17) & BitBoard(!(H_FILE));
+    }
+
+    pub fn white_single_push_target(&self, bitboard: BitBoard) -> BitBoard {
+        return self.north_one(bitboard) & self.empty_bitboard;
     }
 
     pub fn white_double_push_target(&self, bitboard: BitBoard) -> BitBoard {
         const RANK4: BitBoard = BitBoard(0x0000_0000_FF00_0000);
         let single_pushes = self.white_single_push_target(bitboard);
         return self.north_one(single_pushes) & self.empty_bitboard & RANK4;
+    }
+
+    pub fn white_pawns_able_push(&self, empty: BitBoard) -> BitBoard {
+        return self.south_one(empty)
+            & self.piece_bitboards[Side::White as usize][Piece::Pawn as usize];
+    }
+
+    pub fn white_pawns_able_double_push(&self) -> BitBoard {
+        const RANK4: BitBoard = BitBoard(0x0000_0000_FF00_0000);
+        let empty_rank_3 = self.south_one(self.empty_bitboard & RANK4) & self.empty_bitboard;
+        return self.white_pawns_able_push(empty_rank_3);
     }
 
     pub fn black_single_push_target(&self, bitboard: BitBoard) -> BitBoard {
@@ -345,8 +363,18 @@ impl Position {
             Side::White => {
                 let mut white_pawns: BitBoard = BitBoard(0);
                 white_pawns.set_bit(square);
-                pushes |= self.white_single_push_target(white_pawns);
-                pushes |= self.white_double_push_target(white_pawns);
+
+                if self
+                    .white_pawns_able_push(self.empty_bitboard)
+                    .get_bit(square as u64)
+                    == 1
+                {
+                    pushes |= self.white_single_push_target(white_pawns);
+                }
+
+                if self.white_pawns_able_double_push().get_bit(square as u64) == 1 {
+                    pushes |= self.white_double_push_target(white_pawns);
+                }
                 return pushes;
             }
             Side::Black => {
