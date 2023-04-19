@@ -15,5 +15,8 @@ version = "0.35.2"
 default-features = false
 features = ["image", "gfx"]
 
+[profile.release]
+debug = true
+
 [[examples]]
 name = "main"

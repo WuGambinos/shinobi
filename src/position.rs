@@ -12,8 +12,8 @@ use crate::Side;
 use crate::Square;
 use crate::SquareLabel;
 use crate::A_FILE;
-use crate::EMPTY_BITBOARD;
 use crate::B_FILE;
+use crate::EMPTY_BITBOARD;
 use crate::G_FILE;
 use crate::H_FILE;
 use strum::IntoEnumIterator;
@@ -357,35 +357,42 @@ impl Position {
         return self.south_one(single_pushes) & self.empty_bitboard & RANK5;
     }
 
-    pub fn generate_pawn_pushes(&self, side: Side, square: SquareLabel) -> BitBoard {
-        let mut pushes: BitBoard = EMPTY_BITBOARD;
+    pub fn generate_pawn_pushes(&mut self, side: Side) {
+        for square in SquareLabel::iter() {
+            let mut pushes: BitBoard = EMPTY_BITBOARD;
 
-        match side {
-            Side::White => {
-                let mut white_pawns: BitBoard = EMPTY_BITBOARD;
-                white_pawns.set_bit(square);
-
-                if self
-                    .white_pawns_able_push(self.empty_bitboard)
-                    .get_bit(square as u64)
-                    == 1
-                {
+            match side {
+                Side::White => {
+                    let mut white_pawns: BitBoard = EMPTY_BITBOARD;
+                    white_pawns.set_bit(square);
                     pushes |= self.white_single_push_target(white_pawns);
-                }
-
-                if self.white_pawns_able_double_push().get_bit(square as u64) == 1 {
                     pushes |= self.white_double_push_target(white_pawns);
+
+                    /*
+                    if self
+                        .white_pawns_able_push(self.empty_bitboard)
+                        .get_bit(square as u64)
+                        == 1
+                    {
+                        pushes |= self.white_single_push_target(white_pawns);
+                    }
+
+                    if self.white_pawns_able_double_push().get_bit(square as u64) == 1 {
+                        pushes |= self.white_double_push_target(white_pawns);
+                    }
+                    */
+                    self.pawn_pushes[side as usize][square as usize] = pushes;
                 }
-                return pushes;
-            }
-            Side::Black => {
-                let mut black_pawns: BitBoard = EMPTY_BITBOARD;
-                black_pawns.set_bit(square);
-                pushes |= self.black_single_push_target(black_pawns);
-                pushes |= self.black_double_push_target(black_pawns);
-                return pushes;
-            }
-        };
+                Side::Black => {
+                    let mut black_pawns: BitBoard = EMPTY_BITBOARD;
+                    black_pawns.set_bit(square);
+                    pushes |= self.black_single_push_target(black_pawns);
+                    pushes |= self.black_double_push_target(black_pawns);
+
+                    self.pawn_pushes[side as usize][square as usize] = pushes;
+                }
+            };
+        }
     }
 
     pub fn white_pawn_east_attacks(&self, bitboard: BitBoard) -> BitBoard {
@@ -404,59 +411,66 @@ impl Position {
         return self.south_west_one(bitboard);
     }
 
-    pub fn generate_pawn_attacks(&self, side: Side, square: SquareLabel) -> BitBoard {
-        let mut attacks: BitBoard = EMPTY_BITBOARD;
-        let mut bitboard: BitBoard = EMPTY_BITBOARD;
+    pub fn generate_pawn_attacks(&mut self, side: Side) {
+        for square in SquareLabel::iter() {
+            let mut moves: BitBoard = EMPTY_BITBOARD;
+            let mut bitboard: BitBoard = EMPTY_BITBOARD;
 
-        bitboard.set_bit(square);
+            bitboard.set_bit(square);
 
-        match side {
-            Side::White => {
-                attacks |= self.white_pawn_east_attacks(bitboard);
-                attacks |= self.white_pawn_west_attacks(bitboard);
-            }
-            Side::Black => {
-                attacks |= self.black_pawn_east_attacks(bitboard);
-                attacks |= self.black_pawn_west_attacks(bitboard);
+            match side {
+                Side::White => {
+                    moves |= self.white_pawn_east_attacks(bitboard);
+                    moves |= self.white_pawn_west_attacks(bitboard);
+                    self.pawn_attacks[side as usize][square as usize] = moves;
+                }
+                Side::Black => {
+                    moves |= self.black_pawn_east_attacks(bitboard);
+                    moves |= self.black_pawn_west_attacks(bitboard);
+                    self.pawn_attacks[side as usize][square as usize] = moves;
+                }
             }
         }
-
-        attacks
-    }
-
-    pub fn generate_king_moves(&self, square: SquareLabel) -> BitBoard {
-        let mut attacks: BitBoard = EMPTY_BITBOARD;
-        let mut bitboard: BitBoard = EMPTY_BITBOARD;
-
-        bitboard.set_bit(square);
-
-        attacks = self.east_one(bitboard) | self.west_one(bitboard);
-        bitboard |= attacks;
-        attacks |= self.north_one(bitboard) | self.south_one(bitboard);
-
-        return attacks;
     }
 
     pub fn generate_pawn_moves(&self, side: Side, square: SquareLabel) -> BitBoard {
-        self.generate_pawn_pushes(side, square) | self.generate_pawn_attacks(side, square)
+        //self.generate_pawn_pushes(side, square) | self.generate_pawn_attacks(side, square)
+        todo!();
     }
 
-    pub fn generate_knight_moves(&self, square: SquareLabel) -> BitBoard {
-        let mut attacks: BitBoard = EMPTY_BITBOARD;
-        let mut bitboard: BitBoard = EMPTY_BITBOARD;
+    pub fn generate_king_moves(&mut self) {
+        for square in SquareLabel::iter() {
+            let mut moves: BitBoard = EMPTY_BITBOARD;
+            let mut bitboard: BitBoard = EMPTY_BITBOARD;
 
-        bitboard.set_bit(square);
+            bitboard.set_bit(square);
 
-        attacks |= self.north_north_east(bitboard);
-        attacks |= self.north_east_east(bitboard);
-        attacks |= self.south_east_east(bitboard);
-        attacks |= self.south_south_east(bitboard);
-        attacks |= self.north_north_west(bitboard);
-        attacks |= self.north_west_west(bitboard);
-        attacks |= self.south_west_west(bitboard);
-        attacks |= self.south_south_west(bitboard);
+            moves |= self.east_one(bitboard) | self.west_one(bitboard);
+            bitboard |= moves;
+            moves |= self.north_one(bitboard) | self.south_one(bitboard);
 
-        attacks
+            self.king_attacks[square as usize] = moves;
+        }
+    }
+
+    pub fn generate_knight_moves(&mut self) {
+        for square in SquareLabel::iter() {
+            let mut moves: BitBoard = EMPTY_BITBOARD;
+            let mut bitboard: BitBoard = EMPTY_BITBOARD;
+
+            bitboard.set_bit(square);
+
+            moves |= self.north_north_east(bitboard);
+            moves |= self.north_east_east(bitboard);
+            moves |= self.south_east_east(bitboard);
+            moves |= self.south_south_east(bitboard);
+            moves |= self.north_north_west(bitboard);
+            moves |= self.north_west_west(bitboard);
+            moves |= self.south_west_west(bitboard);
+            moves |= self.south_south_west(bitboard);
+
+            self.knight_attacks[square as usize] = moves;
+        }
     }
 
     pub fn generate_bishop_moves(&self, square: SquareLabel) -> BitBoard {
@@ -477,103 +491,157 @@ impl Position {
             & !self.side_bitboards[self.state.turn as usize];
     }
 
-    pub fn generate_moves(&mut self, side: Side) {
+    pub fn generate_targets(&mut self, side: Side) {
+        self.generate_pawn_pushes(side);
+        self.generate_knight_moves();
+    }
+
+    pub fn generate_moves(&mut self, side: Side) -> Vec<Move> {
+        let mut moves: Vec<Move> = Vec::new();
+
+        self.generate_targets(side);
         for square in SquareLabel::iter() {
-            self.knight_attacks[square as usize] = self.generate_knight_moves(square);
-            self.pawn_pushes[side as usize][square as usize] =
-                self.generate_pawn_pushes(side, square);
-            self.king_attacks[square as usize] = self.generate_king_moves(square);
-        }
-    }
+            let piece: Option<Piece> = self.get_piece_on_square(square, side);
+            if let Some(p) = piece {
+                match p {
+                    Piece::Pawn => {
+                        let mut n: u64 = (self.pawn_pushes[side as usize][square as usize]
+                            & (!self.main_bitboard))
+                            .0;
 
-    pub fn create_moves_for_piece(
-        &self,
-        piece: Piece,
-        side: Side,
-        attacks: &[BitBoard],
-    ) -> Vec<Move> {
-        let mut moves: Vec<Move> = Vec::new();
-        for (from_square, attack) in attacks.iter().enumerate() {
-            if self.piece_bitboards[side as usize][piece as usize].get_bit(from_square as u64) == 1
-            {
-                let board = *attack & !self.side_bitboards[side as usize];
-                for i in 0..64 {
-                    let bit = board.get_bit(i);
-                    if bit == 1 {
-                        let mv: Move = Move::new(
-                            piece,
-                            SquareLabel::from(from_square as u64),
-                            SquareLabel::from(i),
-                        );
-                        moves.push(mv);
+                        let mut i = 0;
+                        while i < 64 {
+                            let bit = n & 1;
+                            if bit == 1 {
+                                moves.push(Move::new(p, square, SquareLabel::from(i)));
+                            }
+
+                            n = n >> 1;
+                            i += 1;
+                        }
                     }
-                }
-            }
-        }
-        return moves;
-    }
+                    Piece::Knight => {
+                        let mut n: u64 =
+                            (self.knight_attacks[square as usize] & (!self.main_bitboard)).0;
 
-    pub fn create_slider_moves(&self, slider_piece: Piece, side: Side) -> Vec<Move> {
-        let mut moves: Vec<Move> = Vec::new();
+                        let mut i = 0;
+                        while i < 64 {
+                            let bit = n & 1;
+                            if bit == 1 {
+                                moves.push(Move::new(p, square, SquareLabel::from(i)));
+                            }
 
-        for from_square in SquareLabel::iter() {
-            if self.piece_bitboards[side as usize][slider_piece as usize]
-                .get_bit(from_square as u64)
-                == 1
-            {
-                let board = match slider_piece {
-                    Piece::Bishop => self.generate_bishop_moves(from_square),
-                    Piece::Rook => self.generate_rook_moves(from_square),
-                    Piece::Queen => self.generate_queen_moves(from_square),
-                    _ => panic!("NOT A SLIDER PIECE"),
-                };
-                for i in 0..64 {
-                    let bit = board.get_bit(i);
-                    if bit == 1 {
-                        let mv: Move = Move::new(slider_piece, from_square, SquareLabel::from(i));
-                        moves.push(mv);
+                            n = n >> 1;
+                            i += 1;
+                        }
                     }
-                }
-            }
-        }
-
-        return moves;
-    }
-
-    pub fn create_move(&mut self, side: Side) -> Vec<Move> {
-        let mut moves: Vec<Move> = Vec::new();
-        for piece in Piece::iter() {
-            match piece {
-                Piece::Knight => {
-                    moves.append(&mut self.create_moves_for_piece(
-                        piece,
-                        side,
-                        &self.knight_attacks,
-                    ));
-                }
-                Piece::Pawn => {
-                    moves.append(&mut self.create_moves_for_piece(
-                        piece,
-                        side,
-                        &self.pawn_pushes[side as usize],
-                    ));
-                }
-
-                Piece::Bishop => {
-                    moves.append(&mut self.create_slider_moves(piece, side));
-                }
-
-                Piece::Rook => moves.append(&mut self.create_slider_moves(piece, side)),
-
-                Piece::Queen => moves.append(&mut self.create_slider_moves(piece, side)),
-
-                Piece::King => {
-                    moves.append(&mut self.create_moves_for_piece(piece, side, &self.king_attacks));
+                    Piece::King => {}
+                    _ => (),
                 }
             }
         }
         moves
     }
+
+    /*
+        pub fn generate_moves(&mut self, side: Side) {
+            for square in SquareLabel::iter() {
+                self.knight_attacks[square as usize] = self.generate_knight_moves(square);
+                self.pawn_pushes[side as usize][square as usize] =
+                    self.generate_pawn_pushes(side, square);
+                self.king_attacks[square as usize] = self.generate_king_moves(square);
+            }
+        }
+
+        pub fn create_moves_for_piece(
+            &self,
+            piece: Piece,
+            side: Side,
+            attacks: &[BitBoard],
+        ) -> Vec<Move> {
+            let mut moves: Vec<Move> = Vec::new();
+            for (from_square, attack) in attacks.iter().enumerate() {
+                if self.piece_bitboards[side as usize][piece as usize].get_bit(from_square as u64) == 1
+                {
+                    let board = *attack & !self.side_bitboards[side as usize];
+                    for i in 0..64 {
+                        let bit = board.get_bit(i);
+                        if bit == 1 {
+                            let mv: Move = Move::new(
+                                piece,
+                                SquareLabel::from(from_square as u64),
+                                SquareLabel::from(i),
+                            );
+                            moves.push(mv);
+                        }
+                    }
+                }
+            }
+            return moves;
+        }
+
+        pub fn create_slider_moves(&self, slider_piece: Piece, side: Side) -> Vec<Move> {
+            let mut moves: Vec<Move> = Vec::new();
+
+            for from_square in SquareLabel::iter() {
+                if self.piece_bitboards[side as usize][slider_piece as usize]
+                    .get_bit(from_square as u64)
+                    == 1
+                {
+                    let board = match slider_piece {
+                        Piece::Bishop => self.generate_bishop_moves(from_square),
+                        Piece::Rook => self.generate_rook_moves(from_square),
+                        Piece::Queen => self.generate_queen_moves(from_square),
+                        _ => panic!("NOT A SLIDER PIECE"),
+                    };
+                    for i in 0..64 {
+                        let bit = board.get_bit(i);
+                        if bit == 1 {
+                            let mv: Move = Move::new(slider_piece, from_square, SquareLabel::from(i));
+                            moves.push(mv);
+                        }
+                    }
+                }
+            }
+
+            return moves;
+        }
+
+        pub fn create_move(&mut self, side: Side) -> Vec<Move> {
+            let mut moves: Vec<Move> = Vec::new();
+            for piece in Piece::iter() {
+                match piece {
+                    Piece::Knight => {
+                        moves.append(&mut self.create_moves_for_piece(
+                            piece,
+                            side,
+                            &self.knight_attacks,
+                        ));
+                    }
+                    Piece::Pawn => {
+                        moves.append(&mut self.create_moves_for_piece(
+                            piece,
+                            side,
+                            &self.pawn_pushes[side as usize],
+                        ));
+                    }
+
+                    Piece::Bishop => {
+                        moves.append(&mut self.create_slider_moves(piece, side));
+                    }
+
+                    Piece::Rook => moves.append(&mut self.create_slider_moves(piece, side)),
+
+                    Piece::Queen => moves.append(&mut self.create_slider_moves(piece, side)),
+
+                    Piece::King => {
+                        moves.append(&mut self.create_moves_for_piece(piece, side, &self.king_attacks));
+                    }
+                }
+            }
+            moves
+        }
+    */
 
     pub fn print_black_piece_bitboards(&self) {
         for (i, bitboard) in self.piece_bitboards[Side::Black as usize]

@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::mouse::MouseState;
 use shinobi::enums::*;
@@ -6,6 +8,7 @@ use shinobi::*;
 
 fn main() -> Result<(), String> {
     /* VIDEO SETUP */
+    /*
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
     let _image_context = sdl2::image::init(InitFlag::PNG)?;
@@ -29,6 +32,7 @@ fn main() -> Result<(), String> {
 
     let texture_creator = canvas.texture_creator();
     let mut event_pump = sdl_context.event_pump()?;
+    */
 
     /* CHESS STUFF */
     let mut position = Position::new();
@@ -43,8 +47,18 @@ fn main() -> Result<(), String> {
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
 
+    /*
     init_slider_attacks(&mut position, true);
     init_slider_attacks(&mut position, false);
+    */
+
+    /*
+    for square in SquareLabel::iter() {
+        println!("SQUARE {:?}", square);
+
+        position.pawn_pushes[Side::White as usize][square as usize].print();
+    }
+    */
 
     /*
     position.piece_bitboards[Side::White as usize][Piece::Pawn as usize].0 = 0xaa5500;
@@ -92,10 +106,15 @@ fn main() -> Result<(), String> {
     position.create_move();
     */
 
+    let start = Instant::now();
     let depth = 2;
-    //println!("PERFT: {}", perft(&mut position, depth));
+    let res = perft(&mut position, depth);
+    let elasped = start.elapsed();
+    println!("PERFT: {} TIME: {} MS", res, elasped.as_millis());
+    /*
     let mut res = perft_divide(&mut position, depth);
     print_perft_divide(&mut res.1);
+    */
 
     /*
     let mut moves: Vec<Move> = Vec::new();
@@ -214,8 +233,7 @@ fn debug(position: &Position) {
 
 fn perft(position: &mut Position, depth: u32) -> u32 {
     let mut num_positions: u32 = 0;
-    position.generate_moves(position.state.turn);
-    let moves = position.create_move(position.state.turn);
+    let moves = position.generate_moves(position.state.turn);
     if depth == 1 {
         return moves.len() as u32;
     }
@@ -241,50 +259,13 @@ pub fn print_perft_divide(results: &mut Vec<(String, u64)>) {
     println!("NODES: {total}");
 }
 
-/*
-pub fn print_perft_divide(results: &mut Vec<(String, u64)>) {
-    results.sort_by(|a, b| b.0.chars().nth(1).cmp(&a.0.chars().nth(1)));
-    let mut total = 0;
-    for mv in results {
-        println!("{}: {}", mv.0, mv.1);
-        total += mv.1;
-    }
-    println!("NODES: {total}");
-}
-
-pub fn perft_divide(board: &mut Board, depth: u8) -> (u64, Vec<(String, u64)>) {
-    if depth == 0 {
-        return (1, vec![]);
-    }
-
-    let mut total_nodes = 0;
-    let moves = board.generate_legal_moves();
-    let mut result = (0, vec![]);
-
-    for mv in moves {
-        let mut piece = board.board()[mv.start_square() as usize].unwrap();
-        let old_board = *board;
-        board.make_move(&mut piece, mv);
-
-        let child_result = perft_divide(board, depth - 1);
-        total_nodes += child_result.0;
-        result.1.push((mv.to_string(), child_result.0));
-
-        *board = old_board;
-    }
-
-    result.0 = total_nodes;
-    result
-}
-*/
 pub fn perft_divide(position: &mut Position, depth: u8) -> (u64, Vec<(String, u64)>) {
     if depth == 0 {
         return (1, vec![]);
     }
 
     let mut total_nodes = 0;
-    position.generate_moves(position.state.turn);
-    let moves = position.create_move(position.state.turn);
+    let moves = position.generate_moves(position.state.turn);
     let mut result = (0, vec![]);
 
     for mv in moves {
