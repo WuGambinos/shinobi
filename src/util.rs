@@ -8,6 +8,7 @@ use crate::EventPump;
 use crate::IntoEnumIterator;
 use crate::LoadTexture;
 use crate::Move;
+use crate::MoveGenerator;
 use crate::Piece;
 use crate::Position;
 use crate::Rect;
@@ -78,6 +79,7 @@ pub fn drag_and_drop(
     event_pump: &EventPump,
     old_state: &mut MouseState,
     position: &mut Position,
+    move_gen: &mut MoveGenerator,
     from_square: &mut Option<SquareLabel>,
     selected_piece: &mut Option<Piece>,
 ) -> Result<(), String> {
@@ -126,7 +128,7 @@ pub fn drag_and_drop(
             }
         }
 
-        //*moves = position.generate_moves(position.state.turn);
+        *moves = move_gen.generate_moves(&position, position.state.turn);
 
         if let Some(selected_p) = selected_piece {
             position.piece_bitboards[position.state.turn as usize][*selected_p as usize]

@@ -71,7 +71,7 @@ impl State {
         }
     }
 
-    fn enemy(&mut self) -> Side {
+    fn enemy(&self) -> Side {
         match self.turn {
             Side::White => Side::Black,
             Side::Black => Side::White,
@@ -173,6 +173,10 @@ impl Position {
         }
     }
 
+    pub fn enemy_bitboard(&self) -> BitBoard {
+        return self.side_bitboards[self.state.enemy() as usize];
+    }
+
     pub fn from_grid(&mut self, grid: [char; 64]) {
         for (i, ch) in grid.iter().enumerate() {
             let mask = BitBoard(1u64 << i);
@@ -206,21 +210,6 @@ impl Position {
     pub fn get_piece_on_square(&self, square: SquareLabel, side: Side) -> Option<Piece> {
         let pieces = self.piece_bitboards[side as usize];
 
-        if pieces[Piece::Pawn as usize].get_bit(square as u64) == 1 {
-            let board = pieces[Piece::Pawn as usize];
-
-            if board.get_bit(square as u64) == 1 {
-                return Some(Piece::Pawn);
-            }
-        } else if pieces[Piece::Knight as usize].get_bit(square as u64) == 1 {
-            let board = pieces[Piece::Knight as usize];
-
-            if board.get_bit(square as u64) == 1 {
-                return Some(Piece::Knight);
-            }
-        }
-
-        /*
         for piece in Piece::iter() {
             let board = pieces[piece as usize];
 
@@ -228,7 +217,6 @@ impl Position {
                 return Some(piece);
             }
         }
-        */
         return None;
     }
 

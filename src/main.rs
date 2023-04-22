@@ -9,7 +9,6 @@ use std::mem::size_of;
 
 fn main() -> Result<(), String> {
     /* VIDEO SETUP */
-    /*
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
     let _image_context = sdl2::image::init(InitFlag::PNG)?;
@@ -33,7 +32,6 @@ fn main() -> Result<(), String> {
 
     let texture_creator = canvas.texture_creator();
     let mut event_pump = sdl_context.event_pump()?;
-    */
 
     /* CHESS STUFF */
     let mut position = Position::new();
@@ -53,76 +51,17 @@ fn main() -> Result<(), String> {
     position.unmake();
 
     /*
-    init_slider_attacks(&mut position, true);
-    init_slider_attacks(&mut position, false);
-    */
-
-    /*
-    for square in SquareLabel::iter() {
-        println!("SQUARE {:?}", square);
-
-        position.pawn_pushes[Side::White as usize][square as usize].print();
-    }
-    */
-
-    /*
-    position.piece_bitboards[Side::White as usize][Piece::Pawn as usize].0 = 0xaa5500;
-    position.empty_bitboard &= !position.piece_bitboards[Side::White as usize][Piece::Pawn as usize];
-    println!("EMPTY SQUARES");
-    position.empty_bitboard.print();
-    let board = position.white_pawns_able_double_push();
-    println!("WHITE PAWNS THAT CAN DOUBLE ");
-    board.print();
-    */
-
-    /*
-    println!("BISHOP");
-    let bishop_occupancy: BitBoard =
-        position.piece_bitboards[Side::White as usize][Piece::Bishop as usize];
-    bishop_occupancy.print();
-
-    let bishop_attacks = BitBoard(get_bishop_attacks(
-        &mut position,
-        SquareLabel::D4 as u64,
-        bishop_occupancy.0,
-    ));
-    bishop_attacks.print();
-
-    println!("ROOK");
-    let rook_occupancy: BitBoard =
-        position.piece_bitboards[Side::White as usize][Piece::Rook as usize];
-    rook_occupancy.print();
-    let rook_attacks = BitBoard(get_rook_attacks(
-        &mut position,
-        SquareLabel::D2 as u64,
-        rook_occupancy.0,
-    ));
-    rook_attacks.print();
-    println!("QUEEN");
-    let occupancy: BitBoard = position.main_bitboard;
-    occupancy.print();
-
-    let queen_attacks = position.generate_queen_moves(SquareLabel::D7);
-    queen_attacks.print();
-    */
-
-    /*
-    position.generate_moves();
-    position.create_move();
-    */
-
     let start = Instant::now();
-    let depth = 2;
+    let depth = 3;
     let res = perft(&mut position, &mut move_gen, depth);
     let elasped = start.elapsed();
-    println!("PERFT: {} TIME: {} US", res, elasped.as_micros());
-
-    /*
-    let mut res = perft_divide(&mut position, depth);
-    print_perft_divide(&mut res.1);
+    //println!("PERFT: {} TIME: {} US", res, elasped.as_micros());
     */
 
-    /*
+    let depth = 3;
+    let mut res2 = perft_divide(&mut position, &mut move_gen, depth as u8);
+    print_perft_divide(&mut res2.1);
+
     let mut moves: Vec<Move> = Vec::new();
 
     let mut state = MouseState::from_sdl_state(0);
@@ -156,13 +95,13 @@ fn main() -> Result<(), String> {
             &event_pump,
             &mut state,
             &mut position,
+            &mut move_gen,
             &mut from_square,
             &mut piece,
         )?;
 
         canvas.present();
     }
-    */
 
     Ok(())
 }
@@ -263,28 +202,29 @@ pub fn print_perft_divide(results: &mut Vec<(String, u64)>) {
     }
     println!("NODES: {total}");
 }
-/*
 
-pub fn perft_divide(position: &mut Position, depth: u8) -> (u64, Vec<(String, u64)>) {
+pub fn perft_divide(
+    position: &mut Position,
+    move_generator: &mut MoveGenerator,
+    depth: u8,
+) -> (u64, Vec<(String, u64)>) {
     if depth == 0 {
         return (1, vec![]);
     }
 
     let mut total_nodes = 0;
-    let moves = position.generate_moves(position.state.turn);
+    let moves = move_generator.generate_moves(&position, position.state.turn);
     let mut result = (0, vec![]);
 
     for mv in moves {
-        let old_position: Position = *position;
         position.make_move(mv.piece, mv.from_square, mv.target_square);
-        let child_result = perft_divide(position, depth - 1);
+        let child_result = perft_divide(position, move_generator, depth - 1);
         total_nodes += child_result.0;
         result.1.push((mv.to_string(), child_result.0));
 
-        *position = old_position;
+        position.unmake();
     }
 
     result.0 = total_nodes;
     result
 }
-*/

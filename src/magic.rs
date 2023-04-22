@@ -1,4 +1,5 @@
 use crate::BitBoard;
+use crate::MoveGenerator;
 use crate::Position;
 use crate::EMPTY_BITBOARD;
 use rand::prelude::*;
@@ -1150,13 +1151,13 @@ pub fn find_magic(square: u64, is_bishop: bool) -> MagicEntry {
     panic!("MAGIC NUMBER NOT FOUND");
 }
 
-pub fn init_slider_attacks(position: &mut Position, is_bishop: bool) {
+pub fn init_slider_attacks(move_gen: &mut MoveGenerator, is_bishop: bool) {
     for square in 0..64 {
         let bishop_magic: SMagic = NEW_BISHOP_MAGICS[square as usize];
         let rook_magic: SMagic = NEW_ROOK_MAGICS[square as usize];
 
-        position.move_gen.bishop_tbl[square as usize] = bishop_magic;
-        position.move_gen.rook_tbl[square as usize] = rook_magic;
+        move_gen.bishop_tbl[square as usize] = bishop_magic;
+        move_gen.rook_tbl[square as usize] = rook_magic;
 
         let bit_count: u32 = if is_bishop {
             bishop_magic.mask.count_ones()
@@ -1170,11 +1171,11 @@ pub fn init_slider_attacks(position: &mut Position, is_bishop: bool) {
             if is_bishop {
                 let occupancy = BitBoard(index_to_u64(count, bit_count, bishop_magic.mask));
                 let index = bishop_magic.get_index(occupancy);
-                position.move_gen.bishop_moves[index] = bishop_attack(square, occupancy);
+                move_gen.bishop_moves[index] = bishop_attack(square, occupancy);
             } else {
                 let occupancy = BitBoard(index_to_u64(count, bit_count, rook_magic.mask));
                 let index = rook_magic.get_index(occupancy);
-                position.move_gen.rook_moves[index] = rook_attack(square, occupancy);
+                move_gen.rook_moves[index] = rook_attack(square, occupancy);
             }
         }
     }

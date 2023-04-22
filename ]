@@ -137,7 +137,7 @@ impl MoveGenerator {
         return self.south_one(single_pushes) & position.empty_bitboard & RANK5;
     }
 
-    pub fn fill_pawn_pushes(&mut self, position: &Position, side: Side) {
+    pub fn generate_pawn_pushes(&mut self, position: &Position, side: Side) {
         for square in SquareLabel::iter() {
             let mut pushes: BitBoard = EMPTY_BITBOARD;
 
@@ -176,7 +176,7 @@ impl MoveGenerator {
         return self.south_west_one(bitboard);
     }
 
-    pub fn fill_pawn_attacks(&mut self, position: &Position, side: Side) {
+    pub fn generate_pawn_attacks(&mut self, side: Side) {
         for square in SquareLabel::iter() {
             let mut moves: BitBoard = EMPTY_BITBOARD;
             let mut bitboard: BitBoard = EMPTY_BITBOARD;
@@ -198,9 +198,9 @@ impl MoveGenerator {
         }
     }
 
-    pub fn fill_pawn_moves(&mut self, position: &Position, side: Side) {
-        self.fill_pawn_pushes(position, side);
-        self.fill_pawn_attacks(position, side);
+    pub fn generate_pawn_moves(&self, side: Side, square: SquareLabel) -> BitBoard {
+        //self.generate_pawn_pushes(side, square) | self.generate_pawn_attacks(side, square)
+        todo!();
     }
 
     pub fn fill_king_moves(&mut self) {
@@ -262,10 +262,14 @@ impl MoveGenerator {
         )) & !position.side_bitboards[position.state.turn as usize];
     }
 
+    pub fn generate_targets(&mut self, position: &Position, side: Side) {
+        self.generate_pawn_pushes(position, side);
+    }
+
     pub fn generate_moves(&mut self, position: &Position, side: Side) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::new();
 
-        self.fill_pawn_moves(position, side);
+        self.generate_targets(position, side);
         for square in SquareLabel::iter() {
             let piece: Option<Piece> = position.get_piece_on_square(square, side);
             if let Some(p) = piece {
@@ -275,8 +279,6 @@ impl MoveGenerator {
                         let mut n: u64 = (pawn_pushes & (!position.main_bitboard)).0;
 
                         let mut i = 0;
-
-                        // Quiet Moves
                         while n > 0 {
                             let bit = n & 1;
                             if bit == 1 {
@@ -285,36 +287,14 @@ impl MoveGenerator {
 
                             n = n >> 1;
                             i += 1;
-                        }
-
-                        let pawn_attacks = self.pawn_attacks[side as usize][square as usize];
-                        let enemy_bitboard = position.enemy_bitboard();
-                        let mut j = 0;
-                        let mut n2: u64 = (pawn_attacks & (enemy_bitboard)).0;
-
-                        if square == SquareLabel::D4 {
-                            pawn_attacks.print();
-                        }
-
-                        // Captures
-                        while n2 > 0 {
-                            let bit = n2 & 1;
-                            if bit == 1 {
-                                let mv = Move::new(p, square, SquareLabel::from(j));
-                                moves.push(mv);
-                            }
-
-                            n2 = n2 >> 1;
-                            j += 1;
                         }
                     }
                     Piece::Knight => {
                         let knight_moves = self.knight_moves[square as usize];
-                        let mut n: u64 = (knight_moves & (!position.main_bitboard)).0;
                         let enemy_bitboard = position.enemy_bitboard();
+                        let mut n: u64 = (knight_moves & (!enemy_bitboard)).0;
 
                         let mut i = 0;
-                        // Quiet Moves
                         while n > 0 {
                             let bit = n & 1;
                             if bit == 1 {
@@ -323,32 +303,14 @@ impl MoveGenerator {
 
                             n = n >> 1;
                             i += 1;
-                        }
-
-                        let mut j = 0;
-                        let mut n2: u64 = (knight_moves & (enemy_bitboard)).0;
-
-                        // Captures
-                        while n2 > 0 {
-                            let bit = n2 & 1;
-                            if bit == 1 {
-                                let mv = Move::new(p, square, SquareLabel::from(j));
-                                moves.push(mv);
-                            }
-
-                            n2 = n2 >> 1;
-                            j += 1;
                         }
                     }
 
                     Piece::Queen => {
                         let queen_moves = self.generate_queen_moves(position, square);
                         let mut n: u64 = (queen_moves & (!position.main_bitboard)).0;
-                        let enemy_bitboard = position.enemy_bitboard();
 
                         let mut i = 0;
-
-                        // Quiet Moves
                         while n > 0 {
                             let bit = n & 1;
                             if bit == 1 {
@@ -357,30 +319,13 @@ impl MoveGenerator {
 
                             n = n >> 1;
                             i += 1;
-                        }
-
-                        let mut j = 0;
-                        let mut n2: u64 = (queen_moves & (enemy_bitboard)).0;
-
-                        // Captures
-                        while n2 > 0 {
-                            let bit = n2 & 1;
-                            if bit == 1 {
-                                let mv = Move::new(p, square, SquareLabel::from(j));
-                                moves.push(mv);
-                            }
-
-                            n2 = n2 >> 1;
-                            j += 1;
                         }
                     }
 
                     Piece::Rook => {
                         let rook_moves = self.generate_rook_moves(position, square);
                         let mut n: u64 = (rook_moves & (!position.main_bitboard)).0;
-                        let enemy_bitboard = position.enemy_bitboard();
 
-                        // Queen Moves
                         let mut i = 0;
                         while n > 0 {
                             let bit = n & 1;
@@ -390,21 +335,6 @@ impl MoveGenerator {
 
                             n = n >> 1;
                             i += 1;
-                        }
-
-                        let mut j = 0;
-                        let mut n2: u64 = (rook_moves & (enemy_bitboard)).0;
-
-                        // Captures
-                        while n2 > 0 {
-                            let bit = n2 & 1;
-                            if bit == 1 {
-                                let mv = Move::new(p, square, SquareLabel::from(j));
-                                moves.push(mv);
-                            }
-
-                            n2 = n2 >> 1;
-                            j += 1;
                         }
                     }
                     Piece::Bishop => {
@@ -413,7 +343,6 @@ impl MoveGenerator {
 
                         let mut n: u64 = (bishop_moves & (!position.main_bitboard)).0;
 
-                        // Quiet Moves
                         let mut i = 0;
                         while n > 0 {
                             let bit = n & 1;
@@ -428,27 +357,19 @@ impl MoveGenerator {
                         let mut j = 0;
                         let mut n2: u64 = (bishop_moves & (enemy_bitboard)).0;
 
-                        // Captures
                         while n2 > 0 {
-                            let bit = n2 & 1;
+                            let bit = n & 1;
                             if bit == 1 {
-                                let mv = Move::new(p, square, SquareLabel::from(j));
-                                moves.push(mv);
+                                moves.push(Move::new(p, square, SquareLabel::from(i)));
                             }
-
-                            n2 = n2 >> 1;
-                            j += 1;
                         }
                     }
 
                     Piece::King => {
                         let king_moves = self.king_moves[square as usize];
-                        let enemy_bitboard = position.enemy_bitboard();
-
                         let mut n: u64 = (king_moves & (!position.main_bitboard)).0;
 
                         let mut i = 0;
-                        // Quiet Moves
                         while n > 0 {
                             let bit = n & 1;
                             if bit == 1 {
@@ -457,21 +378,6 @@ impl MoveGenerator {
 
                             n = n >> 1;
                             i += 1;
-                        }
-
-                        let mut j = 0;
-                        let mut n2: u64 = (king_moves & (enemy_bitboard)).0;
-
-                        // Captures
-                        while n2 > 0 {
-                            let bit = n2 & 1;
-                            if bit == 1 {
-                                let mv = Move::new(p, square, SquareLabel::from(j));
-                                moves.push(mv);
-                            }
-
-                            n2 = n2 >> 1;
-                            j += 1;
                         }
                     }
                     _ => (),
