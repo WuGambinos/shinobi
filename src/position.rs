@@ -115,7 +115,28 @@ impl std::fmt::Display for Move {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
+pub struct History {
+    pub prev_main_bitboards: Vec<BitBoard>,
+    pub prev_empty_bitboards: Vec<BitBoard>,
+    pub prev_side_bitboards: Vec<[BitBoard; 2]>,
+    pub prev_piece_bitboards: Vec<[[BitBoard; 6]; 2]>,
+    pub prev_states: Vec<State>,
+}
+
+impl History {
+    fn new() -> History {
+        History {
+            prev_main_bitboards: Vec::new(),
+            prev_empty_bitboards: Vec::new(),
+            prev_side_bitboards: Vec::new(),
+            prev_piece_bitboards: Vec::new(),
+            prev_states: Vec::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Position {
     // BitBoard that shows combined states of white and black bitboards
     pub main_bitboard: BitBoard,
@@ -133,6 +154,8 @@ pub struct Position {
 
     /// State contains all relveant information for evalution
     pub state: State,
+
+    pub history: History,
 }
 
 impl Position {
@@ -145,6 +168,8 @@ impl Position {
             move_gen: MoveGenerator::new(),
 
             state: State::new(),
+
+            history: History::new(),
         }
     }
 
@@ -216,6 +241,12 @@ impl Position {
         if from_square != to_square
             && self.side_bitboards[self.state.turn as usize].get_bit(to_square as u64) == 0
         {
+            self.history.prev_main_bitboards.push(self.main_bitboard);
+            self.history.prev_empty_bitboards.push(self.empty_bitboard);
+            self.history.prev_piece_bitboards.push(self.piece_bitboards);
+            self.history.prev_side_bitboards.push(self.side_bitboards);
+            self.history.prev_states.push(self.state);
+
             // Check from_square has piece on it
             if self.side_bitboards[self.state.turn as usize].get_bit(from_square as u64) != 0 {
                 if self.side_bitboards[self.state.enemy() as usize].get_bit(to_square as u64) == 1 {
@@ -253,8 +284,15 @@ impl Position {
         }
     }
 
-    pub fn unmake(&self) {
+    pub fn unmake(&mut self) {
+        // Revert BitBoards
+        self.main_bitboard = self.history.prev_main_bitboards.pop().unwrap();
+        self.empty_bitboard = self.history.prev_empty_bitboards.pop().unwrap();
+        self.side_bitboards = self.history.prev_side_bitboards.pop().unwrap();
+        self.piece_bitboards = self.history.prev_piece_bitboards.pop().unwrap();
 
+        // Revert State
+        self.state = self.history.prev_states.pop().unwrap();
     }
 
     pub fn set_bit_on_piece_bitboard(&mut self, piece: Piece, side: Side, square: SquareLabel) {

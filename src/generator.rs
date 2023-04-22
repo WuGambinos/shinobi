@@ -274,13 +274,13 @@ impl MoveGenerator {
     }
 
     pub fn generate_targets(&mut self, position: &Position, side: Side) {
-        //self.generate_pawn_pushes(position, side);
+        self.generate_pawn_pushes(position, side);
     }
 
     pub fn generate_moves(&mut self, position: &Position, side: Side) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::new();
 
-        //self.generate_targets(position, side);
+        self.generate_targets(position, side);
         for square in SquareLabel::iter() {
             let piece: Option<Piece> = position.get_piece_on_square(square, side);
             if let Some(p) = piece {

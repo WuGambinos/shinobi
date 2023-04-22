@@ -49,7 +49,8 @@ fn main() -> Result<(), String> {
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
 
-    println!("SIZE OF STRUCT {} BYTES", size_of::<Position>());
+    position.make_move(Piece::Pawn, SquareLabel::D2, SquareLabel::D4);
+    position.unmake();
 
     /*
     init_slider_attacks(&mut position, true);
@@ -114,7 +115,7 @@ fn main() -> Result<(), String> {
     let depth = 2;
     let res = perft(&mut position, &mut move_gen, depth);
     let elasped = start.elapsed();
-    println!("PERFT: {} TIME: {} MS", res, elasped.as_millis());
+    println!("PERFT: {} TIME: {} US", res, elasped.as_micros());
 
     /*
     let mut res = perft_divide(&mut position, depth);
@@ -245,15 +246,9 @@ fn perft(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32
     }
 
     for mv in moves {
-        let start = Instant::now();
-        let old_position: Position = *position;
-        let elapsed = start.elapsed();
-        println!("MV: {:?} TIME: {} US", mv, elapsed.as_micros());
-
         position.make_move(mv.piece, mv.from_square, mv.target_square);
         num_positions += perft(position, move_generator, depth - 1);
-
-        *position = old_position;
+        position.unmake();
     }
 
     return num_positions;
