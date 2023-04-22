@@ -50,17 +50,17 @@ fn main() -> Result<(), String> {
     position.make_move(Piece::Pawn, SquareLabel::D2, SquareLabel::D4);
     position.unmake();
 
-    /*
     let start = Instant::now();
     let depth = 3;
     let res = perft(&mut position, &mut move_gen, depth);
     let elasped = start.elapsed();
-    //println!("PERFT: {} TIME: {} US", res, elasped.as_micros());
-    */
+    println!("PERFT: {} TIME: {} US", res, elasped.as_micros());
 
+    /*
     let depth = 3;
     let mut res2 = perft_divide(&mut position, &mut move_gen, depth as u8);
     print_perft_divide(&mut res2.1);
+    */
 
     let mut moves: Vec<Move> = Vec::new();
 

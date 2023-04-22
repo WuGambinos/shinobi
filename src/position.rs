@@ -255,6 +255,9 @@ impl Position {
 
                     // Update main_bitboard
                     self.main_bitboard ^= from_to_bitboard;
+
+                    // Update empty bitboard
+                    self.empty_bitboard = !self.main_bitboard;
                 } else {
                     // Update piece bitboard
                     self.piece_bitboards[self.state.turn as usize][piece as usize] ^=
@@ -265,6 +268,9 @@ impl Position {
 
                     // Update main_bitboard
                     self.main_bitboard ^= from_to_bitboard;
+
+                    // Update empty bitboard
+                    self.empty_bitboard = !self.main_bitboard;
                 }
 
                 self.state.change_turn();

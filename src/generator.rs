@@ -145,8 +145,12 @@ impl MoveGenerator {
                 Side::White => {
                     let mut white_pawns: BitBoard = EMPTY_BITBOARD;
                     white_pawns.set_bit(square);
-                    pushes |= self.white_single_push_target(position, white_pawns);
-                    pushes |= self.white_double_push_target(position, white_pawns);
+                    let single_push = self.white_single_push_target(position, white_pawns);
+                    let double_push = self.white_double_push_target(position, white_pawns);
+                    pushes |= single_push;
+                    if single_push != EMPTY_BITBOARD {
+                        pushes |= double_push;
+                    }
                     self.pawn_pushes[side as usize][square as usize] = pushes;
                 }
                 Side::Black => {
@@ -291,10 +295,6 @@ impl MoveGenerator {
                         let enemy_bitboard = position.enemy_bitboard();
                         let mut j = 0;
                         let mut n2: u64 = (pawn_attacks & (enemy_bitboard)).0;
-
-                        if square == SquareLabel::D4 {
-                            pawn_attacks.print();
-                        }
 
                         // Captures
                         while n2 > 0 {
