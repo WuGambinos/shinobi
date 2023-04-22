@@ -1,22 +1,13 @@
 use std::fmt;
 
-use crate::get_bishop_attacks;
-use crate::get_queen_attacks;
-use crate::get_rook_attacks;
-use crate::init_slider_attacks;
 use crate::square_name;
 use crate::BitBoard;
 use crate::MoveGenerator;
 use crate::Piece;
-use crate::SMagic;
 use crate::Side;
 use crate::Square;
 use crate::SquareLabel;
-use crate::A_FILE;
-use crate::B_FILE;
 use crate::EMPTY_BITBOARD;
-use crate::G_FILE;
-use crate::H_FILE;
 use strum::IntoEnumIterator;
 
 pub struct Castling(u8);
@@ -155,6 +146,9 @@ pub struct Position {
     /// State contains all relveant information for evalution
     pub state: State,
 
+    pub white_king_square: SquareLabel,
+    pub black_king_square: SquareLabel,
+
     pub history: History,
 }
 
@@ -169,12 +163,19 @@ impl Position {
 
             state: State::new(),
 
+            white_king_square: SquareLabel::A1,
+            black_king_square: SquareLabel::A1,
+
             history: History::new(),
         }
     }
 
     pub fn enemy_bitboard(&self) -> BitBoard {
         return self.side_bitboards[self.state.enemy() as usize];
+    }
+
+    pub fn get_piece_bitboard(&self, piece: Piece, side: Side) -> BitBoard {
+        self.piece_bitboards[side as usize][piece as usize]
     }
 
     pub fn from_grid(&mut self, grid: [char; 64]) {
@@ -190,6 +191,12 @@ impl Position {
                 'K' | 'k' => Piece::King as usize,
                 _ => 0,
             };
+
+            if *ch == 'K' {
+                self.white_king_square = SquareLabel::from(i as u64);
+            } else if *ch == 'k' {
+                self.black_king_square = SquareLabel::from(i as u64);
+            }
 
             if ch.is_ascii() {
                 if ch.is_uppercase() {
@@ -229,6 +236,13 @@ impl Position {
         if from_square != to_square
             && self.side_bitboards[self.state.turn as usize].get_bit(to_square as u64) == 0
         {
+            if piece == Piece::King {
+                match self.state.turn {
+                    Side::White => self.white_king_square = to_square,
+                    Side::Black => self.black_king_square = to_square,
+                }
+            }
+
             self.history.prev_main_bitboards.push(self.main_bitboard);
             self.history.prev_empty_bitboards.push(self.empty_bitboard);
             self.history.prev_piece_bitboards.push(self.piece_bitboards);
@@ -254,7 +268,7 @@ impl Position {
                     self.side_bitboards[enemy as usize] ^= to_bitboard;
 
                     // Update main_bitboard
-                    self.main_bitboard ^= from_to_bitboard;
+                    self.main_bitboard ^= from_bitboard;
 
                     // Update empty bitboard
                     self.empty_bitboard = !self.main_bitboard;

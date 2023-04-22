@@ -5,7 +5,6 @@ use sdl2::mouse::MouseState;
 use shinobi::enums::*;
 use shinobi::util::*;
 use shinobi::*;
-use std::mem::size_of;
 
 fn main() -> Result<(), String> {
     /* VIDEO SETUP */
@@ -47,20 +46,17 @@ fn main() -> Result<(), String> {
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
 
-    position.make_move(Piece::Pawn, SquareLabel::D2, SquareLabel::D4);
-    position.unmake();
-
+    /*
     let start = Instant::now();
-    let depth = 3;
-    let res = perft(&mut position, &mut move_gen, depth);
+    let depth = 4;
+    let res = perft(&mut position.clone(), &mut move_gen, depth);
     let elasped = start.elapsed();
     println!("PERFT: {} TIME: {} US", res, elasped.as_micros());
+    */
 
-    /*
-    let depth = 3;
+    let depth = 4;
     let mut res2 = perft_divide(&mut position, &mut move_gen, depth as u8);
     print_perft_divide(&mut res2.1);
-    */
 
     let mut moves: Vec<Move> = Vec::new();
 
@@ -178,7 +174,7 @@ fn debug(position: &Position) {
 
 fn perft(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) -> u32 {
     let mut num_positions: u32 = 0;
-    let moves = move_generator.generate_moves(&position, position.state.turn);
+    let moves = move_generator.generate_moves(position, position.state.turn);
 
     if depth == 1 {
         return moves.len() as u32;

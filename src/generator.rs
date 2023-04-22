@@ -207,6 +207,28 @@ impl MoveGenerator {
         self.fill_pawn_attacks(position, side);
     }
 
+    pub fn attacks_to_king(&self, position: &Position, side: Side) -> BitBoard {
+        let king_square = match side {
+            Side::White => position.white_king_square,
+            Side::Black => position.black_king_square,
+        };
+
+        let enemy = match side {
+            Side::White => Side::Black,
+            Side::Black => Side::White,
+        };
+
+        let opponent_pawns = position.get_piece_bitboard(Piece::Pawn, enemy);
+        let opponent_knights = position.get_piece_bitboard(Piece::Knight, enemy);
+        let opponent_rooks = position.get_piece_bitboard(Piece::Rook, enemy);
+        let opponent_bishop = position.get_piece_bitboard(Piece::Bishop, enemy);
+        let opponent_queen = position.get_piece_bitboard(Piece::Queen, enemy);
+
+        return (self.generate_bishop_moves(&position, king_square) & opponent_bishop)
+            | (self.generate_rook_moves(&position, king_square) & opponent_rooks)
+            | (self.knight_moves[king_square as usize] & opponent_knights)
+            | (self.pawn_attacks[side as usize][king_square as usize] & opponent_pawns);
+    }
     pub fn fill_king_moves(&mut self) {
         for square in SquareLabel::iter() {
             let mut moves: BitBoard = EMPTY_BITBOARD;
@@ -270,6 +292,12 @@ impl MoveGenerator {
         let mut moves: Vec<Move> = Vec::new();
 
         self.fill_pawn_moves(position, side);
+        let checks = self.attacks_to_king(position, side);
+        /*
+        if checks != EMPTY_BITBOARD {
+            println!("CHECK");
+        }
+        */
         for square in SquareLabel::iter() {
             let piece: Option<Piece> = position.get_piece_on_square(square, side);
             if let Some(p) = piece {
