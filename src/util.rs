@@ -126,7 +126,7 @@ pub fn drag_and_drop(
             }
         }
 
-        *moves = position.generate_moves(position.state.turn);
+        //*moves = position.generate_moves(position.state.turn);
 
         if let Some(selected_p) = selected_piece {
             position.piece_bitboards[position.state.turn as usize][*selected_p as usize]

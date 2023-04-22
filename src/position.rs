@@ -6,6 +6,7 @@ use crate::get_rook_attacks;
 use crate::init_slider_attacks;
 use crate::square_name;
 use crate::BitBoard;
+use crate::MoveGenerator;
 use crate::Piece;
 use crate::SMagic;
 use crate::Side;
@@ -86,7 +87,7 @@ pub struct Move {
 }
 
 impl Move {
-    fn new(piece: Piece, from_square: SquareLabel, target_square: SquareLabel) -> Move {
+    pub fn new(piece: Piece, from_square: SquareLabel, target_square: SquareLabel) -> Move {
         Move {
             piece,
             from_square,
@@ -128,20 +129,7 @@ pub struct Position {
     /// BitBoards for all pieces and each side
     pub piece_bitboards: [[BitBoard; 6]; 2],
 
-    // BitBoard for piece attacks
-    //pub attack_bitboards: [[BitBoard; 6]; 2],
-    pub knight_attacks: [BitBoard; 64],
-    pub pawn_pushes: [[BitBoard; 64]; 2],
-    pub pawn_attacks: [[BitBoard; 64]; 2],
-    pub king_attacks: [BitBoard; 64],
-
-    pub rook_attacks: [BitBoard; 102400],
-    pub bishop_attacks: [BitBoard; 5248],
-
-    //pub bishop_attacks: [[BitBoard; 512]; 64],
-    //pub rook_attacks: [[BitBoard; 4096]; 64],
-    pub bishop_tbl: [SMagic; 64],
-    pub rook_tbl: [SMagic; 64],
+    pub move_gen: MoveGenerator,
 
     /// State contains all relveant information for evalution
     pub state: State,
@@ -154,17 +142,8 @@ impl Position {
             empty_bitboard: EMPTY_BITBOARD,
             side_bitboards: [EMPTY_BITBOARD; 2],
             piece_bitboards: [[EMPTY_BITBOARD; 6]; 2],
-            //attack_bitboards: [[BITBOARD_EMPTY; 6]; 2],
-            rook_attacks: [EMPTY_BITBOARD; 102400],
-            bishop_attacks: [EMPTY_BITBOARD; 5248],
+            move_gen: MoveGenerator::new(),
 
-            knight_attacks: [EMPTY_BITBOARD; 64],
-            pawn_pushes: [[EMPTY_BITBOARD; 64]; 2],
-            pawn_attacks: [[EMPTY_BITBOARD; 64]; 2],
-            king_attacks: [EMPTY_BITBOARD; 64],
-
-            bishop_tbl: [SMagic::new(0, 0, 0, 0); 64],
-            rook_tbl: [SMagic::new(0, 0, 0, 0); 64],
             state: State::new(),
         }
     }
@@ -202,6 +181,21 @@ impl Position {
     pub fn get_piece_on_square(&self, square: SquareLabel, side: Side) -> Option<Piece> {
         let pieces = self.piece_bitboards[side as usize];
 
+        if pieces[Piece::Pawn as usize].get_bit(square as u64) == 1 {
+            let board = pieces[Piece::Pawn as usize];
+
+            if board.get_bit(square as u64) == 1 {
+                return Some(Piece::Pawn);
+            }
+        } else if pieces[Piece::Knight as usize].get_bit(square as u64) == 1 {
+            let board = pieces[Piece::Knight as usize];
+
+            if board.get_bit(square as u64) == 1 {
+                return Some(Piece::Knight);
+            }
+        }
+
+        /*
         for piece in Piece::iter() {
             let board = pieces[piece as usize];
 
@@ -209,6 +203,7 @@ impl Position {
                 return Some(piece);
             }
         }
+        */
         return None;
     }
 
@@ -258,289 +253,12 @@ impl Position {
         }
     }
 
+    pub fn unmake(&self) {
+
+    }
+
     pub fn set_bit_on_piece_bitboard(&mut self, piece: Piece, side: Side, square: SquareLabel) {
         self.piece_bitboards[side as usize][piece as usize].set_bit(square);
-    }
-
-    pub fn north_one(&self, bitboard: BitBoard) -> BitBoard {
-        return bitboard << 8;
-    }
-
-    pub fn south_one(&self, bitboard: BitBoard) -> BitBoard {
-        return bitboard >> 8;
-    }
-
-    pub fn east_one(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 1) & BitBoard(!A_FILE);
-    }
-
-    pub fn west_one(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 1) & BitBoard(!H_FILE);
-    }
-
-    pub fn north_east_one(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 9) & BitBoard(!A_FILE);
-    }
-
-    pub fn north_west_one(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 7) & BitBoard(!H_FILE);
-    }
-
-    pub fn south_east_one(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 7) & BitBoard(!(A_FILE));
-    }
-
-    pub fn south_west_one(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 9) & BitBoard(!(H_FILE));
-    }
-
-    pub fn north_north_east(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 17) & BitBoard(!(A_FILE));
-    }
-
-    pub fn north_east_east(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 10) & BitBoard(!(A_FILE | B_FILE));
-    }
-
-    pub fn south_east_east(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 6) & BitBoard(!(A_FILE | B_FILE));
-    }
-
-    pub fn south_south_east(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 15) & BitBoard(!(A_FILE));
-    }
-
-    pub fn north_north_west(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 15) & BitBoard(!(H_FILE));
-    }
-
-    pub fn north_west_west(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 6) & BitBoard(!(G_FILE | H_FILE));
-    }
-
-    pub fn south_west_west(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 10) & BitBoard(!(G_FILE | H_FILE));
-    }
-
-    pub fn south_south_west(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 17) & BitBoard(!(H_FILE));
-    }
-
-    pub fn white_single_push_target(&self, bitboard: BitBoard) -> BitBoard {
-        return self.north_one(bitboard) & self.empty_bitboard;
-    }
-
-    pub fn white_double_push_target(&self, bitboard: BitBoard) -> BitBoard {
-        const RANK4: BitBoard = BitBoard(0x0000_0000_FF00_0000);
-        let single_pushes = self.white_single_push_target(bitboard);
-        return self.north_one(single_pushes) & self.empty_bitboard & RANK4;
-    }
-
-    pub fn white_pawns_able_push(&self, empty: BitBoard) -> BitBoard {
-        return self.south_one(empty)
-            & self.piece_bitboards[Side::White as usize][Piece::Pawn as usize];
-    }
-
-    pub fn white_pawns_able_double_push(&self) -> BitBoard {
-        const RANK4: BitBoard = BitBoard(0x0000_0000_FF00_0000);
-        let empty_rank_3 = self.south_one(self.empty_bitboard & RANK4) & self.empty_bitboard;
-        return self.white_pawns_able_push(empty_rank_3);
-    }
-
-    pub fn black_single_push_target(&self, bitboard: BitBoard) -> BitBoard {
-        return self.south_one(bitboard) & self.empty_bitboard;
-    }
-
-    pub fn black_double_push_target(&self, bitboard: BitBoard) -> BitBoard {
-        const RANK5: BitBoard = BitBoard(0x0000_00FF_0000_0000);
-        let single_pushes = self.black_single_push_target(bitboard);
-        return self.south_one(single_pushes) & self.empty_bitboard & RANK5;
-    }
-
-    pub fn generate_pawn_pushes(&mut self, side: Side) {
-        for square in SquareLabel::iter() {
-            let mut pushes: BitBoard = EMPTY_BITBOARD;
-
-            match side {
-                Side::White => {
-                    let mut white_pawns: BitBoard = EMPTY_BITBOARD;
-                    white_pawns.set_bit(square);
-                    pushes |= self.white_single_push_target(white_pawns);
-                    pushes |= self.white_double_push_target(white_pawns);
-
-                    /*
-                    if self
-                        .white_pawns_able_push(self.empty_bitboard)
-                        .get_bit(square as u64)
-                        == 1
-                    {
-                        pushes |= self.white_single_push_target(white_pawns);
-                    }
-
-                    if self.white_pawns_able_double_push().get_bit(square as u64) == 1 {
-                        pushes |= self.white_double_push_target(white_pawns);
-                    }
-                    */
-                    self.pawn_pushes[side as usize][square as usize] = pushes;
-                }
-                Side::Black => {
-                    let mut black_pawns: BitBoard = EMPTY_BITBOARD;
-                    black_pawns.set_bit(square);
-                    pushes |= self.black_single_push_target(black_pawns);
-                    pushes |= self.black_double_push_target(black_pawns);
-
-                    self.pawn_pushes[side as usize][square as usize] = pushes;
-                }
-            };
-        }
-    }
-
-    pub fn white_pawn_east_attacks(&self, bitboard: BitBoard) -> BitBoard {
-        return self.north_east_one(bitboard);
-    }
-
-    pub fn white_pawn_west_attacks(&self, bitboard: BitBoard) -> BitBoard {
-        return self.north_west_one(bitboard);
-    }
-
-    pub fn black_pawn_east_attacks(&self, bitboard: BitBoard) -> BitBoard {
-        return self.south_east_one(bitboard);
-    }
-
-    pub fn black_pawn_west_attacks(&self, bitboard: BitBoard) -> BitBoard {
-        return self.south_west_one(bitboard);
-    }
-
-    pub fn generate_pawn_attacks(&mut self, side: Side) {
-        for square in SquareLabel::iter() {
-            let mut moves: BitBoard = EMPTY_BITBOARD;
-            let mut bitboard: BitBoard = EMPTY_BITBOARD;
-
-            bitboard.set_bit(square);
-
-            match side {
-                Side::White => {
-                    moves |= self.white_pawn_east_attacks(bitboard);
-                    moves |= self.white_pawn_west_attacks(bitboard);
-                    self.pawn_attacks[side as usize][square as usize] = moves;
-                }
-                Side::Black => {
-                    moves |= self.black_pawn_east_attacks(bitboard);
-                    moves |= self.black_pawn_west_attacks(bitboard);
-                    self.pawn_attacks[side as usize][square as usize] = moves;
-                }
-            }
-        }
-    }
-
-    pub fn generate_pawn_moves(&self, side: Side, square: SquareLabel) -> BitBoard {
-        //self.generate_pawn_pushes(side, square) | self.generate_pawn_attacks(side, square)
-        todo!();
-    }
-
-    pub fn generate_king_moves(&mut self) {
-        for square in SquareLabel::iter() {
-            let mut moves: BitBoard = EMPTY_BITBOARD;
-            let mut bitboard: BitBoard = EMPTY_BITBOARD;
-
-            bitboard.set_bit(square);
-
-            moves |= self.east_one(bitboard) | self.west_one(bitboard);
-            bitboard |= moves;
-            moves |= self.north_one(bitboard) | self.south_one(bitboard);
-
-            self.king_attacks[square as usize] = moves;
-        }
-    }
-
-    pub fn generate_knight_moves(&mut self) {
-        for square in SquareLabel::iter() {
-            let mut moves: BitBoard = EMPTY_BITBOARD;
-            let mut bitboard: BitBoard = EMPTY_BITBOARD;
-
-            bitboard.set_bit(square);
-
-            moves |= self.north_north_east(bitboard);
-            moves |= self.north_east_east(bitboard);
-            moves |= self.south_east_east(bitboard);
-            moves |= self.south_south_east(bitboard);
-            moves |= self.north_north_west(bitboard);
-            moves |= self.north_west_west(bitboard);
-            moves |= self.south_west_west(bitboard);
-            moves |= self.south_south_west(bitboard);
-
-            self.knight_attacks[square as usize] = moves;
-        }
-    }
-
-    pub fn generate_bishop_moves(&self, square: SquareLabel) -> BitBoard {
-        return BitBoard(get_bishop_attacks(
-            self,
-            square as u64,
-            self.main_bitboard.0,
-        )) & !self.side_bitboards[self.state.turn as usize];
-    }
-
-    pub fn generate_rook_moves(&self, square: SquareLabel) -> BitBoard {
-        return BitBoard(get_rook_attacks(self, square as u64, self.main_bitboard.0))
-            & !self.side_bitboards[self.state.turn as usize];
-    }
-
-    pub fn generate_queen_moves(&self, square: SquareLabel) -> BitBoard {
-        return BitBoard(get_queen_attacks(self, square as u64, self.main_bitboard.0))
-            & !self.side_bitboards[self.state.turn as usize];
-    }
-
-    pub fn generate_targets(&mut self, side: Side) {
-        self.generate_pawn_pushes(side);
-        self.generate_knight_moves();
-    }
-
-    pub fn generate_moves(&mut self, side: Side) -> Vec<Move> {
-        let mut moves: Vec<Move> = Vec::new();
-
-        self.generate_targets(side);
-        for square in SquareLabel::iter() {
-            let piece: Option<Piece> = self.get_piece_on_square(square, side);
-            if let Some(p) = piece {
-                match p {
-                    Piece::Pawn => {
-                        let mut n: u64 = (self.pawn_pushes[side as usize][square as usize]
-                            & (!self.main_bitboard))
-                            .0;
-
-                        let mut i = 0;
-                        while i < 64 {
-                            let bit = n & 1;
-                            if bit == 1 {
-                                moves.push(Move::new(p, square, SquareLabel::from(i)));
-                            }
-
-                            n = n >> 1;
-                            i += 1;
-                        }
-                    }
-                    Piece::Knight => {
-                        let mut n: u64 =
-                            (self.knight_attacks[square as usize] & (!self.main_bitboard)).0;
-
-                        let mut i = 0;
-                        while i < 64 {
-                            let bit = n & 1;
-                            if bit == 1 {
-                                moves.push(Move::new(p, square, SquareLabel::from(i)));
-                            }
-
-                            n = n >> 1;
-                            i += 1;
-                        }
-                    }
-                    Piece::King => {}
-                    _ => (),
-                }
-            }
-        }
-        moves
     }
 
     /*

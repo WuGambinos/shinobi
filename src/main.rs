@@ -5,6 +5,7 @@ use sdl2::mouse::MouseState;
 use shinobi::enums::*;
 use shinobi::util::*;
 use shinobi::*;
+use std::mem::size_of;
 
 fn main() -> Result<(), String> {
     /* VIDEO SETUP */
@@ -42,10 +43,13 @@ fn main() -> Result<(), String> {
     let random_fen = "8/3QR2p/2p2Kp1/2B4p/7P/P4n1P/b3p3/1N2k3 w - - 0 1";
     let grid = load_fen(start_pos, &mut position.state);
     position.from_grid(grid);
+    let mut move_gen = MoveGenerator::new();
 
     let mut piece: Option<Piece> = None;
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
+
+    println!("SIZE OF STRUCT {} BYTES", size_of::<Position>());
 
     /*
     init_slider_attacks(&mut position, true);
@@ -108,9 +112,10 @@ fn main() -> Result<(), String> {
 
     let start = Instant::now();
     let depth = 2;
-    let res = perft(&mut position, depth);
+    let res = perft(&mut position, &mut move_gen, depth);
     let elasped = start.elapsed();
     println!("PERFT: {} TIME: {} MS", res, elasped.as_millis());
+
     /*
     let mut res = perft_divide(&mut position, depth);
     print_perft_divide(&mut res.1);
@@ -231,17 +236,22 @@ fn debug(position: &Position) {
     }
 }
 
-fn perft(position: &mut Position, depth: u32) -> u32 {
+fn perft(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) -> u32 {
     let mut num_positions: u32 = 0;
-    let moves = position.generate_moves(position.state.turn);
+    let moves = move_generator.generate_moves(&position, position.state.turn);
+
     if depth == 1 {
         return moves.len() as u32;
     }
 
     for mv in moves {
+        let start = Instant::now();
         let old_position: Position = *position;
+        let elapsed = start.elapsed();
+        println!("MV: {:?} TIME: {} US", mv, elapsed.as_micros());
+
         position.make_move(mv.piece, mv.from_square, mv.target_square);
-        num_positions += perft(position, depth - 1);
+        num_positions += perft(position, move_generator, depth - 1);
 
         *position = old_position;
     }
@@ -258,6 +268,7 @@ pub fn print_perft_divide(results: &mut Vec<(String, u64)>) {
     }
     println!("NODES: {total}");
 }
+/*
 
 pub fn perft_divide(position: &mut Position, depth: u8) -> (u64, Vec<(String, u64)>) {
     if depth == 0 {
@@ -281,3 +292,4 @@ pub fn perft_divide(position: &mut Position, depth: u8) -> (u64, Vec<(String, u6
     result.0 = total_nodes;
     result
 }
+*/

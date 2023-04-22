@@ -4,6 +4,7 @@ pub mod enums;
 pub mod magic;
 pub mod position;
 pub mod util;
+pub mod generator;
 
 pub use ::rand::prelude::*;
 pub use bitboard::*;
@@ -14,6 +15,7 @@ pub use position::*;
 pub use strum::IntoEnumIterator;
 pub use strum_macros::EnumIter;
 pub use util::*;
+pub use generator::*;
 
 pub use sdl2::event::Event;
 pub use sdl2::image::{InitFlag, LoadTexture};

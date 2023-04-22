@@ -1155,8 +1155,8 @@ pub fn init_slider_attacks(position: &mut Position, is_bishop: bool) {
         let bishop_magic: SMagic = NEW_BISHOP_MAGICS[square as usize];
         let rook_magic: SMagic = NEW_ROOK_MAGICS[square as usize];
 
-        position.bishop_tbl[square as usize] = bishop_magic;
-        position.rook_tbl[square as usize] = rook_magic;
+        position.move_gen.bishop_tbl[square as usize] = bishop_magic;
+        position.move_gen.rook_tbl[square as usize] = rook_magic;
 
         let bit_count: u32 = if is_bishop {
             bishop_magic.mask.count_ones()
@@ -1170,24 +1170,24 @@ pub fn init_slider_attacks(position: &mut Position, is_bishop: bool) {
             if is_bishop {
                 let occupancy = BitBoard(index_to_u64(count, bit_count, bishop_magic.mask));
                 let index = bishop_magic.get_index(occupancy);
-                position.bishop_attacks[index] = bishop_attack(square, occupancy);
+                position.move_gen.bishop_moves[index] = bishop_attack(square, occupancy);
             } else {
                 let occupancy = BitBoard(index_to_u64(count, bit_count, rook_magic.mask));
                 let index = rook_magic.get_index(occupancy);
-                position.rook_attacks[index] = rook_attack(square, occupancy);
+                position.move_gen.rook_moves[index] = rook_attack(square, occupancy);
             }
         }
     }
 }
 
 pub fn get_bishop_attacks(position: &Position, square: u64, occupancy: u64) -> u64 {
-    let index = position.bishop_tbl[square as usize].get_index(BitBoard(occupancy));
-    return position.bishop_attacks[index].0;
+    let index = position.move_gen.bishop_tbl[square as usize].get_index(BitBoard(occupancy));
+    return position.move_gen.bishop_moves[index].0;
 }
 
 pub fn get_rook_attacks(position: &Position, square: u64, occupancy: u64) -> u64 {
-    let index = position.rook_tbl[square as usize].get_index(BitBoard(occupancy));
-    return position.rook_attacks[index].0;
+    let index = position.move_gen.rook_tbl[square as usize].get_index(BitBoard(occupancy));
+    return position.move_gen.rook_moves[index].0;
 }
 
 pub fn get_queen_attacks(position: &Position, square: u64, occupancy: u64) -> u64 {
