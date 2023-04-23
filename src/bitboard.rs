@@ -29,6 +29,11 @@ impl BitBoard {
         self.0 &= !(1u64 << (square as u64));
     }
 
+    pub fn bitscan_forward(&self) -> SquareLabel {
+        let square = self.0.trailing_zeros() as u64;
+        SquareLabel::from(square)
+    }
+
     pub fn print(&self) {
         for rank in (0..8).rev() {
             for file in 0..8 {

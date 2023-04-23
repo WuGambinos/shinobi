@@ -18,10 +18,26 @@ use crate::State;
 use crate::TextureCreator;
 use crate::WindowCanvas;
 use crate::WindowContext;
+use crate::A_FILE;
+use crate::B_FILE;
 use crate::B_IMG_POS;
+use crate::C_FILE;
 use crate::DARK;
+use crate::D_FILE;
+use crate::EIGTH_RANK;
+use crate::E_FILE;
+use crate::FIFTH_RANK;
+use crate::FIRST_RANK;
+use crate::FOURTH_RANK;
+use crate::F_FILE;
+use crate::G_FILE;
+use crate::H_FILE;
 use crate::LIGHT;
+use crate::SECOND_RANK;
+use crate::SEVENTH_RANK;
+use crate::SIXTH_RANK;
 use crate::SQUARE_SIZE;
+use crate::THIRD_RANK;
 use crate::W_IMG_POS;
 use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::mouse::MouseButton::Left;
@@ -385,4 +401,38 @@ pub fn square_name(square: u8) -> String {
     let rank = (square / 8) + 1;
     let file = ((square % 8) + (b'a')) as char;
     format!("{file}{rank}")
+}
+
+pub fn get_file(square: SquareLabel) -> u64 {
+    let file = square as u64 % 8;
+
+    match file {
+        0 => A_FILE,
+        1 => B_FILE,
+        2 => C_FILE,
+        3 => D_FILE,
+        4 => E_FILE,
+        5 => F_FILE,
+        6 => G_FILE,
+        7 => H_FILE,
+
+        _ => panic!("NOT A FILE"),
+    }
+}
+
+pub fn get_rank(square: SquareLabel) -> u64 {
+    let rank = square as u64 / 8;
+
+    match rank {
+        0 => FIRST_RANK,
+        1 => SECOND_RANK,
+        2 => THIRD_RANK,
+        3 => FOURTH_RANK,
+        4 => FIFTH_RANK,
+        5 => SIXTH_RANK,
+        6 => SEVENTH_RANK,
+        7 => EIGTH_RANK,
+
+        _ => panic!("NOT A FILE"),
+    }
 }

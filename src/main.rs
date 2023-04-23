@@ -36,8 +36,7 @@ fn main() -> Result<(), String> {
     let mut position = Position::new();
     let start_pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     let test_pos = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
-    let knights_only = "1n4n1/8/8/8/8/8/8/1N4N1 w - - 0 1";
-    let random_fen = "8/3QR2p/2p2Kp1/2B4p/7P/P4n1P/b3p3/1N2k3 w - - 0 1";
+    let check_pos = "4k3/8/6n1/3Q1/8/8/8/4K3 w - - 0 1";
     let grid = load_fen(start_pos, &mut position.state);
     position.from_grid(grid);
     let mut move_gen = MoveGenerator::new();
@@ -54,9 +53,11 @@ fn main() -> Result<(), String> {
     println!("PERFT: {} TIME: {} US", res, elasped.as_micros());
     */
 
+    let start = Instant::now();
     let depth = 4;
-    let mut res2 = perft_divide(&mut position, &mut move_gen, depth as u8);
-    print_perft_divide(&mut res2.1);
+    let res = perft_test(&mut position.clone(), &mut move_gen, depth);
+    let elasped = start.elapsed();
+    //println!("PERFT: {} TIME: {} US", res, elasped.as_micros());
 
     let mut moves: Vec<Move> = Vec::new();
 
@@ -189,38 +190,48 @@ fn perft(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32
     return num_positions;
 }
 
-pub fn print_perft_divide(results: &mut Vec<(String, u64)>) {
-    results.sort_by(|a, b| b.0.chars().nth(1).cmp(&a.0.chars().nth(1)));
-    let mut total = 0;
-    for mv in results {
-        println!("{}: {}", mv.0, mv.1);
-        total += mv.1;
-    }
-    println!("NODES: {total}");
-}
+static mut nodes: u32 = 0;
 
-pub fn perft_divide(
-    position: &mut Position,
-    move_generator: &mut MoveGenerator,
-    depth: u8,
-) -> (u64, Vec<(String, u64)>) {
-    if depth == 0 {
-        return (1, vec![]);
+fn perft_driver(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) {
+    let moves = move_generator.generate_moves(position, position.state.turn);
+    if depth == 1 {
+        unsafe {
+            nodes += moves.len() as u32;
+        }
+        return;
     }
-
-    let mut total_nodes = 0;
-    let moves = move_generator.generate_moves(&position, position.state.turn);
-    let mut result = (0, vec![]);
 
     for mv in moves {
         position.make_move(mv.piece, mv.from_square, mv.target_square);
-        let child_result = perft_divide(position, move_generator, depth - 1);
-        total_nodes += child_result.0;
-        result.1.push((mv.to_string(), child_result.0));
+
+        perft_driver(position, move_generator, depth - 1);
 
         position.unmake();
     }
+}
 
-    result.0 = total_nodes;
-    result
+fn perft_test(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) {
+    println!(" PERFORMANCE TEST");
+
+    let moves = move_generator.generate_moves(position, position.state.turn);
+
+    for mv in moves {
+        position.make_move(mv.piece, mv.from_square, mv.target_square);
+
+        unsafe {
+            let cummulative_nodes: u32 = nodes;
+            perft_driver(position, move_generator, depth - 1);
+
+            let old_nodes: u32 = nodes - cummulative_nodes;
+
+            position.unmake();
+
+            println!("{}: {}", mv, old_nodes);
+        }
+    }
+
+    println!("DEPTH: {}", depth);
+    unsafe {
+        println!("NODES: {}", nodes);
+    }
 }
