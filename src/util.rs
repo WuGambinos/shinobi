@@ -144,7 +144,7 @@ pub fn drag_and_drop(
             }
         }
 
-        *moves = move_gen.generate_moves(&position, position.state.turn);
+        *moves = move_gen.generate_legal_moves(&mut position.clone(), position.state.turn);
 
         if let Some(selected_p) = selected_piece {
             position.piece_bitboards[position.state.turn as usize][*selected_p as usize]
@@ -163,7 +163,8 @@ pub fn drag_and_drop(
         if selected_piece.is_some() {
             let old_turn: Side = position.state.turn;
             let mut old_position: Position = position.clone();
-            position.make_move(selected_piece.unwrap(), from_square.unwrap(), target_square);
+            let mv: Move = Move::new(selected_piece.unwrap(), from_square.unwrap(), target_square);
+            position.make_move(mv);
 
             handle_movement(
                 &mut old_position,

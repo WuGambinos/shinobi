@@ -850,7 +850,7 @@ impl SMagic {
         }
     }
 
-    fn get_index(&self, occupancy: BitBoard) -> usize {
+    pub fn get_index(&self, occupancy: BitBoard) -> usize {
         let blocker = occupancy.0 & self.mask;
         (blocker.wrapping_mul(self.magic) >> self.shift) as usize + self.offset
     }
@@ -1179,19 +1179,4 @@ pub fn init_slider_attacks(move_gen: &mut MoveGenerator, is_bishop: bool) {
             }
         }
     }
-}
-
-pub fn get_bishop_attacks(position: &Position, square: u64, occupancy: u64) -> u64 {
-    let index = position.move_gen.bishop_tbl[square as usize].get_index(BitBoard(occupancy));
-    return position.move_gen.bishop_moves[index].0;
-}
-
-pub fn get_rook_attacks(position: &Position, square: u64, occupancy: u64) -> u64 {
-    let index = position.move_gen.rook_tbl[square as usize].get_index(BitBoard(occupancy));
-    return position.move_gen.rook_moves[index].0;
-}
-
-pub fn get_queen_attacks(position: &Position, square: u64, occupancy: u64) -> u64 {
-    return get_rook_attacks(position, square, occupancy)
-        | get_bishop_attacks(position, square, occupancy);
 }

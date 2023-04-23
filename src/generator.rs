@@ -1,11 +1,9 @@
 use std::time::Instant;
 
 use crate::{
-    get_bishop_attacks, get_file, get_queen_attacks, get_rank, get_rook_attacks,
-    init_slider_attacks, BitBoard, Move, Piece, Position, SMagic, Side, SquareLabel, A_FILE,
-    B_FILE, EMPTY_BITBOARD, F_FILE, G_FILE, H_FILE,
+    get_file, get_rank, init_slider_attacks, BitBoard, Move, Piece, Position, SMagic, Side,
+    SquareLabel, A_FILE, B_FILE, EMPTY_BITBOARD, F_FILE, G_FILE, H_FILE,
 };
-use sdl2::libc::EMPTY;
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
@@ -225,12 +223,14 @@ impl MoveGenerator {
         let opponent_bishop = position.get_piece_bitboard(Piece::Bishop, enemy);
         let opponent_queen = position.get_piece_bitboard(Piece::Queen, enemy);
 
-        return (self.generate_bishop_moves(&position, king_square) & opponent_bishop)
-            | (self.generate_rook_moves(&position, king_square) & opponent_rooks)
+        return (self.get_bishop_moves(king_square as u64, position.main_bitboard)
+            & opponent_bishop)
+            | (self.get_rook_moves(king_square as u64, position.main_bitboard) & opponent_rooks)
             | (self.knight_moves[king_square as usize] & opponent_knights)
             | (self.pawn_attacks[side as usize][king_square as usize] & opponent_pawns)
-            | (self.generate_queen_moves(position, king_square) & opponent_queen);
+            | (self.get_queen_moves(king_square as u64, position.main_bitboard) & opponent_queen);
     }
+
     pub fn fill_king_moves(&mut self) {
         for square in SquareLabel::iter() {
             let mut moves: BitBoard = EMPTY_BITBOARD;
@@ -265,29 +265,18 @@ impl MoveGenerator {
             self.knight_moves[square as usize] = moves;
         }
     }
-
-    pub fn generate_bishop_moves(&self, position: &Position, square: SquareLabel) -> BitBoard {
-        return BitBoard(get_bishop_attacks(
-            position,
-            square as u64,
-            position.main_bitboard.0,
-        )) & !position.side_bitboards[position.state.turn as usize];
+    pub fn get_bishop_moves(&self, square: u64, occupancy: BitBoard) -> BitBoard {
+        let index = self.bishop_tbl[square as usize].get_index(occupancy);
+        return BitBoard(self.bishop_moves[index].0);
     }
 
-    pub fn generate_rook_moves(&self, position: &Position, square: SquareLabel) -> BitBoard {
-        return BitBoard(get_rook_attacks(
-            position,
-            square as u64,
-            position.main_bitboard.0,
-        )) & !position.side_bitboards[position.state.turn as usize];
+    pub fn get_rook_moves(&self, square: u64, occupancy: BitBoard) -> BitBoard {
+        let index = self.rook_tbl[square as usize].get_index(occupancy);
+        return BitBoard(self.rook_moves[index].0);
     }
 
-    pub fn generate_queen_moves(&self, position: &Position, square: SquareLabel) -> BitBoard {
-        return BitBoard(get_queen_attacks(
-            position,
-            square as u64,
-            position.main_bitboard.0,
-        )) & !position.side_bitboards[position.state.turn as usize];
+    pub fn get_queen_moves(&self, square: u64, occupancy: BitBoard) -> BitBoard {
+        return self.get_rook_moves(square, occupancy) | self.get_bishop_moves(square, occupancy);
     }
 
     pub fn create_moves(
@@ -334,140 +323,58 @@ impl MoveGenerator {
         }
     }
 
+    pub fn generate_legal_moves(&mut self, position: &mut Position, side: Side) -> Vec<Move> {
+        let mut moves: Vec<Move> = self.generate_moves(position, side);
+
+        for i in (0..moves.len()).rev() {
+            let mv: Move = moves[i];
+            position.make_move(mv);
+
+            if self.attacks_to_king(position, side) != EMPTY_BITBOARD {
+                moves.remove(i);
+            }
+
+            position.unmake();
+        }
+
+        moves
+    }
     pub fn generate_moves(&mut self, position: &Position, side: Side) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::new();
-        let king_square = match side {
-            Side::White => position.white_king_square,
-            Side::Black => position.black_king_square,
-        };
-
-        let opponent_side = match side {
-            Side::White => Side::Black,
-            Side::Black => Side::White,
-        };
-
         self.fill_pawn_moves(position, side);
-        let checkers = self.attacks_to_king(position, side);
-        /*
-        if checks != EMPTY_BITBOARD {
-            println!("CHECK");
-        }
-        */
         for square in SquareLabel::iter() {
             let piece: Option<Piece> = position.get_piece_on_square(square, side);
 
-            let mut capture_mask = BitBoard(0xFFFFFFFFFFFFFFFF);
-            let mut push_mask = BitBoard(0xFFFFFFFFFFFFFFFF);
+            if let Some(p) = piece {
+                match p {
+                    Piece::Pawn => {
+                        let pawn_pushes = self.pawn_pushes[side as usize][square as usize];
+                        self.create_moves(position, p, side, pawn_pushes, square, &mut moves);
+                    }
+                    Piece::Knight => {
+                        let knight_moves = self.knight_moves[square as usize];
+                        self.create_moves(position, p, side, knight_moves, square, &mut moves);
+                    }
 
-            // Single check
-            if checkers.0.count_ones() == 1 {
-                capture_mask = checkers;
+                    Piece::Queen => {
+                        let queen_moves =
+                            self.get_queen_moves(square as u64, position.main_bitboard);
+                        self.create_moves(position, p, side, queen_moves, square, &mut moves);
+                    }
 
-                let checker_square = checkers.bitscan_forward();
-                let checker_piece = position
-                    .get_piece_on_square(checker_square, opponent_side)
-                    .unwrap();
-
-                let piece_file = get_file(checker_square);
-                let king_file = get_file(king_square);
-                push_mask = match checker_piece {
                     Piece::Rook => {
-                        if piece_file == king_file {
-                            self.generate_rook_moves(position, king_square)
-                                & BitBoard(get_file(king_square))
-                        } else {
-                            self.generate_rook_moves(position, king_square)
-                                & BitBoard(get_rank(king_square))
-                        }
+                        let rook_moves = self.get_rook_moves(square as u64, position.main_bitboard);
+                        self.create_moves(position, p, side, rook_moves, square, &mut moves);
                     }
                     Piece::Bishop => {
-                        self.generate_bishop_moves(position, king_square)
-                            & self.generate_bishop_moves(position, checker_square)
+                        let bishop_moves =
+                            self.get_bishop_moves(square as u64, position.main_bitboard);
+                        self.create_moves(position, p, side, bishop_moves, square, &mut moves);
                     }
-                    Piece::Queen => {
-                        if piece_file == king_file {
-                            self.generate_queen_moves(position, king_square)
-                                & BitBoard(get_file(king_square))
-                        } else {
-                            self.generate_queen_moves(position, king_square)
-                                & self.generate_queen_moves(position, checker_square)
-                        }
-                    }
-                    _ => BitBoard(0),
-                };
-                if let Some(p) = piece {
-                    match p {
-                        Piece::Pawn => {
-                            /*
-                            let mut pawn_pushes = self.pawn_pushes[side as usize][square as usize];
-                            pawn_pushes = pawn_pushes & push_mask;
-                            self.create_moves(position, p, side, pawn_pushes, square, &mut moves);
-                            */
-                        }
-                        Piece::Knight => {
-                            let mut knight_moves = self.knight_moves[square as usize];
-                            knight_moves =
-                                (knight_moves & capture_mask) | (knight_moves & push_mask);
 
-                            self.create_moves(position, p, side, knight_moves, square, &mut moves);
-                        }
-
-                        Piece::Queen => {
-                            let mut queen_moves = self.generate_queen_moves(position, square);
-                            queen_moves = (queen_moves & capture_mask) | (queen_moves & push_mask);
-
-                            self.create_moves(position, p, side, queen_moves, square, &mut moves);
-                        }
-
-                        Piece::Rook => {
-                            let mut rook_moves = self.generate_rook_moves(position, square);
-                            rook_moves = (rook_moves & capture_mask) | (rook_moves & push_mask);
-                            self.create_moves(position, p, side, rook_moves, square, &mut moves);
-                        }
-                        Piece::Bishop => {
-                            let mut bishop_moves = self.generate_bishop_moves(position, square);
-                            bishop_moves =
-                                (bishop_moves & capture_mask) | (bishop_moves & push_mask);
-                            self.create_moves(position, p, side, bishop_moves, square, &mut moves);
-                        }
-
-                        Piece::King => {
-                            let mut king_moves = self.king_moves[square as usize];
-                            king_moves = king_moves & capture_mask;
-                            self.create_moves(position, p, side, king_moves, square, &mut moves);
-                        }
-                    }
-                }
-            } else {
-                if let Some(p) = piece {
-                    match p {
-                        Piece::Pawn => {
-                            let pawn_pushes = self.pawn_pushes[side as usize][square as usize];
-                            self.create_moves(position, p, side, pawn_pushes, square, &mut moves);
-                        }
-                        Piece::Knight => {
-                            let knight_moves = self.knight_moves[square as usize];
-                            self.create_moves(position, p, side, knight_moves, square, &mut moves);
-                        }
-
-                        Piece::Queen => {
-                            let queen_moves = self.generate_queen_moves(position, square);
-                            self.create_moves(position, p, side, queen_moves, square, &mut moves);
-                        }
-
-                        Piece::Rook => {
-                            let rook_moves = self.generate_rook_moves(position, square);
-                            self.create_moves(position, p, side, rook_moves, square, &mut moves);
-                        }
-                        Piece::Bishop => {
-                            let bishop_moves = self.generate_bishop_moves(position, square);
-                            self.create_moves(position, p, side, bishop_moves, square, &mut moves);
-                        }
-
-                        Piece::King => {
-                            let king_moves = self.king_moves[square as usize];
-                            self.create_moves(position, p, side, king_moves, square, &mut moves);
-                        }
+                    Piece::King => {
+                        let king_moves = self.king_moves[square as usize];
+                        self.create_moves(position, p, side, king_moves, square, &mut moves);
                     }
                 }
             }

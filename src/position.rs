@@ -227,19 +227,19 @@ impl Position {
         return None;
     }
 
-    pub fn make_move(&mut self, piece: Piece, from_square: SquareLabel, to_square: SquareLabel) {
-        let from_bitboard: BitBoard = BitBoard(1) << (from_square as usize);
-        let to_bitboard: BitBoard = BitBoard(1) << (to_square as usize);
+    pub fn make_move(&mut self, mv: Move) {
+        let from_bitboard: BitBoard = BitBoard(1) << (mv.from_square as usize);
+        let to_bitboard: BitBoard = BitBoard(1) << (mv.target_square as usize);
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
         let enemy: Side = self.state.enemy();
 
-        if from_square != to_square
-            && self.side_bitboards[self.state.turn as usize].get_bit(to_square as u64) == 0
+        if mv.from_square != mv.target_square
+            && self.side_bitboards[self.state.turn as usize].get_bit(mv.target_square as u64) == 0
         {
-            if piece == Piece::King {
+            if mv.piece == Piece::King {
                 match self.state.turn {
-                    Side::White => self.white_king_square = to_square,
-                    Side::Black => self.black_king_square = to_square,
+                    Side::White => self.white_king_square = mv.target_square,
+                    Side::Black => self.black_king_square = mv.target_square,
                 }
             }
 
@@ -250,16 +250,18 @@ impl Position {
             self.history.prev_states.push(self.state);
 
             // Check from_square has piece on it
-            if self.side_bitboards[self.state.turn as usize].get_bit(from_square as u64) != 0 {
-                if self.side_bitboards[self.state.enemy() as usize].get_bit(to_square as u64) == 1 {
+            if self.side_bitboards[self.state.turn as usize].get_bit(mv.from_square as u64) != 0 {
+                if self.side_bitboards[self.state.enemy() as usize].get_bit(mv.target_square as u64)
+                    == 1
+                {
                     // Update piece bitboard
-                    self.piece_bitboards[self.state.turn as usize][piece as usize] ^=
+                    self.piece_bitboards[self.state.turn as usize][mv.piece as usize] ^=
                         from_to_bitboard;
 
                     // Update white or black bitboard
                     self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
 
-                    let enemy_piece = self.get_piece_on_square(to_square, enemy).unwrap();
+                    let enemy_piece = self.get_piece_on_square(mv.target_square, enemy).unwrap();
 
                     // Reset captured piece
                     self.piece_bitboards[enemy as usize][enemy_piece as usize] ^= to_bitboard;
@@ -274,7 +276,7 @@ impl Position {
                     self.empty_bitboard = !self.main_bitboard;
                 } else {
                     // Update piece bitboard
-                    self.piece_bitboards[self.state.turn as usize][piece as usize] ^=
+                    self.piece_bitboards[self.state.turn as usize][mv.piece as usize] ^=
                         from_to_bitboard;
 
                     // Update white or black bitboard

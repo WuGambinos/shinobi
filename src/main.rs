@@ -37,7 +37,8 @@ fn main() -> Result<(), String> {
     let start_pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     let test_pos = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
     let check_pos = "4k3/8/6n1/3Q1/8/8/8/4K3 w - - 0 1";
-    let grid = load_fen(start_pos, &mut position.state);
+    let check_pos2 = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ";
+    let grid = load_fen(check_pos2, &mut position.state);
     position.from_grid(grid);
     let mut move_gen = MoveGenerator::new();
 
@@ -45,19 +46,19 @@ fn main() -> Result<(), String> {
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
 
-    /*
     let start = Instant::now();
-    let depth = 4;
+    let depth = 2;
     let res = perft(&mut position.clone(), &mut move_gen, depth);
     let elasped = start.elapsed();
     println!("PERFT: {} TIME: {} US", res, elasped.as_micros());
-    */
 
+    /*
     let start = Instant::now();
-    let depth = 4;
+    let depth = 2;
     let res = perft_test(&mut position.clone(), &mut move_gen, depth);
     let elasped = start.elapsed();
     //println!("PERFT: {} TIME: {} US", res, elasped.as_micros());
+    */
 
     let mut moves: Vec<Move> = Vec::new();
 
@@ -175,14 +176,18 @@ fn debug(position: &Position) {
 
 fn perft(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) -> u32 {
     let mut num_positions: u32 = 0;
-    let moves = move_generator.generate_moves(position, position.state.turn);
+    let moves = move_generator.generate_legal_moves(position, position.state.turn);
+
+    for mv in &moves {
+        println!("MOVE: {}", mv);
+    }
 
     if depth == 1 {
         return moves.len() as u32;
     }
 
     for mv in moves {
-        position.make_move(mv.piece, mv.from_square, mv.target_square);
+        position.make_move(mv);
         num_positions += perft(position, move_generator, depth - 1);
         position.unmake();
     }
@@ -193,7 +198,7 @@ fn perft(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32
 static mut nodes: u32 = 0;
 
 fn perft_driver(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) {
-    let moves = move_generator.generate_moves(position, position.state.turn);
+    let moves = move_generator.generate_legal_moves(position, position.state.turn);
     if depth == 1 {
         unsafe {
             nodes += moves.len() as u32;
@@ -202,7 +207,7 @@ fn perft_driver(position: &mut Position, move_generator: &mut MoveGenerator, dep
     }
 
     for mv in moves {
-        position.make_move(mv.piece, mv.from_square, mv.target_square);
+        position.make_move(mv);
 
         perft_driver(position, move_generator, depth - 1);
 
@@ -213,10 +218,10 @@ fn perft_driver(position: &mut Position, move_generator: &mut MoveGenerator, dep
 fn perft_test(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) {
     println!(" PERFORMANCE TEST");
 
-    let moves = move_generator.generate_moves(position, position.state.turn);
+    let moves = move_generator.generate_legal_moves(position, position.state.turn);
 
     for mv in moves {
-        position.make_move(mv.piece, mv.from_square, mv.target_square);
+        position.make_move(mv);
 
         unsafe {
             let cummulative_nodes: u32 = nodes;
