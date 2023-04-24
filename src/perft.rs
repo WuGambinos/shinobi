@@ -24,10 +24,6 @@ pub fn perft(position: &mut Position, move_generator: &mut MoveGenerator, depth:
     let mut num_positions: u32 = 0;
     let moves = move_generator.generate_legal_moves(position, position.state.turn);
 
-    for mv in &moves {
-        println!("MOVE: {}", mv);
-    }
-
     if depth == 1 {
         return moves.len() as u32;
     }

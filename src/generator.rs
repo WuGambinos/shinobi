@@ -34,6 +34,8 @@ impl MoveGenerator {
 
         move_gen.fill_knight_moves();
         move_gen.fill_king_moves();
+        move_gen.fill_pawn_attacks(Side::White);
+        move_gen.fill_pawn_attacks(Side::Black);
         init_slider_attacks(&mut move_gen, true);
         init_slider_attacks(&mut move_gen, false);
 
@@ -179,7 +181,7 @@ impl MoveGenerator {
         return self.south_west_one(bitboard);
     }
 
-    pub fn fill_pawn_attacks(&mut self, position: &Position, side: Side) {
+    pub fn fill_pawn_attacks(&mut self, side: Side) {
         for square in SquareLabel::iter() {
             let mut moves: BitBoard = EMPTY_BITBOARD;
             let mut bitboard: BitBoard = EMPTY_BITBOARD;
@@ -203,7 +205,7 @@ impl MoveGenerator {
 
     pub fn fill_pawn_moves(&mut self, position: &Position, side: Side) {
         self.fill_pawn_pushes(position, side);
-        self.fill_pawn_attacks(position, side);
+        self.fill_pawn_attacks(side);
     }
 
     pub fn attacks_to_king(&self, position: &Position, side: Side) -> BitBoard {
@@ -222,6 +224,12 @@ impl MoveGenerator {
         let opponent_rooks = position.get_piece_bitboard(Piece::Rook, enemy);
         let opponent_bishop = position.get_piece_bitboard(Piece::Bishop, enemy);
         let opponent_queen = position.get_piece_bitboard(Piece::Queen, enemy);
+
+        /*
+        let rook_attacks = self.get_rook_moves(king_square as u64, position.main_bitboard);
+        println!("ROOK ATTACKS");
+        rook_attacks.print();
+        */
 
         return (self.get_bishop_moves(king_square as u64, position.main_bitboard)
             & opponent_bishop)

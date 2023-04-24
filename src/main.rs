@@ -39,7 +39,7 @@ fn main() -> Result<(), String> {
     let test_pos = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
     let check_pos = "4k3/8/6n1/3Q1/8/8/8/4K3 w - - 0 1";
     let check_pos2 = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ";
-    let grid = load_fen(check_pos2, &mut position.state);
+    let grid = load_fen(start_pos, &mut position.state);
     position.from_grid(grid);
     let mut move_gen = MoveGenerator::new();
 
@@ -47,11 +47,21 @@ fn main() -> Result<(), String> {
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
 
-    let mv = Move::new(Piece::Pawn, SquareLabel::G2, SquareLabel::G3);
+    /*
+    let mv = Move::new(Piece::Pawn, SquareLabel::E2, SquareLabel::E3);
     position.make_move(mv);
+    */
 
-    let attacks_on_king = move_gen.attacks_to_king(&position, position.state.turn());
-    attacks_on_king.print();
+    /*
+    let mv2 = Move::new(Piece::Pawn, SquareLabel::F4, SquareLabel::F3);
+    position.make_move(mv2);
+    */
+
+    let start = Instant::now();
+    let depth = 4;
+    let res = perft(&mut position.clone(), &mut move_gen, depth);
+    let elasped = start.elapsed();
+    println!("PERFT: {} TIME: {} US", res, elasped.as_micros());
 
     /*
     let start = Instant::now();
@@ -62,12 +72,12 @@ fn main() -> Result<(), String> {
     */
 
     /*
-    let depth = 1;
+    let depth = 2;
     let res = legal_perft(&mut position.clone(), &mut move_gen, depth);
     println!("PERFT: {}", res);
     */
-    let mut moves: Vec<Move> = Vec::new();
 
+    let mut moves: Vec<Move> = Vec::new();
     let mut state = MouseState::from_sdl_state(0);
     'running: loop {
         for event in event_pump.poll_iter() {

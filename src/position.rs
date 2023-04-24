@@ -113,6 +113,8 @@ pub struct History {
     pub prev_side_bitboards: Vec<[BitBoard; 2]>,
     pub prev_piece_bitboards: Vec<[[BitBoard; 6]; 2]>,
     pub prev_states: Vec<State>,
+    pub prev_white_king_square: Option<SquareLabel>,
+    pub prev_black_king_square: Option<SquareLabel>,
 }
 
 impl History {
@@ -123,6 +125,8 @@ impl History {
             prev_side_bitboards: Vec::new(),
             prev_piece_bitboards: Vec::new(),
             prev_states: Vec::new(),
+            prev_white_king_square: None,
+            prev_black_king_square: None,
         }
     }
 }
@@ -238,8 +242,14 @@ impl Position {
         {
             if mv.piece == Piece::King {
                 match self.state.turn {
-                    Side::White => self.white_king_square = mv.target_square,
-                    Side::Black => self.black_king_square = mv.target_square,
+                    Side::White => {
+                        self.history.prev_white_king_square = Some(self.white_king_square);
+                        self.white_king_square = mv.target_square;
+                    }
+                    Side::Black => {
+                        self.history.prev_black_king_square = Some(self.black_king_square);
+                        self.black_king_square = mv.target_square;
+                    }
                 }
             }
 
@@ -300,6 +310,14 @@ impl Position {
         self.empty_bitboard = self.history.prev_empty_bitboards.pop().unwrap();
         self.side_bitboards = self.history.prev_side_bitboards.pop().unwrap();
         self.piece_bitboards = self.history.prev_piece_bitboards.pop().unwrap();
+
+        if let Some(w_square) = self.history.prev_white_king_square {
+            self.white_king_square = w_square;
+        }
+
+        if let Some(b_square) = self.history.prev_black_king_square {
+            self.black_king_square = b_square;
+        }
 
         // Revert State
         self.state = self.history.prev_states.pop().unwrap();
