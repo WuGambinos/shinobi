@@ -5,6 +5,7 @@ pub mod magic;
 pub mod position;
 pub mod util;
 pub mod generator;
+pub mod perft;
 
 pub use ::rand::prelude::*;
 pub use bitboard::*;

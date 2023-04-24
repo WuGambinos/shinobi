@@ -1180,3 +1180,28 @@ pub fn init_slider_attacks(move_gen: &mut MoveGenerator, is_bishop: bool) {
         }
     }
 }
+
+pub fn print_magics(is_bishop: bool) {
+    let mut offset = 0;
+    for square in 0..64 {
+        let entry = if is_bishop {
+            find_magic(square, true)
+        } else {
+            find_magic(square, false)
+        };
+
+        println!(
+            "    MagicEntry {{ mask: 0x{:0>16X}, magic: 0x{:0>16X}, shift: {}, offset: {} }},",
+            entry.mask, entry.magic, entry.shift, offset,
+        );
+        offset += entry.size;
+    }
+
+    if is_bishop {
+        println!("pub const BISHOP MAP_SIZE: usize = {};", offset);
+        println!();
+    } else {
+        println!("pub const ROOK MAP_SIZE: usize = {};", offset);
+        println!();
+    }
+}

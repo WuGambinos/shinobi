@@ -62,7 +62,7 @@ impl State {
         }
     }
 
-    fn enemy(&self) -> Side {
+    pub fn enemy(&self) -> Side {
         match self.turn {
             Side::White => Side::Black,
             Side::Black => Side::White,

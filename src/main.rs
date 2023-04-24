@@ -1,5 +1,6 @@
 use std::time::Instant;
 
+use perft::*;
 use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::mouse::MouseState;
 use shinobi::enums::*;
@@ -46,11 +47,11 @@ fn main() -> Result<(), String> {
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
 
-    let start = Instant::now();
-    let depth = 2;
-    let res = perft(&mut position.clone(), &mut move_gen, depth);
-    let elasped = start.elapsed();
-    println!("PERFT: {} TIME: {} US", res, elasped.as_micros());
+    let mv = Move::new(Piece::Pawn, SquareLabel::G2, SquareLabel::G3);
+    position.make_move(mv);
+
+    let attacks_on_king = move_gen.attacks_to_king(&position, position.state.turn());
+    attacks_on_king.print();
 
     /*
     let start = Instant::now();
@@ -60,6 +61,11 @@ fn main() -> Result<(), String> {
     //println!("PERFT: {} TIME: {} US", res, elasped.as_micros());
     */
 
+    /*
+    let depth = 1;
+    let res = legal_perft(&mut position.clone(), &mut move_gen, depth);
+    println!("PERFT: {}", res);
+    */
     let mut moves: Vec<Move> = Vec::new();
 
     let mut state = MouseState::from_sdl_state(0);
@@ -104,48 +110,6 @@ fn main() -> Result<(), String> {
     Ok(())
 }
 
-fn print_magics(is_bishop: bool) {
-    let mut offset = 0;
-    for square in 0..64 {
-        let entry = if is_bishop {
-            find_magic(square, true)
-        } else {
-            find_magic(square, false)
-        };
-
-        println!(
-            "    MagicEntry {{ mask: 0x{:0>16X}, magic: 0x{:0>16X}, shift: {}, offset: {} }},",
-            entry.mask, entry.magic, entry.shift, offset,
-        );
-        offset += entry.size;
-    }
-
-    if is_bishop {
-        println!("pub const BISHOP MAP_SIZE: usize = {};", offset);
-        println!();
-    } else {
-        println!("pub const ROOK MAP_SIZE: usize = {};", offset);
-        println!();
-    }
-}
-fn draw_moves(canvas: &mut WindowCanvas, attacks: &BitBoard) -> Result<(), String> {
-    for rank in 0..8 {
-        for file in 0..8 {
-            let square = rank * 8 + file;
-            let bit = attacks.get_bit(square);
-            if bit == 1 {
-                canvas.filled_circle(
-                    file as i16 * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
-                    (7 - rank as i16) * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
-                    5,
-                    Color::RED,
-                )?;
-            }
-        }
-    }
-    Ok(())
-}
-
 fn debug(position: &Position) {
     println!("MAIN BITBOARD");
     position.print_bitboard(position.main_bitboard);
@@ -171,72 +135,5 @@ fn debug(position: &Position) {
         println!("PIECE: {:?}", piece);
         println!();
         black_pieces[piece as usize].print();
-    }
-}
-
-fn perft(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) -> u32 {
-    let mut num_positions: u32 = 0;
-    let moves = move_generator.generate_legal_moves(position, position.state.turn);
-
-    for mv in &moves {
-        println!("MOVE: {}", mv);
-    }
-
-    if depth == 1 {
-        return moves.len() as u32;
-    }
-
-    for mv in moves {
-        position.make_move(mv);
-        num_positions += perft(position, move_generator, depth - 1);
-        position.unmake();
-    }
-
-    return num_positions;
-}
-
-static mut nodes: u32 = 0;
-
-fn perft_driver(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) {
-    let moves = move_generator.generate_legal_moves(position, position.state.turn);
-    if depth == 1 {
-        unsafe {
-            nodes += moves.len() as u32;
-        }
-        return;
-    }
-
-    for mv in moves {
-        position.make_move(mv);
-
-        perft_driver(position, move_generator, depth - 1);
-
-        position.unmake();
-    }
-}
-
-fn perft_test(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) {
-    println!(" PERFORMANCE TEST");
-
-    let moves = move_generator.generate_legal_moves(position, position.state.turn);
-
-    for mv in moves {
-        position.make_move(mv);
-
-        unsafe {
-            let cummulative_nodes: u32 = nodes;
-            perft_driver(position, move_generator, depth - 1);
-
-            let old_nodes: u32 = nodes - cummulative_nodes;
-
-            position.unmake();
-
-            println!("{}: {}", mv, old_nodes);
-        }
-    }
-
-    println!("DEPTH: {}", depth);
-    unsafe {
-        println!("NODES: {}", nodes);
     }
 }
