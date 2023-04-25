@@ -9,6 +9,7 @@ edition = "2021"
 rand = "0.8.5"
 strum = "0.24.1"
 strum_macros = "0.24.3"
+criterion = "0.4.0"
 
 [dependencies.sdl2]
 version = "0.35.2"
@@ -18,5 +19,9 @@ features = ["image", "gfx"]
 [profile.release]
 debug = true
 
-[[examples]]
-name = "main"
+[dev-dependicies]
+criterion = {version = "0.4", features = ["html_reports"]}
+
+[[bench]]
+name = "my_benchmark"
+harness = false

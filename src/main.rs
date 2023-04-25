@@ -8,6 +8,7 @@ use shinobi::util::*;
 use shinobi::*;
 
 fn main() -> Result<(), String> {
+    /*
     /* VIDEO SETUP */
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
@@ -32,6 +33,7 @@ fn main() -> Result<(), String> {
 
     let texture_creator = canvas.texture_creator();
     let mut event_pump = sdl_context.event_pump()?;
+    */
 
     /* CHESS STUFF */
     let mut position = Position::new();
@@ -41,27 +43,17 @@ fn main() -> Result<(), String> {
     let check_pos2 = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ";
     let grid = load_fen(start_pos, &mut position.state);
     position.from_grid(grid);
-    let mut move_gen = MoveGenerator::new();
+    let mut move_gen = position.move_gen;
 
     let mut piece: Option<Piece> = None;
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
 
-    /*
-    let mv = Move::new(Piece::Pawn, SquareLabel::E2, SquareLabel::E3);
-    position.make_move(mv);
-    */
-
-    /*
-    let mv2 = Move::new(Piece::Pawn, SquareLabel::F4, SquareLabel::F3);
-    position.make_move(mv2);
-    */
-
     let start = Instant::now();
     let depth = 4;
     let res = perft(&mut position.clone(), &mut move_gen, depth);
     let elasped = start.elapsed();
-    println!("PERFT: {} TIME: {} US", res, elasped.as_micros());
+    println!("PERFT: {} TIME: {} MS", res, elasped.as_millis());
 
     /*
     let start = Instant::now();
@@ -77,6 +69,7 @@ fn main() -> Result<(), String> {
     println!("PERFT: {}", res);
     */
 
+    /*
     let mut moves: Vec<Move> = Vec::new();
     let mut state = MouseState::from_sdl_state(0);
     'running: loop {
@@ -116,6 +109,7 @@ fn main() -> Result<(), String> {
 
         canvas.present();
     }
+    */
 
     Ok(())
 }
