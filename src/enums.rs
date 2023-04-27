@@ -1,6 +1,5 @@
 use crate::EnumIter;
 
-
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Side {
     White,
@@ -17,6 +16,37 @@ pub enum Piece {
     King,
 }
 
+impl Piece {
+    pub fn is_pawn(self) -> bool {
+        self == Piece::Pawn
+    }
+
+    pub fn is_bishop(self) -> bool {
+        self == Piece::Bishop
+    }
+
+    pub fn is_knight(self) -> bool {
+        self == Piece::Knight
+    }
+
+    pub fn is_queen(self) -> bool {
+        self == Piece::Queen
+    }
+
+    pub fn is_king(self) -> bool {
+        self == Piece::King
+    }
+
+    pub fn is_rook(self) -> bool {
+        self == Piece::Rook
+    }
+
+    pub fn is_slider(self) -> bool {
+        self.is_rook() || self.is_queen() || self.is_bishop()
+    }
+}
+
+#[rustfmt::skip]
 #[derive(EnumIter, Debug, Copy, Clone, Eq, PartialEq)]
 pub enum SquareLabel {
   A1, B1, C1, D1, E1, F1, G1, H1,
