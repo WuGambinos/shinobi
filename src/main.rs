@@ -35,7 +35,7 @@ fn main() -> Result<(), String> {
 
     /* CHESS STUFF */
     let mut position = Position::new();
-    let grid = load_fen(PIN_POS2, &mut position.state);
+    let grid = load_fen(PIN_POS4, &mut position.state);
     position.from_grid(grid);
     let mut move_gen = position.move_gen;
 

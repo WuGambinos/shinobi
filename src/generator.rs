@@ -361,7 +361,9 @@ impl MoveGenerator {
         &self,
         position: &Position,
         pin_bitboard: BitBoard,
-    ) -> (Option<Piece>, Option<SquareLabel>) {
+    ) -> Vec<(Option<Piece>, Option<SquareLabel>)> {
+        let mut pinned_pieces: Vec<(Option<Piece>, Option<SquareLabel>)> = Vec::new();
+        pinned_pieces.push((None, None));
         let mut n = pin_bitboard.0;
         let mut i = 0;
         while n > 0 {
@@ -369,208 +371,193 @@ impl MoveGenerator {
             if bit == 1 {
                 let square = SquareLabel::from(i);
                 let piece = position.get_piece_on_square(square, position.state.turn);
-                println!("PIECE: {:?}", piece);
-                return (piece, Some(square));
+                println!("SQUARE: {:?} PIECE: {:?}", square, piece);
+                pinned_pieces.push((piece, Some(square)));
             }
             n = n >> 1;
             i += 1;
         }
 
-        (None, None)
+        pinned_pieces
     }
 
     pub fn find_pinned_moves(
         &self,
         position: &Position,
         king_square: SquareLabel,
-    ) -> (
-        bool,
-        Option<PinInfo>,
-        Option<PinInfo>,
-        Option<PinInfo>,
-        BitBoard,
-    ) {
+    ) -> (bool, Vec<PinInfo>, Vec<PinInfo>, Vec<PinInfo>, BitBoard) {
         // Opponent's sliding pieces
-        let rooks = position.get_piece_bitboard(Piece::Rook, position.state.enemy());
-        let bishops = position.get_piece_bitboard(Piece::Bishop, position.state.enemy());
-        let queens = position.get_piece_bitboard(Piece::Queen, position.state.enemy());
+        let rooks: BitBoard = position.get_piece_bitboard(Piece::Rook, position.state.enemy());
+        let bishops: BitBoard = position.get_piece_bitboard(Piece::Bishop, position.state.enemy());
+        let queens: BitBoard = position.get_piece_bitboard(Piece::Queen, position.state.enemy());
 
         // Moves from opponent's sliding pieces
-        let mut rook_moves = BitBoard(0);
-        let mut bishop_moves = BitBoard(0);
-        let mut queen_moves = BitBoard(0);
+        let mut rook_moves: BitBoard = BitBoard(0);
+        let mut bishop_moves: BitBoard = BitBoard(0);
+        let mut queen_moves: BitBoard = BitBoard(0);
 
         let mut queen_square = SquareLabel::from(0);
         let mut bishop_square = SquareLabel::from(0);
         let mut rook_square = SquareLabel::from(0);
 
         // Sliding moves from current player's king square
-        let rook_moves_from_king = self.get_rook_moves(
+        let rook_moves_from_king: BitBoard = self.get_rook_moves(
             king_square as u64,
             position.side_bitboards[position.state.enemy() as usize],
         );
-        let bishop_moves_from_king = self.get_bishop_moves(
-            king_square as u64,
-            position.side_bitboards[position.state.enemy() as usize],
-        );
-
-        let queen_moves_from_king = self.get_queen_moves(
+        let bishop_moves_from_king: BitBoard = self.get_bishop_moves(
             king_square as u64,
             position.side_bitboards[position.state.enemy() as usize],
         );
 
-        if position.state.turn == Side::Black {
-            // Find moves from opponents sliding pieces
-            for piece in Piece::iter() {
-                if piece == Piece::Rook {
-                    let mut n = rooks.0;
-                    let mut i = 0;
-                    while n > 0 {
-                        let bit = n & 1;
-                        if bit == 1 {
-                            rook_square = SquareLabel::from(i);
-                            rook_moves = self.get_rook_moves(i, position.main_bitboard);
-                        }
-                        n = n >> 1;
-                        i += 1;
+        let queen_moves_from_king: BitBoard = self.get_queen_moves(
+            king_square as u64,
+            position.side_bitboards[position.state.enemy() as usize],
+        );
+
+        // Find moves from opponents sliding pieces
+        for piece in Piece::iter() {
+            if piece == Piece::Rook {
+                let mut n = rooks.0;
+                let mut i = 0;
+                while n > 0 {
+                    let bit = n & 1;
+                    if bit == 1 {
+                        rook_square = SquareLabel::from(i);
+                        rook_moves |= self.get_rook_moves(i, position.main_bitboard);
                     }
-                } else if piece == Piece::Bishop {
-                    let mut n = bishops.0;
-                    let mut i = 0;
-                    while n > 0 {
-                        let bit = n & 1;
-                        if bit == 1 {
-                            bishop_square = SquareLabel::from(i);
-                            bishop_moves = self.get_bishop_moves(i, position.main_bitboard);
-                        }
-                        n = n >> 1;
-                        i += 1;
+                    n = n >> 1;
+                    i += 1;
+                }
+            } else if piece == Piece::Bishop {
+                let mut n = bishops.0;
+                let mut i = 0;
+                while n > 0 {
+                    let bit = n & 1;
+                    if bit == 1 {
+                        bishop_square = SquareLabel::from(i);
+                        bishop_moves |= self.get_bishop_moves(i, position.main_bitboard);
                     }
-                } else if piece == Piece::Queen {
-                    let mut n = queens.0;
-                    let mut i = 0;
-                    while n > 0 {
-                        let bit = n & 1;
-                        if bit == 1 {
-                            queen_square = SquareLabel::from(i);
-                            queen_moves = self.get_queen_moves(i, position.main_bitboard);
-                        }
-                        n = n >> 1;
-                        i += 1;
+                    n = n >> 1;
+                    i += 1;
+                }
+            } else if piece == Piece::Queen {
+                let mut n = queens.0;
+                let mut i = 0;
+                while n > 0 {
+                    let bit = n & 1;
+                    if bit == 1 {
+                        queen_square = SquareLabel::from(i);
+                        queen_moves |= self.get_queen_moves(i, position.main_bitboard);
                     }
-                    println!("ROOK MOVES FROM KING");
-                    rook_moves_from_king.print();
+                    n = n >> 1;
+                    i += 1;
+                }
+                let possible_queen_pins =
+                    (rook_moves_from_king | bishop_moves_from_king) & queen_moves;
 
-                    println!("BISHOP MOVES FROM KING");
-                    bishop_moves_from_king.print();
+                let possible_rook_pins = (rook_moves_from_king) & rook_moves;
 
-                    println!("QUEEN MOVES FROM KING");
-                    (queen_moves_from_king).print();
+                let possible_bishop_pins = (bishop_moves_from_king) & bishop_moves;
 
-                    println!("ROOK MOVES");
-                    rook_moves.print();
+                let bishop_pins_bitboard: BitBoard =
+                    possible_bishop_pins & position.side_bitboards[position.state.turn as usize];
 
-                    println!("BISHOP MOVES");
-                    bishop_moves.print();
+                let rook_pins_bitboard: BitBoard =
+                    possible_rook_pins & position.side_bitboards[position.state.turn as usize];
 
-                    println!("QUEEN MOVES");
-                    queen_moves.print();
+                let queen_pins_bitboard: BitBoard =
+                    possible_queen_pins & position.side_bitboards[position.state.turn as usize];
 
-                    let possible_queen_pins =
-                        (rook_moves_from_king | bishop_moves_from_king) & queen_moves;
+                let queen_pinned_pieces_and_squares: Vec<(Option<Piece>, Option<SquareLabel>)> =
+                    self.get_pinned_piece(position, queen_pins_bitboard);
 
-                    let possible_rook_pins = (rook_moves_from_king) & rook_moves;
+                let rook_pinned_pieces_and_squares: Vec<(Option<Piece>, Option<SquareLabel>)> =
+                    self.get_pinned_piece(position, rook_pins_bitboard);
 
-                    let possible_bishop_pins = (bishop_moves_from_king) & bishop_moves;
+                let bishop_pinned_pieces_and_squares: Vec<(Option<Piece>, Option<SquareLabel>)> =
+                    self.get_pinned_piece(position, bishop_pins_bitboard);
 
-                    let bishop_pins = possible_bishop_pins
-                        & position.side_bitboards[position.state.turn as usize];
-                    println!("PIECES PINNED BY BISHOP PINS");
-                    bishop_pins.print();
+                let current_king_bitboard =
+                    position.get_piece_bitboard(Piece::King, position.state.turn);
 
-                    let rook_pins =
-                        possible_rook_pins & position.side_bitboards[position.state.turn as usize];
-                    println!("PIECES PINNED BY ROOK PINS");
-                    rook_pins.print();
+                let mut queen_pins: Vec<PinInfo> = Vec::new();
+                let mut rook_pins: Vec<PinInfo> = Vec::new();
+                let mut bishop_pins: Vec<PinInfo> = Vec::new();
 
-                    let queen_pins =
-                        possible_queen_pins & position.side_bitboards[position.state.turn as usize];
-                    println!("PIECES PINNED BY QUEEN PINS");
-                    queen_pins.print();
-
-                    let (queen_pinned_piece, piece_square): (Option<Piece>, Option<SquareLabel>) =
-                        self.get_pinned_piece(position, queen_pins);
-                    let (rook_pinned_piece, piece_square): (Option<Piece>, Option<SquareLabel>) =
-                        self.get_pinned_piece(position, rook_pins);
-                    let (bishop_pinned_piece, piece_square): (Option<Piece>, Option<SquareLabel>) =
-                        self.get_pinned_piece(position, bishop_pins);
-
-                    let current_king_bitboard =
-                        position.get_piece_bitboard(Piece::King, position.state.turn);
-
+                for (bishop_pinned_piece, square) in bishop_pinned_pieces_and_squares {
                     let pinning_bishop_to_king_moves =
                         self.get_bishop_moves(bishop_square as u64, current_king_bitboard);
+                    let mut pinned_bishop_moves = EMPTY_BITBOARD;
+                    if let Some(b_pinned_piece) = bishop_pinned_piece {
+                        pinned_bishop_moves = if b_pinned_piece.is_bishop()
+                            || b_pinned_piece.is_queen()
+                            || b_pinned_piece.is_pawn()
+                        {
+                            pinning_bishop_to_king_moves & bishop_moves_from_king
+                        } else {
+                            EMPTY_BITBOARD
+                        };
+                    }
+                    if let Some(b_pinned_piece) = bishop_pinned_piece {
+                        bishop_pins.push(PinInfo::new(
+                            pinned_bishop_moves,
+                            b_pinned_piece,
+                            Piece::Bishop,
+                        ));
+                    }
+                }
 
+                for (rook_pinned_piece, square) in rook_pinned_pieces_and_squares {
                     let pinning_rook_to_king_moves =
                         self.get_rook_moves(rook_square as u64, current_king_bitboard);
+                    let mut pinned_rook_moves = EMPTY_BITBOARD;
+                    if let Some(r_pinned_piece) = rook_pinned_piece {
+                        pinned_rook_moves = if r_pinned_piece.is_rook() || r_pinned_piece.is_queen()
+                        {
+                            pinning_rook_to_king_moves & rook_moves_from_king
+                        } else {
+                            EMPTY_BITBOARD
+                        };
+                    }
+                    if let Some(r_pinned_piece) = rook_pinned_piece {
+                        rook_pins.push(PinInfo::new(
+                            pinned_rook_moves,
+                            r_pinned_piece,
+                            Piece::Rook,
+                        ));
+                    }
+                }
 
+                for (queen_pinned_piece, square) in queen_pinned_pieces_and_squares {
                     let pinning_queen_to_king_moves =
                         self.get_queen_moves(queen_square as u64, current_king_bitboard);
-
-                    println!("PINNED BISHOP MOVES");
-                    let pinned_bishop_moves = if bishop_pinned_piece.unwrap().is_bishop()
-                        || bishop_pinned_piece.unwrap().is_queen()
-                    {
-                        pinning_bishop_to_king_moves & bishop_moves_from_king
-                    } else {
-                        EMPTY_BITBOARD
-                    };
-                    pinned_bishop_moves.print();
-
-                    println!("PINNED ROOK MOVES");
-                    let pinned_rook_moves = if rook_pinned_piece.unwrap().is_rook()
-                        || rook_pinned_piece.unwrap().is_queen()
-                    {
-                        pinning_rook_to_king_moves & rook_moves_from_king
-                    } else {
-                        EMPTY_BITBOARD
-                    };
-                    pinned_rook_moves.print();
-
-                    println!("PINNED QUEEN MOVES");
                     let pinned_queen_moves = pinning_queen_to_king_moves & queen_moves_from_king;
-                    pinned_queen_moves.print();
-
-                    let pininfo_queen = PinInfo::new(
-                        pinned_queen_moves,
-                        queen_pinned_piece.unwrap(),
-                        Piece::Queen,
-                    );
-                    let pininfo_rook =
-                        PinInfo::new(pinned_rook_moves, rook_pinned_piece.unwrap(), Piece::Rook);
-                    let pininfo_bishop = PinInfo::new(
-                        pinned_bishop_moves,
-                        bishop_pinned_piece.unwrap(),
-                        Piece::Bishop,
-                    );
-
-                    if queen_pins != EMPTY_BITBOARD
-                        || bishop_pins != EMPTY_BITBOARD
-                        || rook_pins != EMPTY_BITBOARD
-                    {
-                        return (
-                            true,
-                            Some(pininfo_queen),
-                            Some(pininfo_rook),
-                            Some(pininfo_bishop),
-                            bishop_pins | rook_pins | queen_pins,
-                        );
+                    if let Some(q_pinned_piece) = queen_pinned_piece {
+                        queen_pins.push(PinInfo::new(
+                            pinned_queen_moves,
+                            q_pinned_piece,
+                            Piece::Queen,
+                        ));
                     }
+                }
+
+                if queen_pins_bitboard != EMPTY_BITBOARD
+                    || bishop_pins_bitboard != EMPTY_BITBOARD
+                    || rook_pins_bitboard != EMPTY_BITBOARD
+                {
+                    return (
+                        true,
+                        queen_pins,
+                        rook_pins,
+                        bishop_pins,
+                        bishop_pins_bitboard | rook_pins_bitboard | queen_pins_bitboard,
+                    );
                 }
             }
         }
 
-        return (false, None, None, None, EMPTY_BITBOARD);
+        return (false, Vec::new(), Vec::new(), Vec::new(), EMPTY_BITBOARD);
     }
 
     fn moves_to_pins_moves(
@@ -578,40 +565,39 @@ impl MoveGenerator {
         position: &Position,
         piece: Piece,
         moves: &mut BitBoard,
-        pin_infos: &[Option<PinInfo>; 3],
-        pins: &BitBoard,
+        pins: &[Vec<PinInfo>; 3],
+        pin_bitboard: &BitBoard,
     ) {
-        if let Some(q_pin) = pin_infos[0] {
-            if q_pin.pinned_piece == piece {
+        let queen_pins = &pins[0];
+        let rook_pins = &pins[1];
+        let bishop_pins = &pins[2];
+
+        for pin in queen_pins {
+            if pin.pinned_piece == piece {
                 let test_pin =
-                    *pins & position.get_piece_bitboard(Piece::Rook, position.state.turn);
+                    *pin_bitboard & position.get_piece_bitboard(piece, position.state.turn);
                 if test_pin != EMPTY_BITBOARD {
-                    println!("THIS IS PINNED");
-                    test_pin.print();
-                    *moves = EMPTY_BITBOARD | q_pin.moves;
-                }
-            }
-        }
-        if let Some(r_pin) = pin_infos[1] {
-            if r_pin.pinned_piece == piece {
-                let test_pin =
-                    *pins & position.get_piece_bitboard(Piece::Rook, position.state.turn);
-                if test_pin != EMPTY_BITBOARD {
-                    println!("THIS IS PINNED");
-                    test_pin.print();
-                    *moves = EMPTY_BITBOARD | r_pin.moves;
+                    *moves = EMPTY_BITBOARD | pin.moves;
                 }
             }
         }
 
-        if let Some(b_pin) = pin_infos[2] {
-            if b_pin.pinned_piece == piece {
+        for pin in rook_pins {
+            if pin.pinned_piece == piece {
                 let test_pin =
-                    *pins & position.get_piece_bitboard(Piece::Rook, position.state.turn);
+                    *pin_bitboard & position.get_piece_bitboard(piece, position.state.turn);
                 if test_pin != EMPTY_BITBOARD {
-                    println!("THIS IS PINNED");
-                    test_pin.print();
-                    *moves = EMPTY_BITBOARD | b_pin.moves;
+                    *moves = EMPTY_BITBOARD | pin.moves;
+                }
+            }
+        }
+
+        for pin in bishop_pins {
+            if pin.pinned_piece == piece {
+                let test_pin =
+                    *pin_bitboard & position.get_piece_bitboard(piece, position.state.turn);
+                if test_pin != EMPTY_BITBOARD {
+                    *moves = EMPTY_BITBOARD | pin.moves;
                 }
             }
         }
@@ -637,10 +623,10 @@ impl MoveGenerator {
         }
         */
 
-        let (is_pinned, queen_pin_info, rook_pin_info, bishop_pin_info, pins) =
+        let (is_pinned, queen_pins, rook_pins, bishop_pins, pin_bitboard) =
             self.find_pinned_moves(position, king_square);
 
-        let pin_infos: [Option<PinInfo>; 3] = [queen_pin_info, rook_pin_info, bishop_pin_info];
+        let pins: [Vec<PinInfo>; 3] = [queen_pins, rook_pins, bishop_pins];
 
         for square in SquareLabel::iter() {
             let piece: Option<Piece> = position.get_piece_on_square(square, side);
@@ -688,11 +674,9 @@ impl MoveGenerator {
                 if let Some(p) = piece {
                     match p {
                         Piece::Pawn => {
-                            /*
                             let mut pawn_pushes = self.pawn_pushes[side as usize][square as usize];
                             pawn_pushes = pawn_pushes & push_mask;
                             self.create_moves(position, p, side, pawn_pushes, square, &mut moves);
-                            */
                         }
                         Piece::Knight => {
                             let mut knight_moves = self.knight_moves[square as usize];
@@ -736,7 +720,19 @@ impl MoveGenerator {
                 if let Some(p) = piece {
                     match p {
                         Piece::Pawn => {
-                            let pawn_pushes = self.pawn_pushes[side as usize][square as usize];
+                            let mut pawn_pushes = self.pawn_pushes[side as usize][square as usize];
+                            let bitboard = pin_bitboard;
+
+                            if is_pinned && bitboard.get_bit(square as u64) == 1 {
+                                self.moves_to_pins_moves(
+                                    position,
+                                    p,
+                                    &mut pawn_pushes,
+                                    &pins,
+                                    &pin_bitboard,
+                                );
+                                pawn_pushes = EMPTY_BITBOARD;
+                            }
                             self.create_moves(position, p, side, pawn_pushes, square, &mut moves);
                         }
                         Piece::Knight => {
@@ -746,8 +742,8 @@ impl MoveGenerator {
                                     position,
                                     p,
                                     &mut knight_moves,
-                                    &pin_infos,
                                     &pins,
+                                    &pin_bitboard,
                                 );
                             }
                             self.create_moves(position, p, side, knight_moves, square, &mut moves);
@@ -761,8 +757,8 @@ impl MoveGenerator {
                                     position,
                                     p,
                                     &mut queen_moves,
-                                    &pin_infos,
                                     &pins,
+                                    &pin_bitboard,
                                 );
                             }
                             self.create_moves(position, p, side, queen_moves, square, &mut moves);
@@ -776,8 +772,8 @@ impl MoveGenerator {
                                     position,
                                     p,
                                     &mut rook_moves,
-                                    &pin_infos,
                                     &pins,
+                                    &pin_bitboard,
                                 );
                             }
                             self.create_moves(position, p, side, rook_moves, square, &mut moves);
@@ -790,8 +786,8 @@ impl MoveGenerator {
                                     position,
                                     p,
                                     &mut bishop_moves,
-                                    &pin_infos,
                                     &pins,
+                                    &pin_bitboard,
                                 );
                             }
                             self.create_moves(position, p, side, bishop_moves, square, &mut moves);
