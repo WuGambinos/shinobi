@@ -223,6 +223,30 @@ impl MoveGenerator {
         self.fill_pawn_attacks(side);
     }
 
+    pub fn is_square_attacked(
+        &self,
+        position: &Position,
+        side: Side,
+        square: SquareLabel,
+    ) -> BitBoard {
+        let enemy = match side {
+            Side::White => Side::Black,
+            Side::Black => Side::White,
+        };
+
+        let opponent_pawns = position.get_piece_bitboard(Piece::Pawn, enemy);
+        let opponent_knights = position.get_piece_bitboard(Piece::Knight, enemy);
+        let opponent_rooks = position.get_piece_bitboard(Piece::Rook, enemy);
+        let opponent_bishop = position.get_piece_bitboard(Piece::Bishop, enemy);
+        let opponent_queen = position.get_piece_bitboard(Piece::Queen, enemy);
+
+        return (self.get_bishop_moves(square as u64, position.main_bitboard) & opponent_bishop)
+            | (self.get_rook_moves(square as u64, position.main_bitboard) & opponent_rooks)
+            | (self.knight_moves[square as usize] & opponent_knights)
+            | (self.pawn_attacks[side as usize][square as usize] & opponent_pawns)
+            | (self.get_queen_moves(square as u64, position.main_bitboard) & opponent_queen);
+    }
+
     pub fn attacks_to_king(&self, position: &Position, side: Side) -> BitBoard {
         let king_square = match side {
             Side::White => position.white_king_square,
@@ -371,7 +395,6 @@ impl MoveGenerator {
             if bit == 1 {
                 let square = SquareLabel::from(i);
                 let piece = position.get_piece_on_square(square, position.state.turn);
-                println!("SQUARE: {:?} PIECE: {:?}", square, piece);
                 pinned_pieces.push((piece, Some(square)));
             }
             n = n >> 1;
@@ -494,7 +517,8 @@ impl MoveGenerator {
                             || b_pinned_piece.is_queen()
                             || b_pinned_piece.is_pawn()
                         {
-                            pinning_bishop_to_king_moves & bishop_moves_from_king
+                            let moves = pinning_bishop_to_king_moves & bishop_moves_from_king;
+                            moves
                         } else {
                             EMPTY_BITBOARD
                         };
@@ -618,7 +642,7 @@ impl MoveGenerator {
         self.fill_pawn_moves(position, side);
         let checkers = self.attacks_to_king(position, side);
         /*
-        if checks != EMPTY_BITBOARD {
+        if checkers != EMPTY_BITBOARD {
             println!("CHECK");
         }
         */
@@ -711,18 +735,37 @@ impl MoveGenerator {
 
                         Piece::King => {
                             let mut king_moves = self.king_moves[square as usize];
-                            king_moves = king_moves & capture_mask;
+                            let mut n = king_moves.0;
+                            let mut i = 0;
+                            while n > 0 {
+                                let bit = n & 1;
+                                if bit == 1 {
+                                    let clear_square = self.is_square_attacked(
+                                        position,
+                                        side,
+                                        SquareLabel::from(i),
+                                    );
+                                    if clear_square != EMPTY_BITBOARD {
+                                        king_moves.clear_bit(SquareLabel::from(i));
+                                    }
+                                }
+                                n = n >> 1;
+                                i += 1;
+                            }
                             self.create_moves(position, p, side, king_moves, square, &mut moves);
                         }
                     }
                 }
-            } else {
+            }
+            // Not in check
+            else {
                 if let Some(p) = piece {
                     match p {
                         Piece::Pawn => {
                             let mut pawn_pushes = self.pawn_pushes[side as usize][square as usize];
                             let bitboard = pin_bitboard;
 
+                            // Checks for pins
                             if is_pinned && bitboard.get_bit(square as u64) == 1 {
                                 self.moves_to_pins_moves(
                                     position,
@@ -731,12 +774,32 @@ impl MoveGenerator {
                                     &pins,
                                     &pin_bitboard,
                                 );
-                                pawn_pushes = EMPTY_BITBOARD;
+                                /*
+                                self.create_moves(
+                                    position,
+                                    p,
+                                    side,
+                                    pawn_pushes,
+                                    square,
+                                    &mut moves,
+                                );
+                                */
                             }
-                            self.create_moves(position, p, side, pawn_pushes, square, &mut moves);
+                            // No Pin
+                            else {
+                                self.create_moves(
+                                    position,
+                                    p,
+                                    side,
+                                    pawn_pushes,
+                                    square,
+                                    &mut moves,
+                                );
+                            }
                         }
                         Piece::Knight => {
                             let mut knight_moves = self.knight_moves[square as usize];
+                            // Pin
                             if is_pinned {
                                 self.moves_to_pins_moves(
                                     position,
@@ -752,6 +815,7 @@ impl MoveGenerator {
                         Piece::Queen => {
                             let mut queen_moves =
                                 self.get_queen_moves(square as u64, position.main_bitboard);
+                            // Pin
                             if is_pinned {
                                 self.moves_to_pins_moves(
                                     position,
@@ -767,6 +831,7 @@ impl MoveGenerator {
                         Piece::Rook => {
                             let mut rook_moves =
                                 self.get_rook_moves(square as u64, position.main_bitboard);
+                            // Pin
                             if is_pinned {
                                 self.moves_to_pins_moves(
                                     position,
@@ -781,6 +846,7 @@ impl MoveGenerator {
                         Piece::Bishop => {
                             let mut bishop_moves =
                                 self.get_bishop_moves(square as u64, position.main_bitboard);
+                            // Pin
                             if is_pinned {
                                 self.moves_to_pins_moves(
                                     position,
@@ -794,7 +860,24 @@ impl MoveGenerator {
                         }
 
                         Piece::King => {
-                            let king_moves = self.king_moves[square as usize];
+                            let mut king_moves = self.king_moves[square as usize];
+                            let mut n = king_moves.0;
+                            let mut i = 0;
+                            while n > 0 {
+                                let bit = n & 1;
+                                if bit == 1 {
+                                    let clear_square = self.is_square_attacked(
+                                        position,
+                                        side,
+                                        SquareLabel::from(i),
+                                    );
+                                    if clear_square != EMPTY_BITBOARD {
+                                        king_moves.clear_bit(SquareLabel::from(i));
+                                    }
+                                }
+                                n = n >> 1;
+                                i += 1;
+                            }
                             self.create_moves(position, p, side, king_moves, square, &mut moves);
                         }
                     }
