@@ -44,8 +44,8 @@ fn main() -> Result<(), String> {
     let castling_rights = position.state.castling_rights;
 
     let start = Instant::now();
-    let depth = 1;
-    let res = perft(&mut position.clone(), &mut move_gen, depth);
+    let depth = 4;
+    let res = perft(&mut position, &mut move_gen, depth);
     let elapsed = start.elapsed();
     println!("PERFT: {} TIME: {} US", res, elapsed.as_micros());
     println!("NPS: {:.0} ", res as f64 / elapsed.as_secs_f64());
