@@ -35,7 +35,7 @@ fn main() -> Result<(), String> {
 
     /* CHESS STUFF */
     let mut position = Position::new();
-    let grid = load_fen(PIN_POS5, &mut position.state);
+    let grid = load_fen(CHECK_POS2, &mut position.state);
     position.from_grid(grid);
     let mut move_gen = position.move_gen;
 
@@ -43,13 +43,11 @@ fn main() -> Result<(), String> {
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
 
-    /*
     let start = Instant::now();
     let depth = 2;
     let res = perft(&mut position.clone(), &mut move_gen, depth);
     let elasped = start.elapsed();
     println!("PERFT: {} TIME: {} MS", res, elasped.as_millis());
-    */
 
     /*
     let start = Instant::now();

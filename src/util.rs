@@ -144,7 +144,7 @@ pub fn drag_and_drop(
             }
         }
 
-        *moves = move_gen.generate_moves(&mut position.clone(), position.state.turn);
+        *moves = move_gen.generate_legal_moves(&mut position.clone(), position.state.turn);
 
         if let Some(selected_p) = selected_piece {
             position.piece_bitboards[position.state.turn as usize][*selected_p as usize]

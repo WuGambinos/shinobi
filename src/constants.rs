@@ -55,7 +55,3 @@ pub const TEST_POS: &str = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3
 pub const CHECK_POS: &str = "4k3/8/6n1/3Q1/8/8/8/4K3 w - - 0 1";
 pub const CHECK_POS2: &str = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ";
 pub const PIN_POS: &str = "4k3/8/8/4r3/8/4Q3/8/3K4 w - - 0 1";
-pub const PIN_POS2: &str = "4kb1R/3n4/8/1B2r3/8/4Q3/8/3K4 w - - 0 1";
-pub const PIN_POS3: &str = "4kb1R/3p4/2B5/4r3/8/4Q3/8/3K4 w - - 0 1";
-pub const PIN_POS4: &str = "R2bkb1R/3p1n2/2B3B1/8/8/8/8/3K4 w - - 0 1";
-pub const PIN_POS5: &str = "8/2p5/3p4/KP4kr/1R3p2/4B3/4P1P1/8 w - - 0 1";
