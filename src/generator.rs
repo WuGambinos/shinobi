@@ -1,6 +1,6 @@
 use crate::{
-    get_file, get_rank, init_slider_attacks, BitBoard, Move, Piece, Position, SMagic, Side,
-    SquareLabel, A_FILE, B_FILE, EMPTY_BITBOARD, F_FILE, G_FILE, H_FILE,
+    get_file, get_rank, init_slider_attacks, BitBoard, Move, MoveType, Piece, Position, SMagic,
+    Side, SquareLabel, A_FILE, B_FILE, EMPTY_BITBOARD, F_FILE, G_FILE, H_FILE,
 };
 use strum::IntoEnumIterator;
 
@@ -294,7 +294,12 @@ impl MoveGenerator {
         while n > 0 {
             let bit = n & 1;
             if bit == 1 {
-                moves.push(Move::new(piece, square, SquareLabel::from(i)));
+                moves.push(Move::new(
+                    piece,
+                    square,
+                    SquareLabel::from(i),
+                    MoveType::Quiet,
+                ));
             }
 
             n = n >> 1;
@@ -313,7 +318,7 @@ impl MoveGenerator {
         while n2 > 0 {
             let bit = n2 & 1;
             if bit == 1 {
-                let mv = Move::new(piece, square, SquareLabel::from(j));
+                let mv = Move::new(piece, square, SquareLabel::from(j), MoveType::Capture);
                 moves.push(mv);
             }
 
@@ -339,10 +344,11 @@ impl MoveGenerator {
         moves
     }
 
-    pub fn generate_moves(&mut self, position: &Position, side: Side) -> Vec<Move> {
+    pub fn generate_moves(&mut self, position: &mut Position, side: Side) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::new();
 
         self.fill_pawn_moves(position, side);
+
         for square in SquareLabel::iter() {
             let piece: Option<(Side, Piece)> = position.pieces[square as usize]; //position.get_piece_on_square(square, side);
 
@@ -353,7 +359,17 @@ impl MoveGenerator {
                 if piece_side == side {
                     match piece_type {
                         Piece::Pawn => {
+                            let en_passant = position.check_en_passant(square, side);
                             let pawn_pushes = self.pawn_pushes[side as usize][square as usize];
+                            if en_passant.is_some() {
+                                let mv = Move::new(
+                                    Piece::Pawn,
+                                    square,
+                                    position.state.en_passant_square.unwrap(),
+                                    MoveType::EnPassant,
+                                );
+                                moves.push(mv);
+                            }
                             self.create_moves(
                                 position,
                                 piece_type,

@@ -35,7 +35,7 @@ fn main() -> Result<(), String> {
 
     /* CHESS STUFF */
     let mut position = Position::new();
-    let grid = load_fen(START_POS, &mut position.state);
+    let grid = load_fen(CHECK_POS2, &mut position.state);
     position.from_grid(grid);
     let mut move_gen = position.move_gen;
 
@@ -43,20 +43,20 @@ fn main() -> Result<(), String> {
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
 
+    /*
     let start = Instant::now();
-    let depth = 4;
+    let depth = 3;
     let res = perft(&mut position, &mut move_gen, depth);
     let elapsed = start.elapsed();
     println!("PERFT: {} TIME: {} US", res, elapsed.as_micros());
     println!("NPS: {:.0} ", res as f64 / elapsed.as_secs_f64());
+    */
 
-    /*
     let start = Instant::now();
     let depth = 2;
     let res = perft_test(&mut position.clone(), &mut move_gen, depth);
     let elasped = start.elapsed();
     //println!("PERFT: {} TIME: {} US", res, elasped.as_micros());
-    */
 
     let mut moves: Vec<Move> = Vec::new();
     let mut state = MouseState::from_sdl_state(0);
@@ -75,6 +75,18 @@ fn main() -> Result<(), String> {
                 } => {
                     position = Position::new();
                     position.from_grid(grid);
+                }
+
+                Event::KeyDown {
+                    keycode: Some(Keycode::A),
+                    ..
+                } => {
+                    println!("MAIN BITBOARD");
+                    position.main_bitboard.print();
+
+                    let checks = move_gen.attacks_to_king(&position, position.state.turn);
+                    println!("ATTACKS ON KING");
+                    checks.print();
                 }
                 _ => {}
             }

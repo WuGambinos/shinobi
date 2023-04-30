@@ -9,6 +9,7 @@ use crate::IntoEnumIterator;
 use crate::LoadTexture;
 use crate::Move;
 use crate::MoveGenerator;
+use crate::MoveType;
 use crate::Piece;
 use crate::Position;
 use crate::Rect;
@@ -163,7 +164,12 @@ pub fn drag_and_drop(
         if selected_piece.is_some() {
             let old_turn: Side = position.state.turn;
             let mut old_position: Position = position.clone();
-            let mv: Move = Move::new(selected_piece.unwrap(), from_square.unwrap(), target_square);
+            let mv: Move = Move::new(
+                selected_piece.unwrap(),
+                from_square.unwrap(),
+                target_square,
+                MoveType::Quiet,
+            );
             position.make_move(mv);
 
             handle_movement(
@@ -404,6 +410,21 @@ pub fn square_name(square: u8) -> String {
     format!("{file}{rank}")
 }
 
+pub fn adjacent_files(square: SquareLabel) -> u64 {
+    let file = square as u64 % 8;
+
+    match file {
+        0 => B_FILE,
+        1 => A_FILE | C_FILE,
+        2 => B_FILE | D_FILE,
+        3 => C_FILE | E_FILE,
+        4 => D_FILE | F_FILE,
+        5 => E_FILE | G_FILE,
+        6 => F_FILE | H_FILE,
+        7 => G_FILE,
+        _ => panic!("NOT A FILE"),
+    }
+}
 pub fn get_file(square: SquareLabel) -> u64 {
     let file = square as u64 % 8;
 
