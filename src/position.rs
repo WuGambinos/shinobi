@@ -108,6 +108,7 @@ impl std::fmt::Display for Move {
 
 #[derive(Debug, Clone)]
 pub struct History {
+    pub prev_pieces: Vec<[Option<(Side, Piece)>; 64]>,
     pub prev_main_bitboards: Vec<BitBoard>,
     pub prev_empty_bitboards: Vec<BitBoard>,
     pub prev_side_bitboards: Vec<[BitBoard; 2]>,
@@ -120,6 +121,7 @@ pub struct History {
 impl History {
     fn new() -> History {
         History {
+            prev_pieces: Vec::new(),
             prev_main_bitboards: Vec::new(),
             prev_empty_bitboards: Vec::new(),
             prev_side_bitboards: Vec::new(),
@@ -133,6 +135,7 @@ impl History {
 
 #[derive(Debug, Clone)]
 pub struct Position {
+    pub pieces: [Option<(Side, Piece)>; 64],
     // BitBoard that shows combined states of white and black bitboards
     pub main_bitboard: BitBoard,
 
@@ -159,6 +162,7 @@ pub struct Position {
 impl Position {
     pub fn new() -> Position {
         Position {
+            pieces: [None; 64],
             main_bitboard: EMPTY_BITBOARD,
             empty_bitboard: EMPTY_BITBOARD,
             side_bitboards: [EMPTY_BITBOARD; 2],
@@ -207,10 +211,12 @@ impl Position {
                     self.side_bitboards[Side::White as usize] |= mask;
                     self.piece_bitboards[Side::White as usize][piece] |= mask;
                     self.main_bitboard |= mask;
+                    self.pieces[i] = Some((Side::White, Piece::from(*ch)));
                 } else if ch.is_lowercase() {
                     self.side_bitboards[Side::Black as usize] |= mask;
                     self.piece_bitboards[Side::Black as usize][piece] |= mask;
                     self.main_bitboard |= mask;
+                    self.pieces[i] = Some((Side::Black, Piece::from(*ch)));
                 } else {
                     self.empty_bitboard |= mask;
                 }
@@ -253,6 +259,7 @@ impl Position {
                 }
             }
 
+            self.history.prev_pieces.push(self.pieces);
             self.history.prev_main_bitboards.push(self.main_bitboard);
             self.history.prev_empty_bitboards.push(self.empty_bitboard);
             self.history.prev_piece_bitboards.push(self.piece_bitboards);
@@ -284,6 +291,10 @@ impl Position {
 
                     // Update empty bitboard
                     self.empty_bitboard = !self.main_bitboard;
+
+                    // Update pieces
+                    self.pieces[mv.target_square() as usize] = Some((self.state.turn, mv.piece));
+                    self.pieces[mv.from_square as usize] = None;
                 } else {
                     // Update piece bitboard
                     self.piece_bitboards[self.state.turn as usize][mv.piece as usize] ^=
@@ -297,6 +308,10 @@ impl Position {
 
                     // Update empty bitboard
                     self.empty_bitboard = !self.main_bitboard;
+
+                    // Update pieces
+                    self.pieces[mv.target_square() as usize] = Some((self.state.turn, mv.piece));
+                    self.pieces[mv.from_square as usize] = None;
                 }
 
                 self.state.change_turn();
@@ -310,6 +325,7 @@ impl Position {
         self.empty_bitboard = self.history.prev_empty_bitboards.pop().unwrap();
         self.side_bitboards = self.history.prev_side_bitboards.pop().unwrap();
         self.piece_bitboards = self.history.prev_piece_bitboards.pop().unwrap();
+        self.pieces = self.history.prev_pieces.pop().unwrap();
 
         if let Some(w_square) = self.history.prev_white_king_square {
             self.white_king_square = w_square;
@@ -325,6 +341,25 @@ impl Position {
 
     pub fn set_bit_on_piece_bitboard(&mut self, piece: Piece, side: Side, square: SquareLabel) {
         self.piece_bitboards[side as usize][piece as usize].set_bit(square);
+    }
+
+    pub fn print_pieces(&self) {
+        for rank in (0..8).rev() {
+            for file in 0..8 {
+                let pos = rank * 8 + file;
+                let piece = self.pieces[pos];
+
+                if let Some(p) = piece {
+                    let side = p.0;
+                    let piece_type = p.1;
+                    let c = piece_type.to_char(side);
+                    print!("{} ", c);
+                } else {
+                    print!(". ");
+                }
+            }
+            println!();
+        }
     }
 
     pub fn print_black_piece_bitboards(&self) {

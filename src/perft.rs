@@ -2,7 +2,7 @@ use crate::{MoveGenerator, Position, EMPTY_BITBOARD};
 
 pub fn perft(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) -> u32 {
     let mut num_positions: u32 = 0;
-    let moves = move_generator.generate_legal_moves(position, position.state.turn);
+    let moves = move_generator.generate_moves(position, position.state.turn);
 
     if depth == 1 {
         return moves.len() as u32;

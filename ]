@@ -43,12 +43,20 @@ fn main() -> Result<(), String> {
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
 
+    /*
     let start = Instant::now();
     let depth = 1;
     let res = perft(&mut position.clone(), &mut move_gen, depth);
     let elapsed = start.elapsed();
     println!("PERFT: {} TIME: {} US", res, elapsed.as_micros());
     println!("NPS: {:.0} ", res as f64 / elapsed.as_secs_f64());
+    */
+    let moves = move_gen.generate_moves(&mut position.clone(), position.state.turn);
+    println!("MOVES LENGTH: {}", moves.len());
+
+    for mv in moves {
+        println!("MOVES: {}", mv);
+    }
 
     /*
     let start = Instant::now();

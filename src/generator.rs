@@ -344,38 +344,76 @@ impl MoveGenerator {
 
         self.fill_pawn_moves(position, side);
         for square in SquareLabel::iter() {
-            let piece: Option<Piece> = position.get_piece_on_square(square, side);
+            let piece: Option<(Side, Piece)> = position.pieces[square as usize]; //position.get_piece_on_square(square, side);
 
             if let Some(p) = piece {
-                match p {
-                    Piece::Pawn => {
-                        let pawn_pushes = self.pawn_pushes[side as usize][square as usize];
-                        self.create_moves(position, p, side, pawn_pushes, square, &mut moves);
-                    }
-                    Piece::Knight => {
-                        let knight_moves = self.knight_moves[square as usize];
-                        self.create_moves(position, p, side, knight_moves, square, &mut moves);
-                    }
+                let piece_type = p.1;
+                let piece_side = p.0;
 
-                    Piece::Queen => {
-                        let queen_moves =
-                            self.get_queen_moves(square as u64, position.main_bitboard);
-                        self.create_moves(position, p, side, queen_moves, square, &mut moves);
-                    }
+                if piece_side == side {
+                    match piece_type {
+                        Piece::Pawn => {
+                            let pawn_pushes = self.pawn_pushes[side as usize][square as usize];
+                            self.create_moves(
+                                position,
+                                piece_type,
+                                side,
+                                pawn_pushes,
+                                square,
+                                &mut moves,
+                            );
+                        }
+                        Piece::Knight => {
+                            let knight_moves = self.knight_moves[square as usize];
+                            self.create_moves(
+                                position,
+                                piece_type,
+                                side,
+                                knight_moves,
+                                square,
+                                &mut moves,
+                            );
+                        }
 
-                    Piece::Rook => {
-                        let rook_moves = self.get_rook_moves(square as u64, position.main_bitboard);
-                        self.create_moves(position, p, side, rook_moves, square, &mut moves);
-                    }
-                    Piece::Bishop => {
-                        let bishop_moves =
-                            self.get_bishop_moves(square as u64, position.main_bitboard);
-                        self.create_moves(position, p, side, bishop_moves, square, &mut moves);
-                    }
+                        Piece::Queen => {
+                            let queen_moves =
+                                self.get_queen_moves(square as u64, position.main_bitboard);
+                            self.create_moves(
+                                position,
+                                piece_type,
+                                side,
+                                queen_moves,
+                                square,
+                                &mut moves,
+                            );
+                        }
 
-                    Piece::King => {
-                        let king_moves = self.king_moves[square as usize];
-                        self.create_moves(position, p, side, king_moves, square, &mut moves);
+                        Piece::Rook => {
+                            let rook_moves =
+                                self.get_rook_moves(square as u64, position.main_bitboard);
+                            self.create_moves(
+                                position, piece_type, side, rook_moves, square, &mut moves,
+                            );
+                        }
+                        Piece::Bishop => {
+                            let bishop_moves =
+                                self.get_bishop_moves(square as u64, position.main_bitboard);
+                            self.create_moves(
+                                position,
+                                piece_type,
+                                side,
+                                bishop_moves,
+                                square,
+                                &mut moves,
+                            );
+                        }
+
+                        Piece::King => {
+                            let king_moves = self.king_moves[square as usize];
+                            self.create_moves(
+                                position, piece_type, side, king_moves, square, &mut moves,
+                            );
+                        }
                     }
                 }
             }

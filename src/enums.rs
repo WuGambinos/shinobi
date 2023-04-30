@@ -44,6 +44,42 @@ impl Piece {
     pub fn is_slider(self) -> bool {
         self.is_rook() || self.is_queen() || self.is_bishop()
     }
+
+    pub fn to_char(self, side: Side) -> char {
+        if side == Side::White {
+            match self {
+                Piece::King => 'K',
+                Piece::Rook => 'R',
+                Piece::Queen => 'Q',
+                Piece::Bishop => 'B',
+                Piece::Knight => 'N',
+                Piece::Pawn => 'P',
+            }
+        } else {
+            match self {
+                Piece::King => 'k',
+                Piece::Rook => 'r',
+                Piece::Queen => 'q',
+                Piece::Bishop => 'b',
+                Piece::Knight => 'n',
+                Piece::Pawn => 'p',
+            }
+        }
+    }
+}
+
+impl From<char> for Piece {
+    fn from(value: char) -> Piece {
+        match value {
+            'k' | 'K' => Piece::King,
+            'p' | 'P' => Piece::Pawn,
+            'r' | 'R' => Piece::Rook,
+            'q' | 'Q' => Piece::Queen,
+            'b' | 'B' => Piece::Bishop,
+            'n' | 'N' => Piece::Knight,
+            _ => panic!("NOT A PIECE"),
+        }
+    }
 }
 
 #[rustfmt::skip]
