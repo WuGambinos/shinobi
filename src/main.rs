@@ -42,9 +42,10 @@ fn main() -> Result<(), String> {
     let mut piece: Option<Piece> = None;
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
+
     /*
     let start = Instant::now();
-    let depth = 3;
+    let depth = 4;
     let res = perft(&mut position, &mut move_gen, depth);
     let elapsed = start.elapsed();
     println!("PERFT: {} TIME: {} US", res, elapsed.as_micros());

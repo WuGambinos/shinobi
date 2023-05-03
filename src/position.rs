@@ -252,22 +252,10 @@ impl Position {
         }
     }
 
-    pub fn get_king_square(&self, side: Side) -> Option<SquareLabel> {
+    pub fn get_king_square(&self, side: Side) -> SquareLabel {
         let king_bitboard: BitBoard = self.get_piece_bitboard(Piece::King, side);
-        let mut n = king_bitboard.0;
 
-        let mut i = 0;
-        while n > 0 {
-            let bit = n & 1;
-
-            if bit == 1 {
-                return Some(SquareLabel::from(i));
-            }
-
-            n = n >> 1;
-            i += 1;
-        }
-        None
+        return king_bitboard.bitscan_forward();
     }
 
     pub fn get_piece_on_square(&self, square: SquareLabel, side: Side) -> Option<Piece> {
@@ -482,8 +470,8 @@ impl Position {
             self.last_move = None;
         }
 
-        self.white_king_square = self.get_king_square(Side::White).unwrap();
-        self.black_king_square = self.get_king_square(Side::Black).unwrap();
+        self.white_king_square = self.get_king_square(Side::White);
+        self.black_king_square = self.get_king_square(Side::Black);
 
         // Revert State
         self.state = self.history.prev_states.pop().unwrap();
