@@ -222,6 +222,19 @@ impl MoveGenerator {
         let opponent_bishop = position.get_piece_bitboard(Piece::Bishop, enemy);
         let opponent_queen = position.get_piece_bitboard(Piece::Queen, enemy);
 
+        /*
+        println!("OPPONENT ROOKS");
+        opponent_rooks.print();
+
+        let rook_attacks = self.get_rook_moves(king_square as u64, position.main_bitboard);
+        println!("ROOK ATTACKS");
+        rook_attacks.print();
+
+        let result = opponent_rooks & rook_attacks;
+        println!("RESULT");
+        result.print();
+        */
+
         return (self.get_bishop_moves(king_square as u64, position.main_bitboard)
             & opponent_bishop)
             | (self.get_rook_moves(king_square as u64, position.main_bitboard) & opponent_rooks)
