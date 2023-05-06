@@ -40,7 +40,7 @@ pub fn perft_driver(position: &mut Position, move_generator: &mut MoveGenerator,
 }
 
 pub fn perft_test(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) {
-    println!(" PERFORMANCE TEST");
+    //println!(" PERFORMANCE TEST");
 
     let moves = move_generator.generate_legal_moves(position, position.state.turn);
 
@@ -55,12 +55,14 @@ pub fn perft_test(position: &mut Position, move_generator: &mut MoveGenerator, d
 
             position.unmake();
 
-            println!("{}: {}", mv, old_nodes);
+            println!("{} {}", mv, old_nodes);
         }
     }
 
-    println!("DEPTH: {}", depth);
+    //println!("DEPTH: {}", depth);
     unsafe {
-        println!("NODES: {}", NODES);
+        println!();
+        println!("{}", NODES);
+        //println!("NODES: {}", NODES);
     }
 }

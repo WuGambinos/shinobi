@@ -373,6 +373,7 @@ impl Position {
                 // Update pieces
                 self.pieces[mv.target_square() as usize] = Some((self.state.turn, mv.piece));
                 self.pieces[mv.from_square as usize] = None;
+                self.pieces[mv.target_square() as usize - 8] = None;
 
                 let mut test_board = EMPTY_BITBOARD;
                 test_board.set_bit(mv.target_square());

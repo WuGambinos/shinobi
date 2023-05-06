@@ -369,11 +369,18 @@ pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
 
     let fen_board: Vec<&str> = fen.split(' ').collect();
     let main_string: &str = fen_board[0];
+    let turn: &str = fen_board[1];
     let castle_rights = fen_board[2];
 
     let split_main: Vec<&str> = main_string.split('/').collect();
 
     let mut res: [char; 64] = ['.'; 64];
+
+    if turn == "b" {
+        state.turn = Side::Black;
+    } else if turn == "w" {
+        state.turn = Side::White;
+    }
 
     for s in split_main {
         for c in s.chars() {

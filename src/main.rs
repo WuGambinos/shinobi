@@ -35,13 +35,30 @@ fn main() -> Result<(), String> {
 
     /* CHESS STUFF */
     let mut position = Position::new();
-    let grid = load_fen(CHECK_POS2, &mut position.state);
+    let grid = load_fen(START_POS, &mut position.state);
     position.from_grid(grid);
     let mut move_gen = position.move_gen;
 
     let mut piece: Option<Piece> = None;
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
+
+    /*
+    println!("MAIN BITBOARD");
+    position.main_bitboard.print();
+
+    println!("WHITE BITBOARD");
+    position.side_bitboards[Side::White as usize].print();
+
+    println!("WHITE PAWN BITBOARD");
+    position.get_piece_bitboard(Piece::Pawn, Side::White).print();
+
+    println!("BLACK BITBOARD");
+    position.side_bitboards[Side::Black as usize].print();
+
+    println!("BLACK PAWN BITBOARD");
+    position.get_piece_bitboard(Piece::Pawn, Side::Black).print();
+    */
 
     /*
     let start = Instant::now();
@@ -53,7 +70,7 @@ fn main() -> Result<(), String> {
     */
 
     let start = Instant::now();
-    let depth = 4;
+    let depth = 6;
     let res = perft_test(&mut position.clone(), &mut move_gen, depth);
     let elasped = start.elapsed();
     //println!("PERFT: {} TIME: {} US", res, elasped.as_micros());
