@@ -1,9 +1,11 @@
 use shinobi::load_fen;
 use shinobi::perft;
+use shinobi::perft::perft;
 use shinobi::perft::perft_test;
 use shinobi::MoveGenerator;
 use shinobi::Position;
 use std::env;
+use std::time::Instant;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -33,6 +35,13 @@ fn main() {
     let grid = load_fen(fen, &mut position.state);
     position.from_grid(grid);
     let mut move_gen = MoveGenerator::new();
+
+    let start = Instant::now();
+    let depth = 4;
+    let res = perft(&mut position, &mut move_gen, depth);
+    let elapsed = start.elapsed();
+    println!("PERFT: {} TIME: {} US", res, elapsed.as_micros());
+    println!("NPS: {:.0} ", res as f64 / elapsed.as_secs_f64());
 
     perft_test(&mut position, &mut move_gen, d);
 }
