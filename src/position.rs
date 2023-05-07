@@ -10,6 +10,10 @@ use crate::Piece;
 use crate::Side;
 use crate::SquareLabel;
 use crate::EMPTY_BITBOARD;
+use crate::FIRST_RANK;
+use crate::ROOK_BITS;
+use crate::WHITE_KINGSIDE_SQUARE;
+use crate::WHITE_QUEENSIDE_SQUARE;
 use strum::IntoEnumIterator;
 
 pub struct Castling(u8);
@@ -84,6 +88,7 @@ pub enum MoveType {
     EnPassant,
     Quiet,
     Capture,
+    Castle,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -357,6 +362,69 @@ impl Position {
         None
     }
 
+    pub fn castle(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {
+        let from_to_bitboard = from_bitboard ^ to_bitboard;
+
+        // Update king bitboard
+        self.piece_bitboards[self.state.turn as usize][mv.piece as usize] ^= from_to_bitboard;
+
+        // Update rook bitboard
+        let mut old_rook_board = self.piece_bitboard(Piece::Rook, self.state.turn);
+
+        if self.state.turn == Side::White {
+            // Queenside castle
+            if mv.target_square() == WHITE_QUEENSIDE_SQUARE {
+                // Queen side squares
+                let queen_side = BitBoard((1 << mv.from_square() as usize) - 1);
+                old_rook_board = old_rook_board & queen_side;
+
+                let mut new_rook_board = EMPTY_BITBOARD;
+                new_rook_board.set_bit(SquareLabel::D1);
+
+                let rook_to = old_rook_board ^ new_rook_board;
+
+                // Move rook
+                self.piece_bitboards[self.state.turn as usize][Piece::Rook as usize] ^= rook_to;
+
+                // Update white or black bitboard
+                self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard ^ rook_to;
+
+                // Update main_bitboard
+                self.main_bitboard ^= from_to_bitboard ^ rook_to;
+
+                // Update empty bitboard
+                self.empty_bitboard = !self.main_bitboard;
+
+                // Update piece array board
+                self.pieces[mv.target_square() as usize] = Some((self.state.turn, mv.piece));
+                self.pieces[mv.from_square as usize] = None;
+                self.pieces[SquareLabel::D1 as usize] = Some((self.state.turn, Piece::Rook));
+                self.pieces[SquareLabel::A1 as usize] = None;
+            }
+
+            // Kingside castle
+            if mv.target_square() == WHITE_KINGSIDE_SQUARE {
+                // King side squares
+                let king_side = BitBoard(!1 << mv.from_square() as usize) & FIRST_RANK;
+                old_rook_board = old_rook_board & king_side;
+            }
+        }
+
+        // Update history
+        self.history.moves.push(mv);
+
+        // Update last move
+        self.last_move = Some(mv);
+
+        // Change turn
+        self.state.change_turn();
+    }
+
+    pub fn en_passant() {}
+
+    pub fn capture() {}
+    pub fn quiet() {}
+
     /// Makes move on bitboards if valid
     pub fn make_move(&mut self, mv: Move) {
         let from_bitboard: BitBoard = BitBoard(1) << (mv.from_square as usize);
@@ -367,15 +435,26 @@ impl Position {
         if mv.from_square != mv.target_square
             && self.side_bitboards[self.state.turn as usize].get_bit(mv.target_square as u64) == 0
         {
+            // King move
             if mv.piece == Piece::King {
                 match self.state.turn {
                     Side::White => {
                         self.history.prev_white_king_square = Some(self.white_king_square);
                         self.white_king_square = mv.target_square;
+
+                        // Disable white caslting
+                        self.state.castling_rights = CastlingRights(
+                            self.state.castling_rights.0 & !Castling::WHITE_CASTLING,
+                        );
                     }
                     Side::Black => {
                         self.history.prev_black_king_square = Some(self.black_king_square);
                         self.black_king_square = mv.target_square;
+
+                        //Disable black castling
+                        self.state.castling_rights = CastlingRights(
+                            self.state.castling_rights.0 & !Castling::BLACK_CASTLING,
+                        );
                     }
                 }
             }
@@ -388,8 +467,12 @@ impl Position {
             self.history.prev_side_bitboards.push(self.side_bitboards);
             self.history.prev_states.push(self.state);
 
+            // Castle
+            if mv.move_type == MoveType::Castle {
+                self.castle(mv, from_bitboard, to_bitboard);
+            }
             // En passant
-            if mv.move_type == MoveType::EnPassant {
+            else if mv.move_type == MoveType::EnPassant {
                 // Update piece bitboard
                 self.piece_bitboards[self.state.turn as usize][mv.piece as usize] ^=
                     from_to_bitboard;

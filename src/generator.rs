@@ -1,6 +1,7 @@
 use crate::{
-    get_file, get_rank, init_slider_attacks, BitBoard, Move, MoveType, Piece, Position, SMagic,
-    Side, SquareLabel, A_FILE, B_FILE, EMPTY_BITBOARD, F_FILE, G_FILE, H_FILE,
+    get_file, get_rank, init_slider_attacks, BitBoard, Castling, CastlingRights, Move, MoveType,
+    Piece, Position, SMagic, Side, SquareLabel, A_FILE, B_FILE, EMPTY_BITBOARD, F_FILE, G_FILE,
+    H_FILE,
 };
 use strum::IntoEnumIterator;
 
@@ -426,6 +427,35 @@ impl MoveGenerator {
 
                         Piece::King => {
                             let king_moves = self.king_moves[square as usize];
+                            if side == Side::White {
+
+                                if position.state.castling_rights.0 & Castling::WHITE_CASTLING != 0
+                                {
+                                    if position.pieces[SquareLabel::G1 as usize].is_none() {
+                                        let king_side: Move = Move::new(
+                                            piece_type,
+                                            square,
+                                            SquareLabel::G1,
+                                            MoveType::Castle,
+                                        );
+                                        moves.push(king_side);
+                                    }
+
+                                    if position.pieces[SquareLabel::C1 as usize].is_none() {
+                                        let queen_side: Move = Move::new(
+                                            piece_type,
+                                            square,
+                                            SquareLabel::C1,
+                                            MoveType::Castle,
+                                        );
+                                        moves.push(queen_side);
+                                    }
+                                }
+                            } else {
+                                if position.state.castling_rights.0 & Castling::BLACK_CASTLING != 0
+                                {
+                                }
+                            }
                             self.create_moves(
                                 position, piece_type, side, king_moves, square, &mut moves,
                             );

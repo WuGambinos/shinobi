@@ -1,6 +1,6 @@
 use sdl2::*;
 
-use crate::BitBoard;
+use crate::{BitBoard, SquareLabel};
 
 pub const NUM_SQUARES: u8 = 64;
 pub const SQUARE_SIZE: i32 = 60;
@@ -57,3 +57,10 @@ pub const CHECK_POS: &str = "4k3/8/6n1/3Q1/8/8/8/4K3 w - - 0 1";
 pub const CHECK_POS2: &str = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ";
 pub const CHECK_POS3: &str = "8/2p5/3p4/KP5r/1R2Pp1k/8/6P1/8 b - - 0 1";
 pub const PIN_POS: &str = "4k3/8/8/4r3/8/4Q3/8/3K4 w - - 0 1";
+pub const CASTLE_POS: &str = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1";
+
+pub const WHITE_KINGSIDE_SQUARE: SquareLabel = SquareLabel::G1;
+pub const WHITE_QUEENSIDE_SQUARE: SquareLabel = SquareLabel::C1;
+
+pub const BLACK_KINGSIDE_SQUARE: SquareLabel = SquareLabel::G8;
+pub const BLACK_QUEENSIDE_SQUARE: SquareLabel = SquareLabel::C8;

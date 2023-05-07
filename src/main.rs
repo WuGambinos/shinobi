@@ -31,7 +31,7 @@ fn main() -> Result<(), String> {
 
     /* CHESS STUFF */
     let mut position = Position::new();
-    let grid = load_fen(START_POS, &mut position.state);
+    let grid = load_fen(CASTLE_POS, &mut position.state);
     position.from_grid(grid);
     let mut move_gen = position.move_gen;
 
@@ -68,12 +68,11 @@ fn main() -> Result<(), String> {
                     println!("WHITE BITBOARD");
                     position.print_white_bitboard();
 
-                    println!("WHITE PAWNS");
-                    position.piece_bitboard(Piece::Pawn, Side::White).print();
+                    println!("ROOK BITBOARD");
+                    position.piece_bitboard(Piece::Rook, Side::White).print();
 
-                    println!("BLACK BITBOARD");
-                    position.print_black_bitboard();
-
+                    println!("PIECES");
+                    position.print_pieces();
                 }
                 _ => {}
             }
