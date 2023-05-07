@@ -65,11 +65,15 @@ fn main() -> Result<(), String> {
                     println!("MAIN BITBOARD");
                     position.main_bitboard.print();
 
-                    println!("WHITE KING SQUARE: {:?}", position.white_king_square);
+                    println!("WHITE BITBOARD");
+                    position.print_white_bitboard();
 
-                    let checks = move_gen.attacks_to_king(&position, position.state.turn);
-                    println!("ATTACKS ON KING");
-                    checks.print();
+                    println!("WHITE PAWNS");
+                    position.piece_bitboard(Piece::Pawn, Side::White).print();
+
+                    println!("BLACK BITBOARD");
+                    position.print_black_bitboard();
+
                 }
                 _ => {}
             }

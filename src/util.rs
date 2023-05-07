@@ -164,6 +164,8 @@ pub fn drag_and_drop(
         if selected_piece.is_some() {
             let old_turn: Side = position.state.turn;
             let mut old_position: Position = position.clone();
+
+            /*
             let mv: Move = Move::new(
                 selected_piece.unwrap(),
                 from_square.unwrap(),
@@ -171,7 +173,6 @@ pub fn drag_and_drop(
                 MoveType::Quiet,
             );
             position.make_move(mv);
-
             handle_movement(
                 &mut old_position,
                 position,
@@ -180,6 +181,33 @@ pub fn drag_and_drop(
                 target_square,
                 old_turn,
             );
+            */
+
+            let mut valid = false;
+            for mv in moves.iter() {
+                if mv.piece == selected_piece.unwrap()
+                    && from_square.unwrap() == mv.from_square
+                    && mv.target_square == target_square
+                {
+                    position.make_move(*mv);
+                    handle_movement(
+                        &mut old_position,
+                        position,
+                        selected_piece,
+                        from_square,
+                        target_square,
+                        old_turn,
+                    );
+                    valid = true;
+                }
+            }
+
+            // Undo visual move
+            if !valid {
+                position.piece_bitboards[position.state.turn as usize]
+                    [selected_piece.unwrap() as usize]
+                    .set_bit(from_square.unwrap());
+            }
         }
         *selected_piece = None;
         *old_state = MouseState::from_sdl_state(0);
@@ -327,7 +355,6 @@ pub fn handle_movement(
     target_square: SquareLabel,
     turn: Side,
 ) {
-
     let bit = old_position.side_bitboards[turn as usize].get_bit(target_square as u64);
     if from_square.unwrap() != target_square && bit == 0 {
         position.piece_bitboards[turn as usize][selected_piece.unwrap() as usize]
