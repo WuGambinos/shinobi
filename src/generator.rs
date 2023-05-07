@@ -216,11 +216,11 @@ impl MoveGenerator {
             Side::Black => Side::White,
         };
 
-        let opponent_pawns = position.get_piece_bitboard(Piece::Pawn, enemy);
-        let opponent_knights = position.get_piece_bitboard(Piece::Knight, enemy);
-        let opponent_rooks = position.get_piece_bitboard(Piece::Rook, enemy);
-        let opponent_bishop = position.get_piece_bitboard(Piece::Bishop, enemy);
-        let opponent_queen = position.get_piece_bitboard(Piece::Queen, enemy);
+        let opponent_pawns = position.piece_bitboard(Piece::Pawn, enemy);
+        let opponent_knights = position.piece_bitboard(Piece::Knight, enemy);
+        let opponent_rooks = position.piece_bitboard(Piece::Rook, enemy);
+        let opponent_bishop = position.piece_bitboard(Piece::Bishop, enemy);
+        let opponent_queen = position.piece_bitboard(Piece::Queen, enemy);
 
         /*
         println!("OPPONENT ROOKS");
@@ -322,9 +322,9 @@ impl MoveGenerator {
         let mut j = 0;
 
         let mut n2: u64 = if piece == Piece::Pawn {
-            (self.pawn_attacks[side as usize][square as usize] & (position.enemy_bitboard())).0
+            (self.pawn_attacks[side as usize][square as usize] & (position.opponent_bitboard())).0
         } else {
-            (piece_moves & (position.enemy_bitboard())).0
+            (piece_moves & (position.opponent_bitboard())).0
         };
 
         // Captures

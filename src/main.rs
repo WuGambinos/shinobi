@@ -95,31 +95,3 @@ fn main() -> Result<(), String> {
 
     Ok(())
 }
-
-fn debug(position: &Position) {
-    println!("MAIN BITBOARD");
-    position.print_bitboard(position.main_bitboard);
-
-    println!("WHITE BITBOARD");
-    println!();
-    position.print_white_bitboard();
-
-    let white_pieces = position.piece_bitboards[Side::White as usize];
-
-    for piece in Piece::iter() {
-        println!("PIECE: {:?}", piece);
-        println!();
-        white_pieces[piece as usize].print();
-    }
-    let black_pieces = position.piece_bitboards[Side::Black as usize];
-
-    println!("BLACK BITBOARD");
-    println!();
-    position.print_black_bitboard();
-
-    for piece in Piece::iter() {
-        println!("PIECE: {:?}", piece);
-        println!();
-        black_pieces[piece as usize].print();
-    }
-}
