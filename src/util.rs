@@ -241,7 +241,7 @@ pub fn draw_white_pieces(
     pieces: &Vec<PathBuf>,
     position: &Position,
 ) -> Result<(), String> {
-    let black_bitboards = position.piece_bitboards[Side::White as usize];
+    let white_bitboards = position.piece_bitboards[Side::White as usize];
     let mut j = 0;
 
     for piece in Piece::iter() {
@@ -262,7 +262,7 @@ pub fn draw_white_pieces(
             let x = (file) * (SQUARE_SIZE as i32);
             let y = (7 - rank) * (SQUARE_SIZE as i32);
 
-            let pos = ((black_bitboards[piece as usize]) >> (j as usize)) & BitBoard(1);
+            let pos = ((white_bitboards[piece as usize]) >> (j as usize)) & BitBoard(1);
 
             if pos.0 == 1 {
                 let square: Rect = Rect::new(x, y, 60, 60);
@@ -327,22 +327,6 @@ pub fn handle_movement(
     target_square: SquareLabel,
     turn: Side,
 ) {
-    /*
-    println!("MAIN BITBOARD");
-    println!();
-    position.main_bitboard.print();
-
-    println!();
-    println!("{:?} BITBOARD", turn);
-    println!();
-    position.side_bitboards[turn as usize].print();
-
-    println!();
-    println!("{:?} PIECE BITBOARD", turn);
-    println!();
-
-    println!("SELECTED PIECE: {:?}", selected_piece);
-    */
 
     let bit = old_position.side_bitboards[turn as usize].get_bit(target_square as u64);
     if from_square.unwrap() != target_square && bit == 0 {
@@ -351,7 +335,6 @@ pub fn handle_movement(
     } else {
         position.set_bit_on_piece_bitboard(selected_piece.unwrap(), turn, from_square.unwrap());
     }
-    //position.piece_bitboards[turn as usize][selected_piece.unwrap() as usize].print();
 }
 
 pub fn print_board(position: [char; 64]) {

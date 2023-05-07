@@ -1,6 +1,4 @@
-use std::time::Instant;
-
-use crate::{MoveGenerator, Position, EMPTY_BITBOARD};
+use crate::{MoveGenerator, Position};
 
 pub fn perft(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) -> u32 {
     let mut num_positions: u32 = 0;
