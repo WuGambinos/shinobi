@@ -8,11 +8,8 @@ use crate::BitBoard;
 use crate::MoveGenerator;
 use crate::Piece;
 use crate::Side;
-use crate::Square;
 use crate::SquareLabel;
 use crate::EMPTY_BITBOARD;
-use crate::E_FILE;
-use crate::FIFTH_RANK;
 use strum::IntoEnumIterator;
 
 pub struct Castling(u8);
@@ -144,7 +141,6 @@ impl std::fmt::Display for Move {
     }
 }
 
-/// History
 #[derive(Debug, Clone)]
 pub struct History {
     /// Vec of previous moves
@@ -189,6 +185,9 @@ impl History {
     }
 }
 
+/// Struct that contains all the bitboards, move generator, state, history, current king_squares,
+///
+/// and last move.
 #[derive(Debug, Clone)]
 pub struct Position {
     /// Piece array board
@@ -296,6 +295,7 @@ impl Position {
         return king_bitboard.bitscan_forward();
     }
 
+    // Return Some piece on spefic square is there is one , None otherwise
     pub fn piece_on_square(&self, square: SquareLabel, side: Side) -> Option<Piece> {
         let pieces = self.piece_bitboards[side as usize];
 
@@ -315,6 +315,7 @@ impl Position {
         side: Side,
     ) -> Option<BitBoard> {
         if let Some(last_m) = self.last_move {
+            // Last move was double pawn push
             if last_m.is_double_pawn_push() {
                 let last_move_rank = get_rank(last_m.target_square());
                 let last_move_file = get_file(last_m.target_square());
@@ -323,25 +324,27 @@ impl Position {
                 let current_from_square_file = get_file(current_from_square);
 
                 if last_move_rank == current_from_square_rank {
-                    let adjacent_files = BitBoard(adjacent_files(last_m.target_square()));
-                    let exist: BitBoard = adjacent_files & BitBoard(current_from_square_file);
+                    let adjacent_files = adjacent_files(last_m.target_square());
+                    let exist: BitBoard = adjacent_files & current_from_square_file;
 
+                    // Check if there is a piece on adjacent file
                     if exist != EMPTY_BITBOARD {
-                        let mut en_pass_board = EMPTY_BITBOARD;
-                        en_pass_board.set_bit(last_m.target_square());
+                        let mut ep_board = EMPTY_BITBOARD;
+                        ep_board.set_bit(last_m.target_square());
                         if side == Side::White {
-                            en_pass_board = en_pass_board << 8;
+                            ep_board = ep_board << 8;
                         } else {
-                            en_pass_board = en_pass_board >> 8;
+                            ep_board = ep_board >> 8;
                         }
 
-                        let mut n = en_pass_board.0;
+                        // Find en passant square
+                        let mut n = ep_board.0;
                         let mut i = 0;
                         while n > 0 {
                             let bit = n & 1;
                             if bit == 1 {
                                 self.state.en_passant_square = Some(SquareLabel::from(i));
-                                return Some(en_pass_board);
+                                return Some(ep_board);
                             }
 
                             n = n >> 1;

@@ -417,7 +417,7 @@ pub fn square_name(square: u8) -> String {
     format!("{file}{rank}")
 }
 
-pub fn adjacent_files(square: SquareLabel) -> u64 {
+pub fn adjacent_files(square: SquareLabel) -> BitBoard {
     let file = square as u64 % 8;
 
     match file {
@@ -432,7 +432,7 @@ pub fn adjacent_files(square: SquareLabel) -> u64 {
         _ => panic!("NOT A FILE"),
     }
 }
-pub fn get_file(square: SquareLabel) -> u64 {
+pub fn get_file(square: SquareLabel) -> BitBoard {
     let file = square as u64 % 8;
 
     match file {
@@ -449,7 +449,7 @@ pub fn get_file(square: SquareLabel) -> u64 {
     }
 }
 
-pub fn get_rank(square: SquareLabel) -> u64 {
+pub fn get_rank(square: SquareLabel) -> BitBoard {
     let rank = square as u64 / 8;
 
     match rank {

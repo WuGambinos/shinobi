@@ -41,9 +41,9 @@ pub const A1_TO_H8_DIAGONAL : BitBoard = BitBoard(0x8040_2010_0804_0201);
 #[rustfmt::skip]
 pub const H1_TO_A8_DIAGONAL : BitBoard = BitBoard(0x0102_0408_1020_4080);
 #[rustfmt::skip]
-pub const LIGHT_SQUARES     : BitBoard = BitBoard(0x55AA_55AA_55AA_55AA);
+pub const LIGHT_SQUARES     : u64 = 0x55AA_55AA_55AA_55AA;
 #[rustfmt::skip]
-pub const DARK_SQUARES      : BitBoard = BitBoard(0xAA55_AA55_AA55_AA55);
+pub const DARK_SQUARES      : u64 = 0xAA55_AA55_AA55_AA55;
 
 pub const EMPTY_BITBOARD: BitBoard = BitBoard(0);
 

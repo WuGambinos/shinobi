@@ -48,59 +48,59 @@ impl MoveGenerator {
     }
 
     pub fn east_one(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 1) & BitBoard(!A_FILE);
+        return (bitboard << 1) & !A_FILE;
     }
 
     pub fn west_one(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 1) & BitBoard(!H_FILE);
+        return (bitboard >> 1) & !H_FILE;
     }
 
     pub fn north_east_one(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 9) & BitBoard(!A_FILE);
+        return (bitboard << 9) & !A_FILE;
     }
 
     pub fn north_west_one(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 7) & BitBoard(!H_FILE);
+        return (bitboard << 7) & !H_FILE;
     }
 
     pub fn south_east_one(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 7) & BitBoard(!(A_FILE));
+        return (bitboard >> 7) & !A_FILE;
     }
 
     pub fn south_west_one(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 9) & BitBoard(!(H_FILE));
+        return (bitboard >> 9) & !H_FILE;
     }
 
     pub fn north_north_east(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 17) & BitBoard(!(A_FILE));
+        return (bitboard << 17) & !A_FILE;
     }
 
     pub fn north_east_east(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 10) & BitBoard(!(A_FILE | B_FILE));
+        return (bitboard << 10) & !(A_FILE | B_FILE);
     }
 
     pub fn south_east_east(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 6) & BitBoard(!(A_FILE | B_FILE));
+        return (bitboard >> 6) & !(A_FILE | B_FILE);
     }
 
     pub fn south_south_east(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 15) & BitBoard(!(A_FILE));
+        return (bitboard >> 15) & !A_FILE;
     }
 
     pub fn north_north_west(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 15) & BitBoard(!(H_FILE));
+        return (bitboard << 15) & !H_FILE;
     }
 
     pub fn north_west_west(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard << 6) & BitBoard(!(G_FILE | H_FILE));
+        return (bitboard << 6) & !(G_FILE | H_FILE);
     }
 
     pub fn south_west_west(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 10) & BitBoard(!(G_FILE | H_FILE));
+        return (bitboard >> 10) & !(G_FILE | H_FILE);
     }
 
     pub fn south_south_west(&self, bitboard: BitBoard) -> BitBoard {
-        return (bitboard >> 17) & BitBoard(!(H_FILE));
+        return (bitboard >> 17) & !H_FILE;
     }
 
     pub fn white_single_push_target(&self, position: &Position, bitboard: BitBoard) -> BitBoard {
@@ -221,19 +221,6 @@ impl MoveGenerator {
         let opponent_rooks = position.piece_bitboard(Piece::Rook, enemy);
         let opponent_bishop = position.piece_bitboard(Piece::Bishop, enemy);
         let opponent_queen = position.piece_bitboard(Piece::Queen, enemy);
-
-        /*
-        println!("OPPONENT ROOKS");
-        opponent_rooks.print();
-
-        let rook_attacks = self.get_rook_moves(king_square as u64, position.main_bitboard);
-        println!("ROOK ATTACKS");
-        rook_attacks.print();
-
-        let result = opponent_rooks & rook_attacks;
-        println!("RESULT");
-        result.print();
-        */
 
         return (self.get_bishop_moves(king_square as u64, position.main_bitboard)
             & opponent_bishop)

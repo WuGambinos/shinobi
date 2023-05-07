@@ -5,9 +5,8 @@ use std::ops::{
 };
 use std::*;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct Square(usize);
 
+/// Wrapper around u64
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BitBoard(pub u64);
 
@@ -29,6 +28,7 @@ impl BitBoard {
         self.0 &= !(1u64 << (square as u64));
     }
 
+    // Returns the LSB1 bit
     pub fn bitscan_forward(&self) -> SquareLabel {
         let square = self.0.trailing_zeros() as u64;
         SquareLabel::from(square)
