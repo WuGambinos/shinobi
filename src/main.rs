@@ -71,8 +71,16 @@ fn main() -> Result<(), String> {
                     println!("ROOK BITBOARD");
                     position.piece_bitboard(Piece::Rook, Side::White).print();
 
+                    println!("BLACK BITBOARD");
+                    position.print_black_bitboard();
+
+                    println!("ROOK BITBOARD");
+                    position.piece_bitboard(Piece::Rook, Side::Black).print();
+
                     println!("PIECES");
                     position.print_pieces();
+
+                    println!("CASTLING: {:?}", position.state.castling_rights);
                 }
                 _ => {}
             }

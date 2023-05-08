@@ -1,7 +1,8 @@
 use crate::{
     get_file, get_rank, init_slider_attacks, BitBoard, Castling, CastlingRights, Move, MoveType,
-    Piece, Position, SMagic, Side, SquareLabel, A_FILE, B_FILE, EMPTY_BITBOARD, F_FILE, G_FILE,
-    H_FILE,
+    Piece, Position, SMagic, Side, SquareLabel, A_FILE, BLACK_KINGSIDE_KING_SQUARE,
+    BLACK_QUEENSIDE_KING_SQUARE, B_FILE, EMPTY_BITBOARD, F_FILE, G_FILE, H_FILE,
+    WHITE_KINGSIDE_KING_SQUARE, WHITE_QUEENSIDE_KING_SQUARE,
 };
 use strum::IntoEnumIterator;
 
@@ -427,35 +428,46 @@ impl MoveGenerator {
 
                         Piece::King => {
                             let king_moves = self.king_moves[square as usize];
-                            if side == Side::White {
+                            let (
+                                kingside_castle_king_square,
+                                queenside_castle_king_square,
+                                castling_rights,
+                            ) = match side {
+                                Side::White => (
+                                    WHITE_KINGSIDE_KING_SQUARE,
+                                    WHITE_QUEENSIDE_KING_SQUARE,
+                                    Castling::WHITE_CASTLING,
+                                ),
+                                Side::Black => (
+                                    BLACK_KINGSIDE_KING_SQUARE,
+                                    BLACK_QUEENSIDE_KING_SQUARE,
+                                    Castling::BLACK_CASTLING,
+                                ),
+                            };
 
-                                if position.state.castling_rights.0 & Castling::WHITE_CASTLING != 0
-                                {
-                                    if position.pieces[SquareLabel::G1 as usize].is_none() {
-                                        let king_side: Move = Move::new(
-                                            piece_type,
-                                            square,
-                                            SquareLabel::G1,
-                                            MoveType::Castle,
-                                        );
-                                        moves.push(king_side);
-                                    }
-
-                                    if position.pieces[SquareLabel::C1 as usize].is_none() {
-                                        let queen_side: Move = Move::new(
-                                            piece_type,
-                                            square,
-                                            SquareLabel::C1,
-                                            MoveType::Castle,
-                                        );
-                                        moves.push(queen_side);
-                                    }
+                            if position.state.castling_rights.0 & castling_rights != 0 {
+                                if position.pieces[kingside_castle_king_square as usize].is_none() {
+                                    let king_side: Move = Move::new(
+                                        piece_type,
+                                        square,
+                                        kingside_castle_king_square,
+                                        MoveType::Castle,
+                                    );
+                                    moves.push(king_side);
                                 }
-                            } else {
-                                if position.state.castling_rights.0 & Castling::BLACK_CASTLING != 0
+
+                                if position.pieces[queenside_castle_king_square as usize].is_none()
                                 {
+                                    let queen_side: Move = Move::new(
+                                        piece_type,
+                                        square,
+                                        queenside_castle_king_square,
+                                        MoveType::Castle,
+                                    );
+                                    moves.push(queen_side);
                                 }
                             }
+
                             self.create_moves(
                                 position, piece_type, side, king_moves, square, &mut moves,
                             );

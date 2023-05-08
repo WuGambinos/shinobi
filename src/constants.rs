@@ -50,6 +50,7 @@ pub const EMPTY_BITBOARD: BitBoard = BitBoard(0);
 pub const B_IMG_POS: usize = 0;
 pub const W_IMG_POS: usize = 6;
 
+// FEN strings
 pub const START_POS: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 pub const TEST_POS: &str = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
 pub const TEST_POS2: &str = "8/8/3p4/1Pp4r/K4p1k/8/4P1P1/1R6 b - - 0 1";
@@ -59,8 +60,19 @@ pub const CHECK_POS3: &str = "8/2p5/3p4/KP5r/1R2Pp1k/8/6P1/8 b - - 0 1";
 pub const PIN_POS: &str = "4k3/8/8/4r3/8/4Q3/8/3K4 w - - 0 1";
 pub const CASTLE_POS: &str = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1";
 
-pub const WHITE_KINGSIDE_SQUARE: SquareLabel = SquareLabel::G1;
-pub const WHITE_QUEENSIDE_SQUARE: SquareLabel = SquareLabel::C1;
+// Castling
+pub const WHITE_KINGSIDE_KING_SQUARE: SquareLabel = SquareLabel::G1;
+pub const WHITE_KINGSIDE_ROOK_TO_SQUARE: SquareLabel = SquareLabel::F1;
+pub const WHITE_KINGSIDE_ROOK_FROM_SQUARE: SquareLabel = SquareLabel::H1;
 
-pub const BLACK_KINGSIDE_SQUARE: SquareLabel = SquareLabel::G8;
-pub const BLACK_QUEENSIDE_SQUARE: SquareLabel = SquareLabel::C8;
+pub const WHITE_QUEENSIDE_KING_SQUARE: SquareLabel = SquareLabel::C1;
+pub const WHITE_QUEENSIDE_ROOK_TO_SQUARE: SquareLabel = SquareLabel::D1;
+pub const WHITE_QUEENSIDE_ROOK_FROM_SQUARE: SquareLabel = SquareLabel::A1;
+
+pub const BLACK_KINGSIDE_KING_SQUARE: SquareLabel = SquareLabel::G8;
+pub const BLACK_KINGSIDE_ROOK_TO_SQUARE: SquareLabel = SquareLabel::F8;
+pub const BLACK_KINGSIDE_ROOK_FROM_SQUARE: SquareLabel = SquareLabel::H8;
+
+pub const BLACK_QUEENSIDE_KING_SQUARE: SquareLabel = SquareLabel::C8;
+pub const BLACK_QUEENSIDE_ROOK_TO_SQUARE: SquareLabel = SquareLabel::D8;
+pub const BLACK_QUEENSIDE_ROOK_FROM_SQUARE: SquareLabel = SquareLabel::A8;
