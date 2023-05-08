@@ -37,11 +37,10 @@ fn main() {
     let mut move_gen = MoveGenerator::new();
 
     let start = Instant::now();
-    let depth = 4;
-    let res = perft(&mut position, &mut move_gen, depth);
+    let res = perft(&mut position, &mut move_gen, d);
     let elapsed = start.elapsed();
     println!("PERFT: {} TIME: {} US", res, elapsed.as_micros());
     println!("NPS: {:.0} ", res as f64 / elapsed.as_secs_f64());
 
-    perft_test(&mut position, &mut move_gen, d);
+    //perft_test(&mut position, &mut move_gen, d);
 }

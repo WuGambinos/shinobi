@@ -51,6 +51,22 @@ impl CastlingRights {
     pub fn all() -> CastlingRights {
         CastlingRights(Castling::ANY_CASTLING)
     }
+
+    pub fn white_king_side(self) -> bool {
+        self.0 & Castling::WHITE_KING_SIDE != 0
+    }
+
+    pub fn white_queen_side(self) -> bool {
+        self.0 & Castling::WHITE_QUEEN_SIDE != 0
+    }
+
+    pub fn black_king_side(self) -> bool {
+        self.0 & Castling::BLACK_KING_SIDE != 0
+    }
+
+    pub fn black_queen_side(self) -> bool {
+        self.0 & Castling::BLACK_QUEEN_SIDE != 0
+    }
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -505,6 +521,7 @@ impl Position {
         if mv.from_square != mv.target_square
             && self.side_bitboards[self.state.turn as usize].get_bit(mv.target_square as u64) == 0
         {
+            self.history.prev_states.push(self.state);
             // King move
             if mv.piece == Piece::King {
                 match self.state.turn {
@@ -529,13 +546,50 @@ impl Position {
                 }
             }
 
+            if mv.piece == Piece::Rook {
+                match self.state.turn {
+                    Side::White => match mv.from_square() {
+                        // Disable Kingside castling
+                        WHITE_KINGSIDE_ROOK_FROM_SQUARE => {
+                            self.state.castling_rights = CastlingRights(
+                                self.state.castling_rights.0 & (!Castling::WHITE_KING_SIDE),
+                            )
+                        }
+                        // Disable Queenside castling
+                        WHITE_QUEENSIDE_ROOK_FROM_SQUARE => {
+                            self.state.castling_rights = CastlingRights(
+                                self.state.castling_rights.0 & (!Castling::WHITE_QUEEN_SIDE),
+                            )
+                        }
+
+                        _ => {}
+                    },
+                    Side::Black => match mv.from_square() {
+                        // Disable Kingside castling
+                        BLACK_KINGSIDE_ROOK_FROM_SQUARE => {
+                            self.state.castling_rights = CastlingRights(
+                                self.state.castling_rights.0 & (!Castling::BLACK_KING_SIDE),
+                            )
+                        }
+
+                        // Disable Queenside castling
+                        BLACK_QUEENSIDE_ROOK_FROM_SQUARE => {
+                            self.state.castling_rights = CastlingRights(
+                                self.state.castling_rights.0 & (!Castling::BLACK_QUEEN_SIDE),
+                            )
+                        }
+
+                        _ => {}
+                    },
+                }
+            }
+
             // Update history
             self.history.prev_pieces.push(self.pieces);
             self.history.prev_main_bitboards.push(self.main_bitboard);
             self.history.prev_empty_bitboards.push(self.empty_bitboard);
             self.history.prev_piece_bitboards.push(self.piece_bitboards);
             self.history.prev_side_bitboards.push(self.side_bitboards);
-            self.history.prev_states.push(self.state);
 
             // Castle
             if mv.move_type == MoveType::Castle {

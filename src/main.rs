@@ -1,5 +1,6 @@
 use sdl2::mouse::MouseState;
 use shinobi::enums::*;
+use shinobi::perft::{perft, perft_test};
 use shinobi::util::*;
 use shinobi::*;
 
@@ -31,13 +32,15 @@ fn main() -> Result<(), String> {
 
     /* CHESS STUFF */
     let mut position = Position::new();
-    let grid = load_fen(CASTLE_POS, &mut position.state);
+    let grid = load_fen(CHECK_POS2, &mut position.state);
     position.from_grid(grid);
     let mut move_gen = position.move_gen;
 
     let mut piece: Option<Piece> = None;
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
+
+    perft_test(&mut position.clone(), &mut move_gen, 5);
 
     let mut moves: Vec<Move> = Vec::new();
     let mut state = MouseState::from_sdl_state(0);

@@ -1,8 +1,8 @@
 use crate::{
     get_file, get_rank, init_slider_attacks, BitBoard, Castling, CastlingRights, Move, MoveType,
     Piece, Position, SMagic, Side, SquareLabel, A_FILE, BLACK_KINGSIDE_KING_SQUARE,
-    BLACK_QUEENSIDE_KING_SQUARE, B_FILE, EMPTY_BITBOARD, F_FILE, G_FILE, H_FILE,
-    WHITE_KINGSIDE_KING_SQUARE, WHITE_QUEENSIDE_KING_SQUARE,
+    BLACK_QUEENSIDE_KING_SQUARE, B_FILE, EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK, F_FILE, G_FILE,
+    H_FILE, WHITE_KINGSIDE_KING_SQUARE, WHITE_QUEENSIDE_KING_SQUARE,
 };
 use strum::IntoEnumIterator;
 
@@ -232,6 +232,48 @@ impl MoveGenerator {
             | (self.get_queen_moves(king_square as u64, position.main_bitboard) & opponent_queen);
     }
 
+    pub fn castle_squares_attacked(
+        &self,
+        position: &Position,
+        side: Side,
+        castle_squares: BitBoard,
+    ) -> bool {
+        let mut n = castle_squares.0;
+        let mut i = 0;
+
+        let enemy = match side {
+            Side::White => Side::Black,
+            Side::Black => Side::White,
+        };
+
+        let mut res_board = EMPTY_BITBOARD;
+        let opponent_pawns = position.piece_bitboard(Piece::Pawn, enemy);
+        let opponent_knights = position.piece_bitboard(Piece::Knight, enemy);
+        let opponent_rooks = position.piece_bitboard(Piece::Rook, enemy);
+        let opponent_bishop = position.piece_bitboard(Piece::Bishop, enemy);
+        let opponent_queen = position.piece_bitboard(Piece::Queen, enemy);
+
+        while n > 0 {
+            let bit = n & 1;
+
+            if bit == 1 {
+                let square = SquareLabel::from(i);
+
+                res_board |= (self.get_bishop_moves(square as u64, position.main_bitboard)
+                    & opponent_bishop)
+                    | (self.get_rook_moves(square as u64, position.main_bitboard) & opponent_rooks)
+                    | (self.knight_moves[square as usize] & opponent_knights)
+                    | (self.pawn_attacks[side as usize][square as usize] & opponent_pawns)
+                    | (self.get_queen_moves(square as u64, position.main_bitboard)
+                        & opponent_queen);
+            }
+            i += 1;
+            n = n >> 1;
+        }
+
+        return res_board != EMPTY_BITBOARD;
+    }
+
     pub fn fill_king_moves(&mut self) {
         for square in SquareLabel::iter() {
             let mut moves: BitBoard = EMPTY_BITBOARD;
@@ -428,43 +470,88 @@ impl MoveGenerator {
 
                         Piece::King => {
                             let king_moves = self.king_moves[square as usize];
-                            let (
-                                kingside_castle_king_square,
-                                queenside_castle_king_square,
-                                castling_rights,
-                            ) = match side {
+                            let (kingside_castle_king_square, queenside_castle_king_square, rank) =
+                                match side {
+                                    Side::White => (
+                                        WHITE_KINGSIDE_KING_SQUARE,
+                                        WHITE_QUEENSIDE_KING_SQUARE,
+                                        FIRST_RANK,
+                                    ),
+                                    Side::Black => (
+                                        BLACK_KINGSIDE_KING_SQUARE,
+                                        BLACK_QUEENSIDE_KING_SQUARE,
+                                        EIGTH_RANK,
+                                    ),
+                                };
+
+                            let castle_rights = match side {
                                 Side::White => (
-                                    WHITE_KINGSIDE_KING_SQUARE,
-                                    WHITE_QUEENSIDE_KING_SQUARE,
-                                    Castling::WHITE_CASTLING,
+                                    position.state.castling_rights.white_king_side(),
+                                    position.state.castling_rights.white_queen_side(),
                                 ),
                                 Side::Black => (
-                                    BLACK_KINGSIDE_KING_SQUARE,
-                                    BLACK_QUEENSIDE_KING_SQUARE,
-                                    Castling::BLACK_CASTLING,
+                                    position.state.castling_rights.black_king_side(),
+                                    position.state.castling_rights.black_queen_side(),
                                 ),
                             };
 
-                            if position.state.castling_rights.0 & castling_rights != 0 {
-                                if position.pieces[kingside_castle_king_square as usize].is_none() {
-                                    let king_side: Move = Move::new(
-                                        piece_type,
-                                        square,
-                                        kingside_castle_king_square,
-                                        MoveType::Castle,
-                                    );
-                                    moves.push(king_side);
-                                }
+                            // Kingside
+                            if castle_rights.0 {
+                                let upper = BitBoard(!1 << square as usize);
+                                let king_side_squares =
+                                    upper & rank & !position.piece_bitboard(Piece::Rook, side);
 
-                                if position.pieces[queenside_castle_king_square as usize].is_none()
+                                let blockers: BitBoard = upper
+                                    & position.side_bitboards[side as usize]
+                                    & !position.piece_bitboard(Piece::Rook, side)
+                                    & rank;
+
+                                if !self.castle_squares_attacked(position, side, king_side_squares)
+                                    && blockers == EMPTY_BITBOARD
                                 {
-                                    let queen_side: Move = Move::new(
-                                        piece_type,
-                                        square,
-                                        queenside_castle_king_square,
-                                        MoveType::Castle,
-                                    );
-                                    moves.push(queen_side);
+                                    if position.pieces[kingside_castle_king_square as usize]
+                                        .is_none()
+                                        && position.pieces[square as usize + 1].is_none()
+                                    {
+                                        let king_side: Move = Move::new(
+                                            piece_type,
+                                            square,
+                                            kingside_castle_king_square,
+                                            MoveType::Castle,
+                                        );
+                                        moves.push(king_side);
+                                    }
+                                }
+                            }
+
+                            // Queenside
+                            if castle_rights.1 {
+                                let lower = BitBoard((1 << square as usize) - 1);
+                                let queen_side_squares = lower
+                                    & rank
+                                    & !position.piece_bitboard(Piece::Rook, side)
+                                    ^ BitBoard((1 << queenside_castle_king_square as usize) >> 1);
+
+                                let blockers: BitBoard = lower
+                                    & position.side_bitboards[side as usize]
+                                    & !position.piece_bitboard(Piece::Rook, side)
+                                    & rank;
+
+                                if !self.castle_squares_attacked(position, side, queen_side_squares)
+                                    && blockers == EMPTY_BITBOARD
+                                {
+                                    if position.pieces[queenside_castle_king_square as usize]
+                                        .is_none()
+                                        && position.pieces[square as usize - 1].is_none()
+                                    {
+                                        let queen_side: Move = Move::new(
+                                            piece_type,
+                                            square,
+                                            queenside_castle_king_square,
+                                            MoveType::Castle,
+                                        );
+                                        moves.push(queen_side);
+                                    }
                                 }
                             }
 
