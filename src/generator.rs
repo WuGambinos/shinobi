@@ -469,7 +469,23 @@ impl MoveGenerator {
                         }
 
                         Piece::King => {
-                            let king_moves = self.king_moves[square as usize];
+                            let opponent_king_moves = match side {
+                                Side::Black => self.king_moves[position.white_king_square as usize],
+                                Side::White => self.king_moves[position.black_king_square as usize],
+                            };
+
+                            let king_moves = if self.king_moves[square as usize]
+                                & opponent_king_moves
+                                == EMPTY_BITBOARD
+                            {
+                                self.king_moves[square as usize]
+                            } else {
+                                let intersection =
+                                    self.king_moves[square as usize] & opponent_king_moves;
+
+                                self.king_moves[square as usize] & !intersection
+                            };
+
                             let (kingside_castle_king_square, queenside_castle_king_square, rank) =
                                 match side {
                                     Side::White => (

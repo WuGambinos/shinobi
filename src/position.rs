@@ -85,7 +85,7 @@ impl State {
     /// Create state struct
     fn new() -> State {
         State {
-            castling_rights: CastlingRights::all(),
+            castling_rights: CastlingRights::empty(),
             en_passant_square: None,
             half_move_counter: 0,
             turn: Side::White,

@@ -162,7 +162,7 @@ impl From<u64> for SquareLabel {
             61 => SquareLabel::F8,
             62 => SquareLabel::G8,
             63 => SquareLabel::H8,
-            _ => panic!("Invalid integer value for SquareLabels"),
+            _ => panic!("Invalid integer value for SquareLabels {}", value),
         }
     }
 }
