@@ -32,7 +32,7 @@ fn main() -> Result<(), String> {
 
     /* CHESS STUFF */
     let mut position = Position::new();
-    let grid = load_fen(CHECK_POS2, &mut position.state);
+    let grid = load_fen(CASTLE_POS, &mut position.state);
     position.from_grid(grid);
     let mut move_gen = position.move_gen;
 
@@ -40,39 +40,23 @@ fn main() -> Result<(), String> {
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
 
-    let mv1: Move = Move::new(
-        Piece::Rook,
-        SquareLabel::B4,
-        SquareLabel::B1,
+    let mv1 = Move::new(
+        Piece::Knight,
+        SquareLabel::C3,
+        SquareLabel::B5,
         MoveType::Quiet,
     );
 
-    let mv2: Move = Move::new(
-        Piece::Pawn,
-        SquareLabel::F4,
-        SquareLabel::F3,
+    let mv2 = Move::new(
+        Piece::Knight,
+        SquareLabel::F6,
+        SquareLabel::G4,
         MoveType::Quiet,
     );
-
-    let mv3: Move = Move::new(
-        Piece::Rook,
-        SquareLabel::B1,
-        SquareLabel::C1,
-        MoveType::Quiet,
-    );
-
-    let mv4: Move = Move::new(
-        Piece::Pawn,
-        SquareLabel::F3,
-        SquareLabel::F2,
-        MoveType::Quiet,
-    );
-
     position.make_move(mv1);
     position.make_move(mv2);
-    position.make_move(mv3);
-    position.make_move(mv4);
-    perft_test(&mut position.clone(), &mut move_gen, 2);
+
+    perft_test(&mut position, &mut move_gen, 2);
 
     let mut moves: Vec<Move> = Vec::new();
     let mut state = MouseState::from_sdl_state(0);
@@ -111,6 +95,9 @@ fn main() -> Result<(), String> {
 
                     println!("ROOK BITBOARD");
                     position.piece_bitboard(Piece::Rook, Side::Black).print();
+
+                    println!("BISHOP BOARD");
+                    position.piece_bitboard(Piece::Bishop, Side::Black).print();
 
                     println!("PIECES");
                     position.print_pieces();

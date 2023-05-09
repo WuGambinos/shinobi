@@ -346,7 +346,34 @@ impl MoveGenerator {
 
                 // Pawn Promotion
                 if piece.is_pawn() && (BitBoard(1 << to_square as usize) & rank) != EMPTY_BITBOARD {
-                    moves.push(Move::new(piece, square, to_square, MoveType::Promotion));
+                    moves.push(Move::with_promotion_piece(
+                        piece,
+                        square,
+                        to_square,
+                        MoveType::Promotion,
+                        Some(Piece::Queen),
+                    ));
+                    moves.push(Move::with_promotion_piece(
+                        piece,
+                        square,
+                        to_square,
+                        MoveType::Promotion,
+                        Some(Piece::Knight),
+                    ));
+                    moves.push(Move::with_promotion_piece(
+                        piece,
+                        square,
+                        to_square,
+                        MoveType::Promotion,
+                        Some(Piece::Bishop),
+                    ));
+                    moves.push(Move::with_promotion_piece(
+                        piece,
+                        square,
+                        to_square,
+                        MoveType::Promotion,
+                        Some(Piece::Rook),
+                    ));
                 } else {
                     moves.push(Move::new(piece, square, to_square, MoveType::Quiet));
                 }
@@ -375,7 +402,34 @@ impl MoveGenerator {
                 };
                 // Pawn Promotion
                 if piece.is_pawn() && (BitBoard(1 << to_square as usize) & rank) != EMPTY_BITBOARD {
-                    moves.push(Move::new(piece, square, to_square, MoveType::Promotion));
+                    moves.push(Move::with_promotion_piece(
+                        piece,
+                        square,
+                        to_square,
+                        MoveType::Promotion,
+                        Some(Piece::Queen),
+                    ));
+                    moves.push(Move::with_promotion_piece(
+                        piece,
+                        square,
+                        to_square,
+                        MoveType::Promotion,
+                        Some(Piece::Knight),
+                    ));
+                    moves.push(Move::with_promotion_piece(
+                        piece,
+                        square,
+                        to_square,
+                        MoveType::Promotion,
+                        Some(Piece::Bishop),
+                    ));
+                    moves.push(Move::with_promotion_piece(
+                        piece,
+                        square,
+                        to_square,
+                        MoveType::Promotion,
+                        Some(Piece::Rook),
+                    ));
                 } else {
                     moves.push(Move::new(piece, square, to_square, MoveType::Capture));
                 }

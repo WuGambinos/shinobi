@@ -126,6 +126,7 @@ pub struct Move {
     pub from_square: SquareLabel,
     pub target_square: SquareLabel,
     pub move_type: MoveType,
+    pub promotion_piece: Option<Piece>,
 }
 
 impl Move {
@@ -141,6 +142,23 @@ impl Move {
             from_square,
             target_square,
             move_type,
+            promotion_piece: None,
+        }
+    }
+
+    pub fn with_promotion_piece(
+        piece: Piece,
+        from_square: SquareLabel,
+        target_square: SquareLabel,
+        move_type: MoveType,
+        promotion_piece: Option<Piece>,
+    ) -> Move {
+        Move {
+            piece,
+            from_square,
+            target_square,
+            move_type,
+            promotion_piece,
         }
     }
 
@@ -513,8 +531,8 @@ impl Position {
                 self.piece_bitboards[self.state.turn as usize][mv.piece as usize] &= !from_bitboard;
 
                 // Promote to queen
-                self.piece_bitboards[self.state.turn as usize][Piece::Queen as usize] ^=
-                    to_bitboard;
+                self.piece_bitboards[self.state.turn as usize]
+                    [mv.promotion_piece.unwrap() as usize] ^= to_bitboard;
 
                 // Update white or black bitboard
                 self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
@@ -536,23 +554,36 @@ impl Position {
         }
 
         if !capture {
+            /*
+            println!("FROM BITBOARD");
+            from_bitboard.print();
+
+            println!("TO BITBOARD");
+            to_bitboard.print();
+
+            println!("FROM TO BITBOARD");
+            from_to_bitboard.print();
+            */
+
             // Update piece bitboard
             self.piece_bitboards[self.state.turn as usize][mv.piece as usize] &= !from_bitboard;
 
-            // Promote to queen
-            self.piece_bitboards[self.state.turn as usize][Piece::Queen as usize] ^= to_bitboard;
+            // Promote to new piece
+            self.piece_bitboards[self.state.turn as usize][mv.promotion_piece.unwrap() as usize] ^=
+                to_bitboard;
 
             // Update white or black bitboard
-            self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
+            self.side_bitboards[self.state.turn as usize] ^= from_bitboard;
 
             // Update main_bitboard
-            self.main_bitboard ^= from_to_bitboard;
+            self.main_bitboard ^= from_bitboard;
 
             // Update empty bitboard
             self.empty_bitboard = !self.main_bitboard;
         }
         // Update piece array board
-        self.pieces[mv.target_square() as usize] = Some((self.state.turn, Piece::Queen));
+        self.pieces[mv.target_square() as usize] =
+            Some((self.state.turn, mv.promotion_piece.unwrap()));
         self.pieces[mv.from_square as usize] = None;
     }
 
