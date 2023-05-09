@@ -338,12 +338,18 @@ impl MoveGenerator {
         while n > 0 {
             let bit = n & 1;
             if bit == 1 {
-                moves.push(Move::new(
-                    piece,
-                    square,
-                    SquareLabel::from(i),
-                    MoveType::Quiet,
-                ));
+                let to_square = SquareLabel::from(i);
+                let rank = match side {
+                    Side::White => EIGTH_RANK,
+                    Side::Black => FIRST_RANK,
+                };
+
+                // Pawn Promotion
+                if piece.is_pawn() && (BitBoard(1 << to_square as usize) & rank) != EMPTY_BITBOARD {
+                    moves.push(Move::new(piece, square, to_square, MoveType::Promotion));
+                } else {
+                    moves.push(Move::new(piece, square, to_square, MoveType::Quiet));
+                }
             }
 
             n = n >> 1;
@@ -362,8 +368,17 @@ impl MoveGenerator {
         while n2 > 0 {
             let bit = n2 & 1;
             if bit == 1 {
-                let mv = Move::new(piece, square, SquareLabel::from(j), MoveType::Capture);
-                moves.push(mv);
+                let to_square = SquareLabel::from(j);
+                let rank = match side {
+                    Side::White => EIGTH_RANK,
+                    Side::Black => FIRST_RANK,
+                };
+                // Pawn Promotion
+                if piece.is_pawn() && (BitBoard(1 << to_square as usize) & rank) != EMPTY_BITBOARD {
+                    moves.push(Move::new(piece, square, to_square, MoveType::Promotion));
+                } else {
+                    moves.push(Move::new(piece, square, to_square, MoveType::Capture));
+                }
             }
 
             n2 = n2 >> 1;

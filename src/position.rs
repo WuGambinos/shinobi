@@ -498,7 +498,63 @@ impl Position {
         self.king_side_castle(mv, from_bitboard, to_bitboard);
     }
 
-    pub fn promote(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {}
+    pub fn promote(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {
+        let from_to_bitboard = from_bitboard ^ to_bitboard;
+
+        // Promotion Capture
+        let possible_piece = self.pieces[mv.target_square() as usize];
+        let mut capture = false;
+        if let Some(possible_p) = possible_piece {
+            if possible_p.0 != self.state.turn {
+                let opponent: Side = self.state.opponent();
+                let enemy_piece = self.piece_on_square(mv.target_square, opponent).unwrap();
+
+                // Update piece bitboard
+                self.piece_bitboards[self.state.turn as usize][mv.piece as usize] &= !from_bitboard;
+
+                // Promote to queen
+                self.piece_bitboards[self.state.turn as usize][Piece::Queen as usize] ^=
+                    to_bitboard;
+
+                // Update white or black bitboard
+                self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
+
+                // Reset captured piece
+                self.piece_bitboards[opponent as usize][enemy_piece as usize] ^= to_bitboard;
+
+                // Update color bitboard for captured side
+                self.side_bitboards[opponent as usize] ^= to_bitboard;
+
+                // Update main_bitboard
+                self.main_bitboard ^= from_bitboard;
+
+                // Update empty bitboard
+                self.empty_bitboard = !self.main_bitboard;
+
+                capture = true;
+            }
+        }
+
+        if !capture {
+            // Update piece bitboard
+            self.piece_bitboards[self.state.turn as usize][mv.piece as usize] &= !from_bitboard;
+
+            // Promote to queen
+            self.piece_bitboards[self.state.turn as usize][Piece::Queen as usize] ^= to_bitboard;
+
+            // Update white or black bitboard
+            self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
+
+            // Update main_bitboard
+            self.main_bitboard ^= from_to_bitboard;
+
+            // Update empty bitboard
+            self.empty_bitboard = !self.main_bitboard;
+        }
+        // Update piece array board
+        self.pieces[mv.target_square() as usize] = Some((self.state.turn, Piece::Queen));
+        self.pieces[mv.from_square as usize] = None;
+    }
 
     pub fn en_passant(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {
         let from_to_bitboard = from_bitboard ^ to_bitboard;

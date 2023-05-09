@@ -40,7 +40,39 @@ fn main() -> Result<(), String> {
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
 
-    perft_test(&mut position.clone(), &mut move_gen, 5);
+    let mv1: Move = Move::new(
+        Piece::Rook,
+        SquareLabel::B4,
+        SquareLabel::B1,
+        MoveType::Quiet,
+    );
+
+    let mv2: Move = Move::new(
+        Piece::Pawn,
+        SquareLabel::F4,
+        SquareLabel::F3,
+        MoveType::Quiet,
+    );
+
+    let mv3: Move = Move::new(
+        Piece::Rook,
+        SquareLabel::B1,
+        SquareLabel::C1,
+        MoveType::Quiet,
+    );
+
+    let mv4: Move = Move::new(
+        Piece::Pawn,
+        SquareLabel::F3,
+        SquareLabel::F2,
+        MoveType::Quiet,
+    );
+
+    position.make_move(mv1);
+    position.make_move(mv2);
+    position.make_move(mv3);
+    position.make_move(mv4);
+    perft_test(&mut position.clone(), &mut move_gen, 2);
 
     let mut moves: Vec<Move> = Vec::new();
     let mut state = MouseState::from_sdl_state(0);

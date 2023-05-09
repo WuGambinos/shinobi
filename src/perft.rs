@@ -54,13 +54,15 @@ pub fn perft_test(position: &mut Position, move_generator: &mut MoveGenerator, d
             position.unmake();
 
             println!("{}: {}", mv, old_nodes);
+            // used for perftree
+            //println!("{}: {}", mv, old_nodes);
         }
     }
 
     //println!("DEPTH: {}", depth);
     unsafe {
         println!();
-        println!("{} ", NODES);
+        println!("{}", NODES);
         //println!("NODES: {}", NODES);
     }
 }
