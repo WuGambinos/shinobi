@@ -115,6 +115,7 @@ pub enum MoveType {
     Quiet,
     Capture,
     Castle,
+    Promotion,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -495,28 +496,110 @@ impl Position {
         // Castle
         self.queen_side_castle(mv, from_bitboard, to_bitboard);
         self.king_side_castle(mv, from_bitboard, to_bitboard);
-
-        // Update history
-        self.history.moves.push(mv);
-
-        // Update last move
-        self.last_move = Some(mv);
-
-        // Change turn
-        self.state.change_turn();
     }
 
-    pub fn en_passant() {}
+    pub fn promote(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {}
 
-    pub fn capture() {}
-    pub fn quiet() {}
+    pub fn en_passant(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {
+        let from_to_bitboard = from_bitboard ^ to_bitboard;
+        // Update piece bitboard
+        self.piece_bitboards[self.state.turn as usize][mv.piece as usize] ^= from_to_bitboard;
+
+        // Update white or black bitboard
+        self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
+
+        // Update main_bitboard
+        self.main_bitboard ^= from_to_bitboard;
+
+        // Update empty bitboard
+        self.empty_bitboard = !self.main_bitboard;
+
+        // Update pieces
+        self.pieces[mv.target_square() as usize] = Some((self.state.turn, mv.piece));
+        self.pieces[mv.from_square as usize] = None;
+
+        if self.state.opponent() == Side::Black {
+            self.pieces[mv.target_square() as usize - 8] = None;
+        } else {
+            self.pieces[mv.target_square() as usize + 8] = None;
+        }
+
+        let mut ep_bitboard = EMPTY_BITBOARD;
+        ep_bitboard.set_bit(mv.target_square());
+
+        if self.state.opponent() == Side::White {
+            ep_bitboard = ep_bitboard << 8;
+        } else {
+            ep_bitboard = ep_bitboard >> 8;
+        }
+
+        // Clear Piece taken by en passant
+        self.piece_bitboards[self.state.opponent() as usize][Piece::Pawn as usize] =
+            self.piece_bitboard(Piece::Pawn, self.state.opponent()) & !(ep_bitboard);
+
+        // Update mainboard
+        self.main_bitboard ^= ep_bitboard;
+
+        // Update side bitboard
+        self.side_bitboards[self.state.opponent() as usize] ^= ep_bitboard;
+
+        // Update empty bitboard
+        self.empty_bitboard = !self.main_bitboard;
+    }
+
+    pub fn capture(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {
+        let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
+        let opponent: Side = self.state.opponent();
+
+        // Update piece bitboard
+        self.piece_bitboards[self.state.turn as usize][mv.piece as usize] ^= from_to_bitboard;
+
+        // Update white or black bitboard
+        self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
+
+        let enemy_piece = self.piece_on_square(mv.target_square, opponent).unwrap();
+
+        // Reset captured piece
+        self.piece_bitboards[opponent as usize][enemy_piece as usize] ^= to_bitboard;
+
+        // Update color bitboard for captured side
+        self.side_bitboards[opponent as usize] ^= to_bitboard;
+
+        // Update main_bitboard
+        self.main_bitboard ^= from_bitboard;
+
+        // Update empty bitboard
+        self.empty_bitboard = !self.main_bitboard;
+
+        // Update piece array board
+        self.pieces[mv.target_square() as usize] = Some((self.state.turn, mv.piece));
+        self.pieces[mv.from_square as usize] = None;
+    }
+    pub fn quiet(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {
+        let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
+
+        // Update piece bitboard
+        self.piece_bitboards[self.state.turn as usize][mv.piece as usize] ^= from_to_bitboard;
+
+        // Update white or black bitboard
+        self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
+
+        // Update main_bitboard
+        self.main_bitboard ^= from_to_bitboard;
+
+        // Update empty bitboard
+        self.empty_bitboard = !self.main_bitboard;
+
+        // Update piece array board
+        self.pieces[mv.target_square() as usize] = Some((self.state.turn, mv.piece));
+        self.pieces[mv.from_square as usize] = None;
+    }
 
     /// Makes move on bitboards if valid
     pub fn make_move(&mut self, mv: Move) {
         let from_bitboard: BitBoard = BitBoard(1) << (mv.from_square as usize);
         let to_bitboard: BitBoard = BitBoard(1) << (mv.target_square as usize);
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
-        let opponent: Side = self.state.opponent();
 
         if mv.from_square != mv.target_square
             && self.side_bitboards[self.state.turn as usize].get_bit(mv.target_square as u64) == 0
@@ -595,61 +678,13 @@ impl Position {
             if mv.move_type == MoveType::Castle {
                 self.castle(mv, from_bitboard, to_bitboard);
             }
+            // Prototion
+            else if mv.move_type == MoveType::Promotion {
+                self.promote(mv, from_to_bitboard, to_bitboard);
+            }
             // En passant
             else if mv.move_type == MoveType::EnPassant {
-                // Update piece bitboard
-                self.piece_bitboards[self.state.turn as usize][mv.piece as usize] ^=
-                    from_to_bitboard;
-
-                // Update white or black bitboard
-                self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
-
-                // Update main_bitboard
-                self.main_bitboard ^= from_to_bitboard;
-
-                // Update empty bitboard
-                self.empty_bitboard = !self.main_bitboard;
-
-                // Update pieces
-                self.pieces[mv.target_square() as usize] = Some((self.state.turn, mv.piece));
-                self.pieces[mv.from_square as usize] = None;
-
-                if self.state.opponent() == Side::Black {
-                    self.pieces[mv.target_square() as usize - 8] = None;
-                } else {
-                    self.pieces[mv.target_square() as usize + 8] = None;
-                }
-
-                let mut ep_bitboard = EMPTY_BITBOARD;
-                ep_bitboard.set_bit(mv.target_square());
-
-                if self.state.opponent() == Side::White {
-                    ep_bitboard = ep_bitboard << 8;
-                } else {
-                    ep_bitboard = ep_bitboard >> 8;
-                }
-
-                // Clear Piece taken by en passant
-                self.piece_bitboards[self.state.opponent() as usize][Piece::Pawn as usize] =
-                    self.piece_bitboard(Piece::Pawn, self.state.opponent()) & !(ep_bitboard);
-
-                // Update mainboard
-                self.main_bitboard ^= ep_bitboard;
-
-                // Update side bitboard
-                self.side_bitboards[self.state.opponent() as usize] ^= ep_bitboard;
-
-                // Update empty bitboard
-                self.empty_bitboard = !self.main_bitboard;
-
-                // Update history
-                self.history.moves.push(mv);
-
-                // Update last move
-                self.last_move = Some(mv);
-
-                // Change turn
-                self.state.change_turn();
+                self.en_passant(mv, from_bitboard, to_bitboard);
             } else {
                 // Make sure there is piece on from_square
                 if self.side_bitboards[self.state.turn as usize].get_bit(mv.from_square as u64) != 0
@@ -659,64 +694,22 @@ impl Position {
                         .get_bit(mv.target_square as u64)
                         == 1
                     {
-                        // Update piece bitboard
-                        self.piece_bitboards[self.state.turn as usize][mv.piece as usize] ^=
-                            from_to_bitboard;
-
-                        // Update white or black bitboard
-                        self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
-
-                        let enemy_piece = self.piece_on_square(mv.target_square, opponent).unwrap();
-
-                        // Reset captured piece
-                        self.piece_bitboards[opponent as usize][enemy_piece as usize] ^=
-                            to_bitboard;
-
-                        // Update color bitboard for captured side
-                        self.side_bitboards[opponent as usize] ^= to_bitboard;
-
-                        // Update main_bitboard
-                        self.main_bitboard ^= from_bitboard;
-
-                        // Update empty bitboard
-                        self.empty_bitboard = !self.main_bitboard;
-
-                        // Update piece array board
-                        self.pieces[mv.target_square() as usize] =
-                            Some((self.state.turn, mv.piece));
-                        self.pieces[mv.from_square as usize] = None;
+                        self.capture(mv, from_bitboard, to_bitboard);
                     }
                     // Quiet
                     else {
-                        // Update piece bitboard
-                        self.piece_bitboards[self.state.turn as usize][mv.piece as usize] ^=
-                            from_to_bitboard;
-
-                        // Update white or black bitboard
-                        self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
-
-                        // Update main_bitboard
-                        self.main_bitboard ^= from_to_bitboard;
-
-                        // Update empty bitboard
-                        self.empty_bitboard = !self.main_bitboard;
-
-                        // Update piece array board
-                        self.pieces[mv.target_square() as usize] =
-                            Some((self.state.turn, mv.piece));
-                        self.pieces[mv.from_square as usize] = None;
+                        self.quiet(mv, from_bitboard, to_bitboard);
                     }
-
-                    // Update history
-                    self.history.moves.push(mv);
-
-                    // Update last move
-                    self.last_move = Some(mv);
-
-                    // Change turns
-                    self.state.change_turn();
                 }
             }
+            // Update history
+            self.history.moves.push(mv);
+
+            // Update last move
+            self.last_move = Some(mv);
+
+            // Change turns
+            self.state.change_turn();
         }
     }
 
