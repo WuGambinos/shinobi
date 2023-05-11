@@ -183,6 +183,7 @@ impl Move {
 impl std::fmt::Display for Move {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.move_type == MoveType::Promotion {
+            // promotion move format like "c7c8q" (pawn from c7 to c8  and promoting to queen)
             write!(
                 f,
                 "{}{}{}",

@@ -1,11 +1,11 @@
 use crate::{MoveGenerator, Position};
 
-pub fn perft(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) -> u32 {
-    let mut num_positions: u32 = 0;
+pub fn perft(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) -> u64 {
+    let mut num_positions: u64 = 0;
     let moves = move_generator.generate_legal_moves(position, position.state.turn);
 
     if depth == 1 {
-        return moves.len() as u32;
+        return moves.len() as u64;
     }
 
     for mv in moves {
@@ -17,13 +17,13 @@ pub fn perft(position: &mut Position, move_generator: &mut MoveGenerator, depth:
     return num_positions;
 }
 
-static mut NODES: u32 = 0;
+static mut NODES: u64 = 0;
 
 pub fn perft_driver(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) {
     let moves = move_generator.generate_legal_moves(position, position.state.turn);
     if depth == 1 {
         unsafe {
-            NODES += moves.len() as u32;
+            NODES += moves.len() as u64;
         }
         return;
     }
@@ -46,10 +46,10 @@ pub fn perft_test(position: &mut Position, move_generator: &mut MoveGenerator, d
         position.make_move(mv);
 
         unsafe {
-            let cummulative_nodes: u32 = NODES;
+            let cummulative_nodes: u64 = NODES;
             perft_driver(position, move_generator, depth - 1);
 
-            let old_nodes: u32 = NODES - cummulative_nodes;
+            let old_nodes: u64 = NODES - cummulative_nodes;
 
             position.unmake();
 
