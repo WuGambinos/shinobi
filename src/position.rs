@@ -182,12 +182,22 @@ impl Move {
 /// Where a1 is the from square and b2 is the target_square
 impl std::fmt::Display for Move {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}{}",
-            square_name(self.from_square() as u8),
-            square_name(self.target_square() as u8)
-        )
+        if self.move_type == MoveType::Promotion {
+            write!(
+                f,
+                "{}{}{}",
+                square_name(self.from_square() as u8),
+                square_name(self.target_square() as u8),
+                self.promotion_piece.unwrap().to_char(Side::Black)
+            )
+        } else {
+            write!(
+                f,
+                "{}{}",
+                square_name(self.from_square() as u8),
+                square_name(self.target_square() as u8)
+            )
+        }
     }
 }
 
@@ -411,23 +421,25 @@ impl Position {
         let from_to_bitboard = from_bitboard ^ to_bitboard;
         let mut old_rook_board = self.piece_bitboard(Piece::Rook, self.state.turn);
 
-        let (castle_king_square, from_rook_square, to_rook_square) = match self.state.turn {
+        let (castle_king_square, from_rook_square, to_rook_square, rank) = match self.state.turn {
             Side::White => (
                 WHITE_QUEENSIDE_KING_SQUARE,
                 WHITE_QUEENSIDE_ROOK_FROM_SQUARE,
                 WHITE_QUEENSIDE_ROOK_TO_SQUARE,
+                FIRST_RANK,
             ),
             Side::Black => (
                 BLACK_QUEENSIDE_KING_SQUARE,
                 BLACK_QUEENSIDE_ROOK_FROM_SQUARE,
                 BLACK_QUEENSIDE_ROOK_TO_SQUARE,
+                EIGTH_RANK,
             ),
         };
 
         // Queenside castle
         if mv.target_square() == castle_king_square {
             // Queen side squares
-            let queen_side = BitBoard((1 << mv.from_square() as usize) - 1);
+            let queen_side = BitBoard((1 << mv.from_square() as usize) - 1) & rank;
             old_rook_board = old_rook_board & queen_side;
 
             let mut new_rook_board = EMPTY_BITBOARD;
@@ -530,21 +542,21 @@ impl Position {
                 // Update piece bitboard
                 self.piece_bitboards[self.state.turn as usize][mv.piece as usize] &= !from_bitboard;
 
-                // Promote to queen
+                // Promote to new piece
                 self.piece_bitboards[self.state.turn as usize]
                     [mv.promotion_piece.unwrap() as usize] ^= to_bitboard;
 
-                // Update white or black bitboard
-                self.side_bitboards[self.state.turn as usize] ^= from_to_bitboard;
+                // Update side bitboard for side making the move
+                self.side_bitboards[self.state.turn as usize] ^= from_bitboard;
 
                 // Reset captured piece
                 self.piece_bitboards[opponent as usize][enemy_piece as usize] ^= to_bitboard;
 
-                // Update color bitboard for captured side
+                // Update side bitboard for captured side
                 self.side_bitboards[opponent as usize] ^= to_bitboard;
 
                 // Update main_bitboard
-                self.main_bitboard ^= from_bitboard;
+                self.main_bitboard ^= from_to_bitboard;
 
                 // Update empty bitboard
                 self.empty_bitboard = !self.main_bitboard;
@@ -553,18 +565,8 @@ impl Position {
             }
         }
 
+        // Quiet Promotion
         if !capture {
-            /*
-            println!("FROM BITBOARD");
-            from_bitboard.print();
-
-            println!("TO BITBOARD");
-            to_bitboard.print();
-
-            println!("FROM TO BITBOARD");
-            from_to_bitboard.print();
-            */
-
             // Update piece bitboard
             self.piece_bitboards[self.state.turn as usize][mv.piece as usize] &= !from_bitboard;
 

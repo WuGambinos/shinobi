@@ -32,7 +32,7 @@ fn main() -> Result<(), String> {
 
     /* CHESS STUFF */
     let mut position = Position::new();
-    let grid = load_fen(CASTLE_POS, &mut position.state);
+    let grid = load_fen(TEST_POS4, &mut position.state);
     position.from_grid(grid);
     let mut move_gen = position.move_gen;
 
@@ -40,23 +40,7 @@ fn main() -> Result<(), String> {
     let mut from_square: Option<SquareLabel> = None;
     let castling_rights = position.state.castling_rights;
 
-    let mv1 = Move::new(
-        Piece::Knight,
-        SquareLabel::C3,
-        SquareLabel::B5,
-        MoveType::Quiet,
-    );
-
-    let mv2 = Move::new(
-        Piece::Knight,
-        SquareLabel::F6,
-        SquareLabel::G4,
-        MoveType::Quiet,
-    );
-    position.make_move(mv1);
-    position.make_move(mv2);
-
-    perft_test(&mut position, &mut move_gen, 2);
+    perft_test(&mut position, &mut move_gen, 6);
 
     let mut moves: Vec<Move> = Vec::new();
     let mut state = MouseState::from_sdl_state(0);

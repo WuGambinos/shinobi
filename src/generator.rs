@@ -391,6 +391,22 @@ impl MoveGenerator {
             (piece_moves & (position.opponent_bitboard())).0
         };
 
+        /*
+        if piece.is_queen() {
+            println!("MAIN BITBOARD");
+            position.main_bitboard.print();
+
+            println!("SIDE: {:?}  BOARD", position.state.turn);
+            position.side_bitboards[position.state.turn as usize].print();
+
+            println!("SIDE: {:?}  BOARD", position.state.opponent());
+            position.opponent_bitboard().print();
+
+            println!("PIECE MOVES");
+            piece_moves.print();
+        }
+        */
+
         // Captures
         while n2 > 0 {
             let bit = n2 & 1;
@@ -582,12 +598,13 @@ impl MoveGenerator {
 
                             // Kingside
                             if castle_rights.0 {
+                                let checkers = self.attacks_to_king(position, side);
                                 let upper = BitBoard(!1 << square as usize);
                                 let king_side_squares =
                                     upper & rank & !position.piece_bitboard(Piece::Rook, side);
 
                                 let blockers: BitBoard = upper
-                                    & position.side_bitboards[side as usize]
+                                    & position.main_bitboard
                                     & !position.piece_bitboard(Piece::Rook, side)
                                     & rank;
 
@@ -597,6 +614,7 @@ impl MoveGenerator {
                                     if position.pieces[kingside_castle_king_square as usize]
                                         .is_none()
                                         && position.pieces[square as usize + 1].is_none()
+                                        && checkers == EMPTY_BITBOARD
                                     {
                                         let king_side: Move = Move::new(
                                             piece_type,
@@ -611,6 +629,7 @@ impl MoveGenerator {
 
                             // Queenside
                             if castle_rights.1 {
+                                let checkers = self.attacks_to_king(position, side);
                                 let lower = BitBoard((1 << square as usize) - 1);
                                 let queen_side_squares = lower
                                     & rank
@@ -618,12 +637,13 @@ impl MoveGenerator {
                                     ^ BitBoard((1 << queenside_castle_king_square as usize) >> 1);
 
                                 let blockers: BitBoard = lower
-                                    & position.side_bitboards[side as usize]
+                                    & position.main_bitboard
                                     & !position.piece_bitboard(Piece::Rook, side)
                                     & rank;
 
                                 if !self.castle_squares_attacked(position, side, queen_side_squares)
                                     && blockers == EMPTY_BITBOARD
+                                    && checkers == EMPTY_BITBOARD
                                 {
                                     if position.pieces[queenside_castle_king_square as usize]
                                         .is_none()
