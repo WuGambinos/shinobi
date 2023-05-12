@@ -474,13 +474,12 @@ impl MoveGenerator {
     }
 
     pub fn generate_moves(&mut self, position: &mut Position, side: Side) -> Vec<Move> {
-        let mut moves: Vec<Move> = Vec::new();
+        let mut moves: Vec<Move> = Vec::with_capacity(60);
 
         self.fill_pawn_moves(position, side);
 
         for square in SquareLabel::iter() {
-            let piece: Option<(Side, Piece)> = position.pieces[square as usize]; //position.get_piece_on_square(square, side);
-
+            let piece: Option<(Side, Piece)> = position.pieces[square as usize];
             if let Some(p) = piece {
                 let piece_type = p.1;
                 let piece_side = p.0;

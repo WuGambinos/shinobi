@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use crate::{MoveGenerator, Position};
 
 pub fn perft(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) -> u64 {

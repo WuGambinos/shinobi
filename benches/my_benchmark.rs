@@ -31,7 +31,7 @@ fn perft_starting_pos_depth_3(c: &mut Criterion) {
 
 fn perft_starting_pos_depth_4(c: &mut Criterion) {
     let mut position = Position::new();
-    let mut move_gen = MoveGenerator::new();
+    let mut move_gen = position.move_gen;
     let depth = 4;
     let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     let grid = load_fen(fen, &mut position.state);
@@ -59,5 +59,5 @@ fn perft_starting_pos_depth_5(c: &mut Criterion) {
     }
 }
 
-criterion_group!(benches, perft_starting_pos_depth_5);
+criterion_group!(benches, perft_starting_pos_depth_4, perft_starting_pos_depth_5);
 criterion_main!(benches);

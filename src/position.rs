@@ -233,13 +233,13 @@ impl History {
     /// Create history struct
     fn new() -> History {
         History {
-            moves: Vec::new(),
-            prev_pieces: Vec::new(),
-            prev_main_bitboards: Vec::new(),
-            prev_empty_bitboards: Vec::new(),
-            prev_side_bitboards: Vec::new(),
-            prev_piece_bitboards: Vec::new(),
-            prev_states: Vec::new(),
+            moves: Vec::with_capacity(50),
+            prev_pieces: Vec::with_capacity(50),
+            prev_main_bitboards: Vec::with_capacity(50),
+            prev_empty_bitboards: Vec::with_capacity(50),
+            prev_side_bitboards: Vec::with_capacity(50),
+            prev_piece_bitboards: Vec::with_capacity(50),
+            prev_states: Vec::with_capacity(50),
             prev_white_king_square: None,
             prev_black_king_square: None,
         }
