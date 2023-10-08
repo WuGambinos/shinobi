@@ -1,5 +1,4 @@
 use shinobi::load_fen;
-use shinobi::perft;
 use shinobi::perft::perft;
 use shinobi::perft::perft_test;
 use shinobi::MoveGenerator;
