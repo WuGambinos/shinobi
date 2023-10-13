@@ -473,6 +473,29 @@ impl MoveGenerator {
         moves
     }
 
+    pub fn generate_pawn_moves(
+        &mut self,
+        position: &mut Position,
+        side: Side,
+        square: SquareLabel,
+    ) -> Vec<Move> {
+        let mut moves: Vec<Move> = Vec::new();
+        let en_passant = position.check_en_passant(square, side);
+        let pawn_pushes = self.pawn_pushes[side as usize][square as usize];
+
+        if en_passant.is_some() {
+            let mv = Move::new(
+                Piece::Pawn,
+                square,
+                position.state.en_passant_square.unwrap(),
+                MoveType::EnPassant,
+            );
+            moves.push(mv);
+        }
+        self.create_moves(position, Piece::Pawn, side, pawn_pushes, square, &mut moves);
+        return moves;
+    }
+
     pub fn generate_moves(&mut self, position: &mut Position, side: Side) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::with_capacity(60);
 
@@ -487,25 +510,7 @@ impl MoveGenerator {
                 if piece_side == side {
                     match piece_type {
                         Piece::Pawn => {
-                            let en_passant = position.check_en_passant(square, side);
-                            let pawn_pushes = self.pawn_pushes[side as usize][square as usize];
-                            if en_passant.is_some() {
-                                let mv = Move::new(
-                                    Piece::Pawn,
-                                    square,
-                                    position.state.en_passant_square.unwrap(),
-                                    MoveType::EnPassant,
-                                );
-                                moves.push(mv);
-                            }
-                            self.create_moves(
-                                position,
-                                piece_type,
-                                side,
-                                pawn_pushes,
-                                square,
-                                &mut moves,
-                            );
+                            moves.extend(self.generate_pawn_moves(position, side, square))
                         }
                         Piece::Knight => {
                             let knight_moves = self.knight_moves[square as usize];

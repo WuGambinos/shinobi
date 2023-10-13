@@ -147,6 +147,7 @@ fn main() -> InquireResult<()> {
                     }
                 }
 
+                //shinobi.position.checkmate(&mut shinobi.move_gen);
                 draw_squares(&mut canvas).expect("Draw Squares Error");
                 draw_pieces(&mut canvas, &texture_creator, &images, &shinobi.position)
                     .expect("Draw Pieces Error");

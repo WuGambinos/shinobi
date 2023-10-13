@@ -807,6 +807,10 @@ impl Position {
         self.state = self.history.prev_states.pop().unwrap();
     }
 
+    pub fn checkmate(&mut self, move_gen: &mut MoveGenerator) -> bool {
+        move_gen.generate_legal_moves(self, self.state.turn).len() == 0
+    }
+
     /// Print piece array board
     pub fn print_pieces(&self) {
         for rank in (0..8).rev() {

@@ -8,6 +8,7 @@ pub mod perft;
 pub mod position;
 pub mod util;
 pub mod engine;
+pub mod bot;
 
 pub use ::rand::prelude::*;
 pub use bitboard::*;
@@ -21,6 +22,7 @@ pub use strum::IntoEnumIterator;
 pub use strum_macros::EnumIter;
 pub use util::*;
 pub use engine::*;
+pub use bot::*;
 
 pub use sdl2::event::Event;
 pub use sdl2::image::{InitFlag, LoadTexture};
