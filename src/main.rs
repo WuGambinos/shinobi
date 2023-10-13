@@ -71,17 +71,20 @@ fn main() -> InquireResult<()> {
     let mut event_pump = sdl_context.event_pump().expect("SDL2 Event Pump Error");
 
     /* CHESS STUFF */
-    let mut position = Position::new();
-    let grid = load_fen(&fen.unwrap(), &mut position.state);
-    position.from_grid(grid);
-    let mut move_gen = position.move_gen;
+    let mut shinobi = Engine::new();
+    let grid = load_fen(&fen.unwrap(), &mut shinobi.position.state);
+    shinobi.position.from_grid(grid);
 
     let mut piece: Option<Piece> = None;
     let mut from_square: Option<SquareLabel> = None;
     match second_ans {
         Mode::Perft => {
             let depth = Text::new("Enter Depth").with_default("1").prompt()?;
-            let res = perft(&mut position, &mut move_gen, depth.parse::<u32>().unwrap());
+            let res = perft(
+                &mut shinobi.position,
+                &mut shinobi.move_gen,
+                depth.parse::<u32>().unwrap(),
+            );
             println!("DEPTH: {} RES: {}", depth, res);
         }
         _ => {
@@ -100,8 +103,8 @@ fn main() -> InquireResult<()> {
                             keycode: Some(Keycode::R),
                             ..
                         } => {
-                            position = Position::new();
-                            position.from_grid(grid);
+                            shinobi.position = Position::new();
+                            shinobi.position.from_grid(grid);
                         }
 
                         Event::KeyDown {
@@ -109,34 +112,43 @@ fn main() -> InquireResult<()> {
                             ..
                         } => {
                             debug!("MAIN BITBOARD");
-                            position.main_bitboard.print();
+                            shinobi.position.main_bitboard.print();
 
                             debug!("WHITE BITBOARD");
-                            position.print_white_bitboard();
+                            shinobi.position.print_white_bitboard();
 
                             debug!("ROOK BITBOARD");
-                            position.piece_bitboard(Piece::Rook, Side::White).print();
+                            shinobi
+                                .position
+                                .piece_bitboard(Piece::Rook, Side::White)
+                                .print();
 
                             debug!("BLACK BITBOARD");
-                            position.print_black_bitboard();
+                            shinobi.position.print_black_bitboard();
 
                             debug!("ROOK BITBOARD");
-                            position.piece_bitboard(Piece::Rook, Side::Black).print();
+                            shinobi
+                                .position
+                                .piece_bitboard(Piece::Rook, Side::Black)
+                                .print();
 
                             debug!("BISHOP BOARD");
-                            position.piece_bitboard(Piece::Bishop, Side::Black).print();
+                            shinobi
+                                .position
+                                .piece_bitboard(Piece::Bishop, Side::Black)
+                                .print();
 
                             debug!("PIECES");
-                            position.print_pieces();
+                            shinobi.position.print_pieces();
 
-                            debug!("CASTLING: {:?}", position.state.castling_rights);
+                            debug!("CASTLING: {:?}", shinobi.position.state.castling_rights);
                         }
                         _ => {}
                     }
                 }
 
                 draw_squares(&mut canvas).expect("Draw Squares Error");
-                draw_pieces(&mut canvas, &texture_creator, &images, &position)
+                draw_pieces(&mut canvas, &texture_creator, &images, &shinobi.position)
                     .expect("Draw Pieces Error");
                 drag_and_drop(
                     &mut canvas,
@@ -145,8 +157,8 @@ fn main() -> InquireResult<()> {
                     &mut moves,
                     &event_pump,
                     &mut state,
-                    &mut position,
-                    &mut move_gen,
+                    &mut shinobi.position,
+                    &mut shinobi.move_gen,
                     &mut from_square,
                     &mut piece,
                 )
@@ -159,4 +171,3 @@ fn main() -> InquireResult<()> {
 
     Ok(())
 }
-

@@ -1,29 +1,12 @@
+use crate::{
+    adjacent_files, get_file, get_rank, square_name, BitBoard, MoveGenerator, Piece, Side,
+    SquareLabel, BLACK_KINGSIDE_KING_SQUARE, BLACK_KINGSIDE_ROOK_FROM_SQUARE,
+    BLACK_KINGSIDE_ROOK_TO_SQUARE, BLACK_QUEENSIDE_KING_SQUARE, BLACK_QUEENSIDE_ROOK_FROM_SQUARE,
+    BLACK_QUEENSIDE_ROOK_TO_SQUARE, EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK,
+    WHITE_KINGSIDE_KING_SQUARE, WHITE_KINGSIDE_ROOK_FROM_SQUARE, WHITE_KINGSIDE_ROOK_TO_SQUARE,
+    WHITE_QUEENSIDE_KING_SQUARE, WHITE_QUEENSIDE_ROOK_FROM_SQUARE, WHITE_QUEENSIDE_ROOK_TO_SQUARE,
+};
 use std::fmt;
-
-use crate::adjacent_files;
-use crate::get_file;
-use crate::get_rank;
-use crate::square_name;
-use crate::BitBoard;
-use crate::MoveGenerator;
-use crate::Piece;
-use crate::Side;
-use crate::SquareLabel;
-use crate::BLACK_KINGSIDE_KING_SQUARE;
-use crate::BLACK_KINGSIDE_ROOK_FROM_SQUARE;
-use crate::BLACK_KINGSIDE_ROOK_TO_SQUARE;
-use crate::BLACK_QUEENSIDE_KING_SQUARE;
-use crate::BLACK_QUEENSIDE_ROOK_FROM_SQUARE;
-use crate::BLACK_QUEENSIDE_ROOK_TO_SQUARE;
-use crate::EIGTH_RANK;
-use crate::EMPTY_BITBOARD;
-use crate::FIRST_RANK;
-use crate::WHITE_KINGSIDE_KING_SQUARE;
-use crate::WHITE_KINGSIDE_ROOK_FROM_SQUARE;
-use crate::WHITE_KINGSIDE_ROOK_TO_SQUARE;
-use crate::WHITE_QUEENSIDE_KING_SQUARE;
-use crate::WHITE_QUEENSIDE_ROOK_FROM_SQUARE;
-use crate::WHITE_QUEENSIDE_ROOK_TO_SQUARE;
 use strum::IntoEnumIterator;
 
 pub struct Castling(u8);
@@ -266,8 +249,6 @@ pub struct Position {
     /// BitBoards for all pieces and each side
     pub piece_bitboards: [[BitBoard; 6]; 2],
 
-    pub move_gen: MoveGenerator,
-
     /// State contains all relveant information for evalution
     pub state: State,
 
@@ -287,7 +268,6 @@ impl Position {
             empty_bitboard: EMPTY_BITBOARD,
             side_bitboards: [EMPTY_BITBOARD; 2],
             piece_bitboards: [[EMPTY_BITBOARD; 6]; 2],
-            move_gen: MoveGenerator::new(),
 
             state: State::new(),
 
