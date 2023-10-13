@@ -10,6 +10,9 @@ rand = "0.8.5"
 strum = "0.24.1"
 strum_macros = "0.24.3"
 criterion = "0.4.0"
+log = "0.4.20"
+inquire = "0.6.2"
+env_logger = "0.10.0"
 
 [dependencies.sdl2]
 version = "0.35.2"
