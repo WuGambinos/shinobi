@@ -391,22 +391,6 @@ impl MoveGenerator {
             (piece_moves & (position.opponent_bitboard())).0
         };
 
-        /*
-        if piece.is_queen() {
-            println!("MAIN BITBOARD");
-            position.main_bitboard.print();
-
-            println!("SIDE: {:?}  BOARD", position.state.turn);
-            position.side_bitboards[position.state.turn as usize].print();
-
-            println!("SIDE: {:?}  BOARD", position.state.opponent());
-            position.opponent_bitboard().print();
-
-            println!("PIECE MOVES");
-            piece_moves.print();
-        }
-        */
-
         // Captures
         while n2 > 0 {
             let bit = n2 & 1;
@@ -493,7 +477,185 @@ impl MoveGenerator {
             moves.push(mv);
         }
         self.create_moves(position, Piece::Pawn, side, pawn_pushes, square, &mut moves);
-        return moves;
+
+        moves
+    }
+
+    pub fn generate_knight_moves(
+        &mut self,
+        position: &mut Position,
+        side: Side,
+        square: SquareLabel,
+    ) -> Vec<Move> {
+        let mut moves = Vec::new();
+        let knight_moves = self.knight_moves[square as usize];
+        self.create_moves(
+            position,
+            Piece::Knight,
+            side,
+            knight_moves,
+            square,
+            &mut moves,
+        );
+
+        moves
+    }
+
+    pub fn generate_queen_moves(
+        &mut self,
+        position: &mut Position,
+        side: Side,
+        square: SquareLabel,
+    ) -> Vec<Move> {
+        let mut moves = Vec::new();
+        let queen_moves = self.get_queen_moves(square as u64, position.main_bitboard);
+        self.create_moves(
+            position,
+            Piece::Queen,
+            side,
+            queen_moves,
+            square,
+            &mut moves,
+        );
+
+        moves
+    }
+
+    pub fn generate_rook_moves(
+        &mut self,
+        position: &mut Position,
+        side: Side,
+        square: SquareLabel,
+    ) -> Vec<Move> {
+        let mut moves = Vec::new();
+        let rook_moves = self.get_rook_moves(square as u64, position.main_bitboard);
+        self.create_moves(position, Piece::Rook, side, rook_moves, square, &mut moves);
+
+        moves
+    }
+
+    pub fn generate_bishop_moves(
+        &mut self,
+        position: &mut Position,
+        side: Side,
+        square: SquareLabel,
+    ) -> Vec<Move> {
+        let mut moves = Vec::new();
+        let bishop_moves = self.get_bishop_moves(square as u64, position.main_bitboard);
+        self.create_moves(
+            position,
+            Piece::Bishop,
+            side,
+            bishop_moves,
+            square,
+            &mut moves,
+        );
+        moves
+    }
+
+    pub fn generate_king_moves(
+        &mut self,
+        position: &mut Position,
+        side: Side,
+        square: SquareLabel,
+    ) -> Vec<Move> {
+        let mut moves = Vec::new();
+        let opponent_king_moves = match side {
+            Side::Black => self.king_moves[position.white_king_square as usize],
+            Side::White => self.king_moves[position.black_king_square as usize],
+        };
+        let piece_type = Piece::King;
+
+        let king_moves = if self.king_moves[square as usize] & opponent_king_moves == EMPTY_BITBOARD
+        {
+            self.king_moves[square as usize]
+        } else {
+            let intersection = self.king_moves[square as usize] & opponent_king_moves;
+
+            self.king_moves[square as usize] & !intersection
+        };
+
+        let (kingside_castle_king_square, queenside_castle_king_square, rank) = match side {
+            Side::White => (
+                WHITE_KINGSIDE_KING_SQUARE,
+                WHITE_QUEENSIDE_KING_SQUARE,
+                FIRST_RANK,
+            ),
+            Side::Black => (
+                BLACK_KINGSIDE_KING_SQUARE,
+                BLACK_QUEENSIDE_KING_SQUARE,
+                EIGTH_RANK,
+            ),
+        };
+
+        let castle_rights = match side {
+            Side::White => (
+                position.state.castling_rights.white_king_side(),
+                position.state.castling_rights.white_queen_side(),
+            ),
+            Side::Black => (
+                position.state.castling_rights.black_king_side(),
+                position.state.castling_rights.black_queen_side(),
+            ),
+        };
+
+        // Kingside
+        if castle_rights.0 {
+            let checkers = self.attacks_to_king(position, side);
+            let upper = BitBoard(!1 << square as usize);
+            let king_side_squares = upper & rank & !position.piece_bitboard(Piece::Rook, side);
+
+            let blockers: BitBoard =
+                upper & position.main_bitboard & !position.piece_bitboard(Piece::Rook, side) & rank;
+
+            if !self.castle_squares_attacked(position, side, king_side_squares)
+                && blockers == EMPTY_BITBOARD
+            {
+                if position.pieces[kingside_castle_king_square as usize].is_none()
+                    && position.pieces[square as usize + 1].is_none()
+                    && checkers == EMPTY_BITBOARD
+                {
+                    let king_side: Move = Move::new(
+                        piece_type,
+                        square,
+                        kingside_castle_king_square,
+                        MoveType::Castle,
+                    );
+                    moves.push(king_side);
+                }
+            }
+        }
+
+        // Queenside
+        if castle_rights.1 {
+            let checkers = self.attacks_to_king(position, side);
+            let lower = BitBoard((1 << square as usize) - 1);
+            let queen_side_squares = lower & rank & !position.piece_bitboard(Piece::Rook, side)
+                ^ BitBoard((1 << queenside_castle_king_square as usize) >> 1);
+
+            let blockers: BitBoard =
+                lower & position.main_bitboard & !position.piece_bitboard(Piece::Rook, side) & rank;
+
+            if !self.castle_squares_attacked(position, side, queen_side_squares)
+                && blockers == EMPTY_BITBOARD
+                && checkers == EMPTY_BITBOARD
+            {
+                if position.pieces[queenside_castle_king_square as usize].is_none()
+                    && position.pieces[square as usize - 1].is_none()
+                {
+                    let queen_side: Move = Move::new(
+                        piece_type,
+                        square,
+                        queenside_castle_king_square,
+                        MoveType::Castle,
+                    );
+                    moves.push(queen_side);
+                }
+            }
+        }
+
+        self.create_moves(position, piece_type, side, king_moves, square, &mut moves);
+        moves
     }
 
     pub fn generate_moves(&mut self, position: &mut Position, side: Side) -> Vec<Move> {
@@ -509,165 +671,12 @@ impl MoveGenerator {
 
                 if piece_side == side {
                     match piece_type {
-                        Piece::Pawn => {
-                            moves.extend(self.generate_pawn_moves(position, side, square))
-                        }
-                        Piece::Knight => {
-                            let knight_moves = self.knight_moves[square as usize];
-                            self.create_moves(
-                                position,
-                                piece_type,
-                                side,
-                                knight_moves,
-                                square,
-                                &mut moves,
-                            );
-                        }
-
-                        Piece::Queen => {
-                            let queen_moves =
-                                self.get_queen_moves(square as u64, position.main_bitboard);
-                            self.create_moves(
-                                position,
-                                piece_type,
-                                side,
-                                queen_moves,
-                                square,
-                                &mut moves,
-                            );
-                        }
-
-                        Piece::Rook => {
-                            let rook_moves =
-                                self.get_rook_moves(square as u64, position.main_bitboard);
-                            self.create_moves(
-                                position, piece_type, side, rook_moves, square, &mut moves,
-                            );
-                        }
-                        Piece::Bishop => {
-                            let bishop_moves =
-                                self.get_bishop_moves(square as u64, position.main_bitboard);
-                            self.create_moves(
-                                position,
-                                piece_type,
-                                side,
-                                bishop_moves,
-                                square,
-                                &mut moves,
-                            );
-                        }
-
-                        Piece::King => {
-                            let opponent_king_moves = match side {
-                                Side::Black => self.king_moves[position.white_king_square as usize],
-                                Side::White => self.king_moves[position.black_king_square as usize],
-                            };
-
-                            let king_moves = if self.king_moves[square as usize]
-                                & opponent_king_moves
-                                == EMPTY_BITBOARD
-                            {
-                                self.king_moves[square as usize]
-                            } else {
-                                let intersection =
-                                    self.king_moves[square as usize] & opponent_king_moves;
-
-                                self.king_moves[square as usize] & !intersection
-                            };
-
-                            let (kingside_castle_king_square, queenside_castle_king_square, rank) =
-                                match side {
-                                    Side::White => (
-                                        WHITE_KINGSIDE_KING_SQUARE,
-                                        WHITE_QUEENSIDE_KING_SQUARE,
-                                        FIRST_RANK,
-                                    ),
-                                    Side::Black => (
-                                        BLACK_KINGSIDE_KING_SQUARE,
-                                        BLACK_QUEENSIDE_KING_SQUARE,
-                                        EIGTH_RANK,
-                                    ),
-                                };
-
-                            let castle_rights = match side {
-                                Side::White => (
-                                    position.state.castling_rights.white_king_side(),
-                                    position.state.castling_rights.white_queen_side(),
-                                ),
-                                Side::Black => (
-                                    position.state.castling_rights.black_king_side(),
-                                    position.state.castling_rights.black_queen_side(),
-                                ),
-                            };
-
-                            // Kingside
-                            if castle_rights.0 {
-                                let checkers = self.attacks_to_king(position, side);
-                                let upper = BitBoard(!1 << square as usize);
-                                let king_side_squares =
-                                    upper & rank & !position.piece_bitboard(Piece::Rook, side);
-
-                                let blockers: BitBoard = upper
-                                    & position.main_bitboard
-                                    & !position.piece_bitboard(Piece::Rook, side)
-                                    & rank;
-
-                                if !self.castle_squares_attacked(position, side, king_side_squares)
-                                    && blockers == EMPTY_BITBOARD
-                                {
-                                    if position.pieces[kingside_castle_king_square as usize]
-                                        .is_none()
-                                        && position.pieces[square as usize + 1].is_none()
-                                        && checkers == EMPTY_BITBOARD
-                                    {
-                                        let king_side: Move = Move::new(
-                                            piece_type,
-                                            square,
-                                            kingside_castle_king_square,
-                                            MoveType::Castle,
-                                        );
-                                        moves.push(king_side);
-                                    }
-                                }
-                            }
-
-                            // Queenside
-                            if castle_rights.1 {
-                                let checkers = self.attacks_to_king(position, side);
-                                let lower = BitBoard((1 << square as usize) - 1);
-                                let queen_side_squares = lower
-                                    & rank
-                                    & !position.piece_bitboard(Piece::Rook, side)
-                                    ^ BitBoard((1 << queenside_castle_king_square as usize) >> 1);
-
-                                let blockers: BitBoard = lower
-                                    & position.main_bitboard
-                                    & !position.piece_bitboard(Piece::Rook, side)
-                                    & rank;
-
-                                if !self.castle_squares_attacked(position, side, queen_side_squares)
-                                    && blockers == EMPTY_BITBOARD
-                                    && checkers == EMPTY_BITBOARD
-                                {
-                                    if position.pieces[queenside_castle_king_square as usize]
-                                        .is_none()
-                                        && position.pieces[square as usize - 1].is_none()
-                                    {
-                                        let queen_side: Move = Move::new(
-                                            piece_type,
-                                            square,
-                                            queenside_castle_king_square,
-                                            MoveType::Castle,
-                                        );
-                                        moves.push(queen_side);
-                                    }
-                                }
-                            }
-
-                            self.create_moves(
-                                position, piece_type, side, king_moves, square, &mut moves,
-                            );
-                        }
+                        Piece::Pawn => moves.extend(self.generate_pawn_moves(position, side, square)),
+                        Piece::Knight =>  moves.extend(self.generate_knight_moves(position, side, square)),
+                        Piece::Queen => moves.extend(self.generate_queen_moves(position, side, square)),
+                        Piece::Rook => moves.extend(self.generate_rook_moves(position, side, square)),
+                        Piece::Bishop => moves.extend(self.generate_bishop_moves(position, side, square)),
+                        Piece::King => moves.extend(self.generate_king_moves(position, side, square)),
                     }
                 }
             }

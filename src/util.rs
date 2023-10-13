@@ -164,25 +164,6 @@ pub fn drag_and_drop(
         if selected_piece.is_some() {
             let old_turn: Side = position.state.turn;
             let mut old_position: Position = position.clone();
-
-            /*
-            let mv: Move = Move::new(
-                selected_piece.unwrap(),
-                from_square.unwrap(),
-                target_square,
-                MoveType::Quiet,
-            );
-            position.make_move(mv);
-            handle_movement(
-                &mut old_position,
-                position,
-                selected_piece,
-                from_square,
-                target_square,
-                old_turn,
-            );
-            */
-
             let mut valid = false;
             for mv in moves.iter() {
                 if mv.piece == selected_piece.unwrap()
