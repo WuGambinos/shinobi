@@ -1,10 +1,46 @@
 use crate::BitBoard;
 use crate::MoveGenerator;
-use crate::EMPTY_BITBOARD;
-use rand::prelude::*;
-use crate::BIT_TABLE;
 use crate::BISHOP_MAGICS;
+use crate::BIT_TABLE;
+use crate::EMPTY_BITBOARD;
 use crate::ROOK_MAGICS;
+use rand::prelude::*;
+use rand_chacha::ChaCha8Rng;
+
+const SEED: u64 = 1804289383;
+pub struct MyRng {
+    state: u32,
+    rng: ChaCha8Rng,
+}
+
+impl MyRng {
+    pub fn new() -> MyRng {
+        MyRng {
+            state: SEED as u32,
+            rng: ChaCha8Rng::seed_from_u64(SEED),
+        }
+    }
+
+    pub fn random_u32(&mut self) -> u32 {
+        let mut number = self.state as u32;
+
+        number ^= number << 13;
+        number ^= number >> 17;
+        number ^= number << 5;
+
+        self.state = number;
+
+        number
+    }
+    pub fn random_u64(&mut self) -> u64 {
+        let u1: u64 = (self.random_u32() as u64) & 0xFFFF;
+        let u2: u64 = (self.random_u32() as u64) & 0xFFFF;
+        let u3: u64 = (self.random_u32() as u64) & 0xFFFF;
+        let u4: u64 = (self.random_u32() as u64) & 0xFFFF;
+
+        return u1 | (u2 << 16) | (u3 << 32) | (u4 << 48);
+    }
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct MagicEntry {
@@ -48,7 +84,7 @@ impl SMagic {
     }
 }
 
-fn random_u64() -> u64 {
+pub fn random_u64() -> u64 {
     let mut rng = rand::thread_rng();
 
     let u1: u64 = (rng.gen::<u64>()) & 0xFFFF;

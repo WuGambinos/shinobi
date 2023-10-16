@@ -1,6 +1,6 @@
 use crate::EnumIter;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(EnumIter, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Side {
     White,
     Black,
@@ -9,8 +9,8 @@ pub enum Side {
 #[derive(EnumIter, Debug, Clone, Copy, PartialEq)]
 pub enum Piece {
     Pawn,
-    Bishop,
     Knight,
+    Bishop,
     Rook,
     Queen,
     King,
