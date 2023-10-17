@@ -8,12 +8,14 @@ fn main() -> InquireResult<()> {
     env_logger::init();
     info!("SHINOBI");
 
-    let fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1 ";
-    let mut shinobi = Engine::new();
-    let grid = load_fen(&START_POS, &mut shinobi.position.state);
-    shinobi.position.from_grid(grid);
+    let fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
+    let position = Position::from_fen(fen);
+    let shinobi = Engine::new(position);
     let mut z = Zobrist::new();
-    shinobi.position.print_pieces();
+
+    let key = z.generate_hash_key(&shinobi.position);
+    shinobi.position.print_position();
+    println!("ZOBRIST HASH: {:#X}", key);
 
     /*
     /* MENU */
@@ -160,7 +162,7 @@ fn run_loop(shinobi: &mut Engine, sdl_state: &mut Sdl2State) {
                         .print();
 
                     debug!("PIECES");
-                    shinobi.position.print_pieces();
+                    shinobi.position.print_position();
 
                     debug!("CASTLING: {:?}", shinobi.position.state.castling_rights);
                 }

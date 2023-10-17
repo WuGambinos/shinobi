@@ -1,6 +1,6 @@
 use crate::{
-    adjacent_files, get_file, get_rank, square_name, BitBoard, MoveGenerator, Piece, Side,
-    SquareLabel, BLACK_KINGSIDE_KING_SQUARE, BLACK_KINGSIDE_ROOK_FROM_SQUARE,
+    adjacent_files, get_file, get_rank, load_fen, square_name, BitBoard, MoveGenerator, Piece,
+    Side, SquareLabel, BLACK_KINGSIDE_KING_SQUARE, BLACK_KINGSIDE_ROOK_FROM_SQUARE,
     BLACK_KINGSIDE_ROOK_TO_SQUARE, BLACK_QUEENSIDE_KING_SQUARE, BLACK_QUEENSIDE_ROOK_FROM_SQUARE,
     BLACK_QUEENSIDE_ROOK_TO_SQUARE, EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK,
     WHITE_KINGSIDE_KING_SQUARE, WHITE_KINGSIDE_ROOK_FROM_SQUARE, WHITE_KINGSIDE_ROOK_TO_SQUARE,
@@ -56,11 +56,8 @@ impl CastlingRights {
 pub struct State {
     pub castling_rights: CastlingRights,
     pub en_passant_square: Option<SquareLabel>,
-
-    /// Ply counter
     pub half_move_counter: u8,
-
-    /// Side that is moving
+    pub full_move_counter: u8,
     pub turn: Side,
 }
 
@@ -71,6 +68,7 @@ impl State {
             castling_rights: CastlingRights::empty(),
             en_passant_square: None,
             half_move_counter: 0,
+            full_move_counter: 1,
             turn: Side::White,
         }
     }
@@ -261,7 +259,7 @@ pub struct Position {
 
 impl Position {
     /// Create position struct
-    pub fn new() -> Position {
+    pub fn empty() -> Position {
         Position {
             pieces: [None; 64],
             main_bitboard: EMPTY_BITBOARD,
@@ -279,21 +277,25 @@ impl Position {
         }
     }
 
-    pub fn opponent_bitboard(&self) -> BitBoard {
-        return self.side_bitboards[self.state.opponent() as usize];
-    }
+    pub fn from_fen(fen: &str) -> Position {
+        let mut position = Position {
+            pieces: [None; 64],
+            main_bitboard: EMPTY_BITBOARD,
+            empty_bitboard: EMPTY_BITBOARD,
+            side_bitboards: [EMPTY_BITBOARD; 2],
+            piece_bitboards: [[EMPTY_BITBOARD; 6]; 2],
 
-    pub fn set_bit_on_piece_bitboard(&mut self, piece: Piece, side: Side, square: SquareLabel) {
-        self.piece_bitboards[side as usize][piece as usize].set_bit(square);
-    }
+            state: State::new(),
 
-    /// Returns bitboard for a specific side and piece
-    pub fn piece_bitboard(&self, piece: Piece, side: Side) -> BitBoard {
-        self.piece_bitboards[side as usize][piece as usize]
-    }
+            white_king_square: SquareLabel::A1,
+            black_king_square: SquareLabel::A1,
 
-    /// Sets up position from a grid array of characters representing pieces
-    pub fn from_grid(&mut self, grid: [char; 64]) {
+            history: History::new(),
+            last_move: None,
+        };
+
+        let grid = load_fen(&fen, &mut position.state);
+
         for (i, ch) in grid.iter().enumerate() {
             let mask = BitBoard(1u64 << i);
 
@@ -308,27 +310,42 @@ impl Position {
             };
 
             if *ch == 'K' {
-                self.white_king_square = SquareLabel::from(i as u64);
+                position.white_king_square = SquareLabel::from(i as u64);
             } else if *ch == 'k' {
-                self.black_king_square = SquareLabel::from(i as u64);
+                position.black_king_square = SquareLabel::from(i as u64);
             }
 
             if ch.is_ascii() {
                 if ch.is_uppercase() {
-                    self.side_bitboards[Side::White as usize] |= mask;
-                    self.piece_bitboards[Side::White as usize][piece] |= mask;
-                    self.main_bitboard |= mask;
-                    self.pieces[i] = Some((Side::White, Piece::from(*ch)));
+                    position.side_bitboards[Side::White as usize] |= mask;
+                    position.piece_bitboards[Side::White as usize][piece] |= mask;
+                    position.main_bitboard |= mask;
+                    position.pieces[i] = Some((Side::White, Piece::from(*ch)));
                 } else if ch.is_lowercase() {
-                    self.side_bitboards[Side::Black as usize] |= mask;
-                    self.piece_bitboards[Side::Black as usize][piece] |= mask;
-                    self.main_bitboard |= mask;
-                    self.pieces[i] = Some((Side::Black, Piece::from(*ch)));
+                    position.side_bitboards[Side::Black as usize] |= mask;
+                    position.piece_bitboards[Side::Black as usize][piece] |= mask;
+                    position.main_bitboard |= mask;
+                    position.pieces[i] = Some((Side::Black, Piece::from(*ch)));
                 } else {
-                    self.empty_bitboard |= mask;
+                    position.empty_bitboard |= mask;
                 }
             }
         }
+
+        position
+    }
+
+    pub fn opponent_bitboard(&self) -> BitBoard {
+        return self.side_bitboards[self.state.opponent() as usize];
+    }
+
+    pub fn set_bit_on_piece_bitboard(&mut self, piece: Piece, side: Side, square: SquareLabel) {
+        self.piece_bitboards[side as usize][piece as usize].set_bit(square);
+    }
+
+    /// Returns bitboard for a specific side and piece
+    pub fn piece_bitboard(&self, piece: Piece, side: Side) -> BitBoard {
+        self.piece_bitboards[side as usize][piece as usize]
     }
 
     pub fn king_square(&self, side: Side) -> SquareLabel {
@@ -812,7 +829,7 @@ impl Position {
     }
 
     /// Print piece array board
-    pub fn print_pieces(&self) {
+    pub fn print_position(&self) {
         for rank in (0..8).rev() {
             for file in 0..8 {
                 let pos = rank * 8 + file;
@@ -829,6 +846,17 @@ impl Position {
             }
             println!();
         }
+
+        println!();
+        println!("Side To Move: {:?}", self.state.turn);
+        println!();
+        println!("Half Move Counter: {}", self.state.half_move_counter);
+        println!();
+        println!("Full Move Counter: {}", self.state.full_move_counter);
+        println!();
+        println!("Castling Rights: {:?}", self.state.castling_rights);
+        println!();
+        println!("En Passant Square: {:?}", self.state.en_passant_square);
     }
 
     pub fn print_black_piece_bitboards(&self) {

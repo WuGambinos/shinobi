@@ -8,7 +8,7 @@ use std::time::Instant;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let mut position: Position = Position::new();
+    let mut position: Position = Position::empty();
     let mut depth = "";
     let mut fen = "";
     let mut res = String::new();

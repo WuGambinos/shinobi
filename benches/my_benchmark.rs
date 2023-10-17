@@ -2,7 +2,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use shinobi::{load_fen, perft::*, MoveGenerator, Position};
 
 fn perft_starting_pos_depth_1(c: &mut Criterion) {
-    let mut position = Position::new();
+    let mut position = Position::empty();
     let mut move_gen = MoveGenerator::new();
     let depth = 1;
     let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -15,7 +15,7 @@ fn perft_starting_pos_depth_1(c: &mut Criterion) {
 }
 
 fn perft_starting_pos_depth_3(c: &mut Criterion) {
-    let mut position = Position::new();
+    let mut position = Position::empty();
     let mut move_gen = MoveGenerator::new();
     let depth = 3;
     let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -30,7 +30,7 @@ fn perft_starting_pos_depth_3(c: &mut Criterion) {
 }
 
 fn perft_starting_pos_depth_4(c: &mut Criterion) {
-    let mut position = Position::new();
+    let mut position = Position::empty();
     let mut move_gen = position.move_gen;
     let depth = 4;
     let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -45,7 +45,7 @@ fn perft_starting_pos_depth_4(c: &mut Criterion) {
 }
 
 fn perft_starting_pos_depth_5(c: &mut Criterion) {
-    let mut position = Position::new();
+    let mut position = Position::empty();
     let mut move_gen = MoveGenerator::new();
     let depth = 5;
     let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";

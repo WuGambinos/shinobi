@@ -6,9 +6,9 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn new() -> Engine {
+    pub fn new(position: Position) -> Engine {
         Engine {
-            position: Position::new(),
+            position,
             move_gen: MoveGenerator::new(),
         }
     }

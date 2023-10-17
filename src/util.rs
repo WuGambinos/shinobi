@@ -354,6 +354,7 @@ pub fn print_board(position: [char; 64]) {
         println!();
     }
 }
+
 pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
     let mut file = 0;
     let mut rank = 7;
@@ -362,10 +363,13 @@ pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
     let main_string: &str = fen_board[0];
     let turn: &str = fen_board[1];
     let castle_rights = fen_board[2];
+    let en_passant_square = fen_board[3];
+    let half_move_counter = fen_board[4];
+    let full_move_counter = fen_board[5];
 
     let split_main: Vec<&str> = main_string.split('/').collect();
 
-    let mut res: [char; 64] = ['.'; 64];
+    let mut grid: [char; 64] = ['.'; 64];
 
     if turn == "b" {
         state.turn = Side::Black;
@@ -379,7 +383,7 @@ pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
                 file += (c as u32) - '0' as u32;
             } else {
                 let idx = rank * 8 + file as usize;
-                res[idx] = c;
+                grid[idx] = c;
                 file += 1;
             }
         }
@@ -399,7 +403,24 @@ pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
             state.castling_rights.0 |= Castling::BLACK_KING_SIDE;
         }
     }
-    res
+
+    state.en_passant_square = if en_passant_square == "-" {
+        None
+    } else {
+        let file = en_passant_square.chars().nth(0).unwrap();
+        let rank = en_passant_square.chars().nth(1).unwrap();
+
+        let file_num = file as u8 - b'a';
+        let rank_num = rank.to_digit(10).unwrap() as u8;
+
+        let square = (rank_num - 1) * 8 + file_num;
+
+        Some(SquareLabel::from(square as u64))
+    };
+
+    state.half_move_counter = half_move_counter.parse::<u8>().unwrap();
+    state.full_move_counter = full_move_counter.parse::<u8>().unwrap();
+    grid
 }
 
 pub fn square_name(square: u8) -> String {
