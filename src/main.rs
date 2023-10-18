@@ -8,16 +8,8 @@ fn main() -> InquireResult<()> {
     env_logger::init();
     info!("SHINOBI");
 
-    let fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
-    let position = Position::from_fen(fen);
-    let shinobi = Engine::new(position);
-    let mut z = Zobrist::new();
+    //let fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
 
-    let key = z.generate_hash_key(&shinobi.position);
-    shinobi.position.print_position();
-    println!("ZOBRIST HASH: {:#X}", key);
-
-    /*
     /* MENU */
     let first_menu = vec!["Load Fen"];
     let _ = Select::new("Select an Option", first_menu).prompt()?;
@@ -25,6 +17,8 @@ fn main() -> InquireResult<()> {
     let fen = Text::new("Enter FEN")
         .with_default(START_POS)
         .prompt_skippable()?;
+    let position = Position::from_fen(&fen.unwrap());
+    let mut shinobi = Engine::new(position);
 
     let second_menu = vec![
         Mode::Perft,
@@ -35,9 +29,6 @@ fn main() -> InquireResult<()> {
     let second_ans = Select::new("Select an Option", second_menu).prompt()?;
 
     /* ENGINE */
-    let mut shinobi = Engine::new();
-    let grid = load_fen(&fen.unwrap(), &mut shinobi.position.state);
-    shinobi.position.from_grid(grid);
 
     match second_ans {
         Mode::Perft => {
@@ -84,7 +75,6 @@ fn main() -> InquireResult<()> {
             run_loop(&mut shinobi, &mut sdl_state);
         }
     }
-    */
 
     Ok(())
 }
@@ -129,6 +119,15 @@ fn run_loop(shinobi: &mut Engine, sdl_state: &mut Sdl2State) {
                     keycode: Some(Keycode::Escape),
                     ..
                 } => break 'running,
+
+                Event::KeyDown {
+                    keycode: Some(Keycode::I),
+                    ..
+                } => {
+                    shinobi.position.print_position();
+                    let key = shinobi.zobrist.generate_hash_key(&shinobi.position);
+                    println!("ZOBRIST HASH: {:#X}", key);
+                }
 
                 Event::KeyDown {
                     keycode: Some(Keycode::A),

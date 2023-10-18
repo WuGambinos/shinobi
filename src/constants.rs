@@ -77,3 +77,5 @@ pub const BLACK_KINGSIDE_ROOK_FROM_SQUARE: SquareLabel = SquareLabel::H8;
 pub const BLACK_QUEENSIDE_KING_SQUARE: SquareLabel = SquareLabel::C8;
 pub const BLACK_QUEENSIDE_ROOK_TO_SQUARE: SquareLabel = SquareLabel::D8;
 pub const BLACK_QUEENSIDE_ROOK_FROM_SQUARE: SquareLabel = SquareLabel::A8;
+
+pub const MAX_HALF_MOVES: u8 = 100;

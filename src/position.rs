@@ -2,7 +2,7 @@ use crate::{
     adjacent_files, get_file, get_rank, load_fen, square_name, BitBoard, MoveGenerator, Piece,
     Side, SquareLabel, BLACK_KINGSIDE_KING_SQUARE, BLACK_KINGSIDE_ROOK_FROM_SQUARE,
     BLACK_KINGSIDE_ROOK_TO_SQUARE, BLACK_QUEENSIDE_KING_SQUARE, BLACK_QUEENSIDE_ROOK_FROM_SQUARE,
-    BLACK_QUEENSIDE_ROOK_TO_SQUARE, EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK,
+    BLACK_QUEENSIDE_ROOK_TO_SQUARE, EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK, MAX_HALF_MOVES,
     WHITE_KINGSIDE_KING_SQUARE, WHITE_KINGSIDE_ROOK_FROM_SQUARE, WHITE_KINGSIDE_ROOK_TO_SQUARE,
     WHITE_QUEENSIDE_KING_SQUARE, WHITE_QUEENSIDE_ROOK_FROM_SQUARE, WHITE_QUEENSIDE_ROOK_TO_SQUARE,
 };
@@ -692,6 +692,7 @@ impl Position {
             && self.side_bitboards[self.state.turn as usize].get_bit(mv.target_square as u64) == 0
         {
             self.history.prev_states.push(self.state);
+            let mut pawn_move_or_capture = false;
             // King move
             if mv.piece == Piece::King {
                 match self.state.turn {
@@ -781,6 +782,7 @@ impl Position {
                         .get_bit(mv.target_square as u64)
                         == 1
                     {
+                        pawn_move_or_capture = true;
                         self.capture(mv, from_bitboard, to_bitboard);
                     }
                     // Quiet
@@ -789,13 +791,25 @@ impl Position {
                     }
                 }
             }
+
+            if mv.piece.is_pawn() {
+                pawn_move_or_capture = true;
+            }
+
+            if pawn_move_or_capture {
+                self.state.half_move_counter = 0;
+            } else {
+                self.state.half_move_counter += 1;
+            }
+
+            if self.state.turn == Side::Black {
+                self.state.full_move_counter += 1;
+            }
+
             // Update history
             self.history.moves.push(mv);
 
-            // Update last move
             self.last_move = Some(mv);
-
-            // Change turns
             self.state.change_turn();
         }
     }
@@ -824,9 +838,6 @@ impl Position {
         self.state = self.history.prev_states.pop().unwrap();
     }
 
-    pub fn checkmate(&mut self, move_gen: &mut MoveGenerator) -> bool {
-        move_gen.generate_legal_moves(self, self.state.turn).len() == 0
-    }
 
     /// Print piece array board
     pub fn print_position(&self) {

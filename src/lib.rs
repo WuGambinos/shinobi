@@ -10,6 +10,7 @@ pub mod util;
 pub mod engine;
 pub mod bot;
 pub mod zobrist;
+pub mod tt;
 
 pub use ::rand::prelude::*;
 pub use bitboard::*;
@@ -25,6 +26,7 @@ pub use util::*;
 pub use engine::*;
 pub use bot::*;
 pub use zobrist::*;
+pub use tt::*;
 
 pub use sdl2::event::Event;
 pub use sdl2::image::{InitFlag, LoadTexture};
