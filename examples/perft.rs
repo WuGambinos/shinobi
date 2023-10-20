@@ -1,6 +1,7 @@
 use shinobi::load_fen;
 use shinobi::perft::perft;
 use shinobi::perft::perft_test;
+use shinobi::Engine;
 use shinobi::MoveGenerator;
 use shinobi::Position;
 use std::env;
@@ -31,12 +32,11 @@ fn main() {
     };
 
     // Setup Position
-    let grid = load_fen(fen, &mut position.state);
-    position.from_grid(grid);
-    let mut move_gen = MoveGenerator::new();
+    let position = Position::from_fen(fen);
+    let mut shinobi = Engine::new(position.clone());
 
     let start = Instant::now();
-    let res = perft(&mut position, &mut move_gen, d);
+    let res = perft(&mut shinobi.position, &mut shinobi.move_gen, d);
     let elapsed = start.elapsed();
     println!("PERFT: {} TIME: {} US", res, elapsed.as_micros());
     println!("NPS: {:.0} ", res as f64 / elapsed.as_secs_f64());

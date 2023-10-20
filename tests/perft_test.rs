@@ -8,10 +8,9 @@ fn test_add() {
 
 #[test]
 fn perft_starting_pos_1() {
-    let mut shinobi = Engine::new();
     let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let grid = load_fen(fen, &mut shinobi.position.state);
-    shinobi.position.from_grid(grid);
+    let position = Position::from_fen(fen);
+    let mut shinobi = Engine::new(position);
 
     let depth = 1;
 
@@ -22,10 +21,9 @@ fn perft_starting_pos_1() {
 
 #[test]
 fn perft_starting_pos_2() {
-    let mut shinobi = Engine::new();
     let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let grid = load_fen(fen, &mut shinobi.position.state);
-    shinobi.position.from_grid(grid);
+    let position = Position::from_fen(fen);
+    let mut shinobi = Engine::new(position);
 
     let depth = 2;
 
@@ -35,10 +33,9 @@ fn perft_starting_pos_2() {
 
 #[test]
 fn perft_starting_pos_3() {
-    let mut shinobi = Engine::new();
     let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let grid = load_fen(fen, &mut shinobi.position.state);
-    shinobi.position.from_grid(grid);
+    let position = Position::from_fen(fen);
+    let mut shinobi = Engine::new(position);
 
     let depth = 3;
 
@@ -48,10 +45,9 @@ fn perft_starting_pos_3() {
 
 #[test]
 fn perft_starting_pos_4() {
-    let mut shinobi = Engine::new();
     let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let grid = load_fen(fen, &mut shinobi.position.state);
-    shinobi.position.from_grid(grid);
+    let position = Position::from_fen(fen);
+    let mut shinobi = Engine::new(position);
 
     let depth = 4;
 
@@ -61,10 +57,9 @@ fn perft_starting_pos_4() {
 
 #[test]
 fn perft_starting_pos_5() {
-    let mut shinobi = Engine::new();
     let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let grid = load_fen(fen, &mut shinobi.position.state);
-    shinobi.position.from_grid(grid);
+    let position = Position::from_fen(fen);
+    let mut shinobi = Engine::new(position);
 
     let depth = 5;
 
@@ -74,10 +69,9 @@ fn perft_starting_pos_5() {
 
 #[test]
 fn perft_starting_pos_6() {
-    let mut shinobi = Engine::new();
     let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let grid = load_fen(fen, &mut shinobi.position.state);
-    shinobi.position.from_grid(grid);
+    let position = Position::from_fen(fen);
+    let mut shinobi = Engine::new(position);
 
     let depth = 6;
 

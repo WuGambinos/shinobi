@@ -1,14 +1,15 @@
-use crate::{random_u64, MyRng, Piece, Position, Side, NUM_SQUARES};
+use crate::{random_u64, MyRng, Piece, Position, Side, SquareLabel, NUM_SQUARES};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
 use strum::IntoEnumIterator;
 
 const SEED: u64 = 12345;
 
+#[derive(Debug, Clone, Copy)]
 pub struct Zobrist {
     rand_piece_nums: [[u64; NUM_SQUARES as usize]; 12],
     rand_en_passant_nums: [u64; 64],
-    rand_castling_rights_num: [u64; 16],
+    rand_castling_rights_nums: [u64; 16],
     rand_side_num: u64,
 }
 
@@ -39,9 +40,24 @@ impl Zobrist {
         Zobrist {
             rand_piece_nums,
             rand_en_passant_nums,
-            rand_castling_rights_num,
+            rand_castling_rights_nums: rand_castling_rights_num,
             rand_side_num,
         }
+    }
+
+    pub fn rand_piece_num(&self, piece: Piece, square: SquareLabel) -> u64 {
+        self.rand_piece_nums[piece as usize][square as usize]
+    }
+    pub fn rand_en_passant(&self, square: SquareLabel) -> u64 {
+        self.rand_en_passant_nums[square as usize]
+    }
+
+    pub fn rand_castling_rights_num(&self, square: SquareLabel) -> u64 {
+        self.rand_castling_rights_nums[square as usize]
+    }
+
+    pub fn rand_side_num(&self) -> u64 {
+        self.rand_side_num
     }
 
     pub fn generate_hash_key(&mut self, position: &Position) -> u64 {
@@ -66,7 +82,7 @@ impl Zobrist {
             key ^= self.rand_side_num;
         }
 
-        key ^= self.rand_castling_rights_num[position.state.castling_rights.0 as usize];
+        key ^= self.rand_castling_rights_nums[position.state.castling_rights.0 as usize];
 
         return key;
     }

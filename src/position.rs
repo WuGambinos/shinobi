@@ -1,6 +1,6 @@
 use crate::{
     adjacent_files, get_file, get_rank, load_fen, square_name, BitBoard, MoveGenerator, Piece,
-    Side, SquareLabel, BLACK_KINGSIDE_KING_SQUARE, BLACK_KINGSIDE_ROOK_FROM_SQUARE,
+    Side, SquareLabel, Zobrist, BLACK_KINGSIDE_KING_SQUARE, BLACK_KINGSIDE_ROOK_FROM_SQUARE,
     BLACK_KINGSIDE_ROOK_TO_SQUARE, BLACK_QUEENSIDE_KING_SQUARE, BLACK_QUEENSIDE_ROOK_FROM_SQUARE,
     BLACK_QUEENSIDE_ROOK_TO_SQUARE, EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK, MAX_HALF_MOVES,
     WHITE_KINGSIDE_KING_SQUARE, WHITE_KINGSIDE_ROOK_FROM_SQUARE, WHITE_KINGSIDE_ROOK_TO_SQUARE,
@@ -59,6 +59,7 @@ pub struct State {
     pub half_move_counter: u8,
     pub full_move_counter: u8,
     pub turn: Side,
+    pub zobrist_key: u64,
 }
 
 impl State {
@@ -70,6 +71,7 @@ impl State {
             half_move_counter: 0,
             full_move_counter: 1,
             turn: Side::White,
+            zobrist_key: 0,
         }
     }
 
@@ -155,6 +157,10 @@ impl Move {
 
     fn target_square(&self) -> SquareLabel {
         self.target_square
+    }
+
+    fn move_type(&self) -> MoveType {
+        self.move_type
     }
 }
 
@@ -255,6 +261,8 @@ pub struct Position {
 
     pub history: History,
     pub last_move: Option<Move>,
+
+    pub zobrist: Zobrist,
 }
 
 impl Position {
@@ -274,6 +282,7 @@ impl Position {
 
             history: History::new(),
             last_move: None,
+            zobrist: Zobrist::new(),
         }
     }
 
@@ -292,6 +301,7 @@ impl Position {
 
             history: History::new(),
             last_move: None,
+            zobrist: Zobrist::new(),
         };
 
         let grid = load_fen(&fen, &mut position.state);
@@ -331,6 +341,9 @@ impl Position {
                 }
             }
         }
+
+        let mut z = position.zobrist;
+        position.state.zobrist_key = z.generate_hash_key(&position);
 
         position
     }
@@ -762,32 +775,26 @@ impl Position {
             self.history.prev_piece_bitboards.push(self.piece_bitboards);
             self.history.prev_side_bitboards.push(self.side_bitboards);
 
-            // Castle
-            if mv.move_type == MoveType::Castle {
-                self.castle(mv, from_bitboard, to_bitboard);
-            }
-            // Prototion
-            else if mv.move_type == MoveType::Promotion {
-                self.promote(mv, from_to_bitboard, to_bitboard);
-            }
-            // En passant
-            else if mv.move_type == MoveType::EnPassant {
-                self.en_passant(mv, from_bitboard, to_bitboard);
-            } else {
-                // Make sure there is piece on from_square
-                if self.side_bitboards[self.state.turn as usize].get_bit(mv.from_square as u64) != 0
-                {
-                    // Capture
-                    if self.side_bitboards[self.state.opponent() as usize]
-                        .get_bit(mv.target_square as u64)
-                        == 1
-                    {
-                        pawn_move_or_capture = true;
-                        self.capture(mv, from_bitboard, to_bitboard);
-                    }
-                    // Quiet
-                    else {
-                        self.quiet(mv, from_bitboard, to_bitboard);
+            match mv.move_type() {
+                MoveType::Castle => self.castle(mv, from_bitboard, to_bitboard),
+                MoveType::Promotion => self.promote(mv, from_to_bitboard, to_bitboard),
+                MoveType::EnPassant => self.en_passant(mv, from_bitboard, to_bitboard),
+                _ => {
+                    let piece_on_from_square = self.side_bitboards[self.state.turn as usize]
+                        .get_bit(mv.from_square as u64)
+                        != 0;
+                    if piece_on_from_square {
+                        let capture = self.side_bitboards[self.state.opponent() as usize]
+                            .get_bit(mv.target_square as u64)
+                            == 1;
+                        if capture {
+                            pawn_move_or_capture = true;
+                            self.capture(mv, from_bitboard, to_bitboard);
+                        }
+                        // Quiet
+                        else {
+                            self.quiet(mv, from_bitboard, to_bitboard);
+                        }
                     }
                 }
             }
@@ -808,6 +815,23 @@ impl Position {
 
             // Update history
             self.history.moves.push(mv);
+
+            // Update hash
+            /*
+            self.state.zobrist_key ^= self.zobrist.rand_piece_num(mv.piece, mv.from_square());
+            if mv.move_type == MoveType::Capture {
+                self.state.zobrist_key ^= self.zobrist.rand_piece_num(
+                    self.piece_on_square(mv.target_square(), self.state.opponent())
+                        .unwrap(),
+                    mv.target_square(),
+                );
+            }
+            self.state.zobrist_key ^= self.zobrist.rand_piece_num(mv.piece, mv.target_square());
+
+            if self.state.turn == Side::Black {
+                self.state.zobrist_key ^= self.zobrist.rand_side_num();
+            }
+            */
 
             self.last_move = Some(mv);
             self.state.change_turn();
@@ -837,7 +861,6 @@ impl Position {
         // Revert State
         self.state = self.history.prev_states.pop().unwrap();
     }
-
 
     /// Print piece array board
     pub fn print_position(&self) {

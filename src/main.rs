@@ -126,7 +126,9 @@ fn run_loop(shinobi: &mut Engine, sdl_state: &mut Sdl2State) {
                 } => {
                     shinobi.position.print_position();
                     let key = shinobi.zobrist.generate_hash_key(&shinobi.position);
-                    println!("ZOBRIST HASH: {:#X}", key);
+                    println!("EXPETED ZOBRIST KEY {:#X}", key);
+                    println!("ACTUAL ZOBRIST KEY: {:#X}", shinobi.position.state.zobrist_key);
+                    println!();
                 }
 
                 Event::KeyDown {
