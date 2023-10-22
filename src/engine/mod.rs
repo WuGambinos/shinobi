@@ -1,7 +1,12 @@
+pub mod tt;
+pub mod zobrist;
+pub mod bot;
+
 use crate::MoveGenerator;
 use crate::Position;
 use crate::Zobrist;
 use crate::MAX_HALF_MOVES;
+
 pub struct Engine {
     pub position: Position,
     pub move_gen: MoveGenerator,

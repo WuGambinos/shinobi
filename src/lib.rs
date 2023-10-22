@@ -1,16 +1,7 @@
-pub mod bitboard;
-pub mod constants;
-pub mod enums;
-pub mod generator;
 pub mod magic;
-pub mod magic_constants;
-pub mod perft;
 pub mod position;
 pub mod util;
 pub mod engine;
-pub mod bot;
-pub mod zobrist;
-pub mod tt;
 
 pub use ::rand::prelude::*;
 pub use bitboard::*;

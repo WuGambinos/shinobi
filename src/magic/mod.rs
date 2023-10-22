@@ -7,6 +7,8 @@ use crate::ROOK_MAGICS;
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 
+pub mod magic_constants;
+
 const SEED: u64 = 1804289383;
 pub struct MyRng {
     state: u32,

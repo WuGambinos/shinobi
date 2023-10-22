@@ -1,4 +1,6 @@
 pub mod castling_rights;
+pub mod generator;
+pub mod bitboard;
 use crate::{
     adjacent_files, get_file, get_rank, load_fen, square_name, BitBoard, MoveGenerator, Piece,
     Side, SquareLabel, Zobrist, BLACK_KINGSIDE_KING_SQUARE, BLACK_KINGSIDE_ROOK_FROM_SQUARE,

@@ -1,3 +1,7 @@
+pub mod constants;
+pub mod enums;
+pub mod perft;
+
 use std::fs;
 use std::path::PathBuf;
 
