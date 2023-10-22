@@ -2,7 +2,6 @@ use std::fs;
 use std::path::PathBuf;
 
 use crate::bitboard::BitBoard;
-use crate::Castling;
 use crate::Color;
 use crate::EventPump;
 use crate::IntoEnumIterator;
@@ -40,6 +39,7 @@ use crate::SIXTH_RANK;
 use crate::SQUARE_SIZE;
 use crate::THIRD_RANK;
 use crate::W_IMG_POS;
+use crate::castling_rights::Castling;
 use sdl2::gfx::primitives::DrawRenderer;
 use sdl2::mouse::MouseButton::Left;
 use sdl2::mouse::MouseState;

@@ -1,3 +1,4 @@
+pub mod castling_rights;
 use crate::{
     adjacent_files, get_file, get_rank, load_fen, square_name, BitBoard, MoveGenerator, Piece,
     Side, SquareLabel, Zobrist, BLACK_KINGSIDE_KING_SQUARE, BLACK_KINGSIDE_ROOK_FROM_SQUARE,
@@ -6,51 +7,12 @@ use crate::{
     WHITE_KINGSIDE_KING_SQUARE, WHITE_KINGSIDE_ROOK_FROM_SQUARE, WHITE_KINGSIDE_ROOK_TO_SQUARE,
     WHITE_QUEENSIDE_KING_SQUARE, WHITE_QUEENSIDE_ROOK_FROM_SQUARE, WHITE_QUEENSIDE_ROOK_TO_SQUARE,
 };
+
 use std::fmt;
 use strum::IntoEnumIterator;
 
-pub struct Castling(u8);
-impl Castling {
-    pub const WHITE_KING_SIDE: u8 = 0b1000;
-    pub const WHITE_QUEEN_SIDE: u8 = 0b0100;
-    pub const BLACK_KING_SIDE: u8 = 0b0010;
-    pub const BLACK_QUEEN_SIDE: u8 = 0b0001;
+use self::castling_rights::{CastlingRights, Castling};
 
-    pub const WHITE_CASTLING: u8 = Self::WHITE_KING_SIDE | Self::WHITE_QUEEN_SIDE;
-    pub const BLACK_CASTLING: u8 = Self::BLACK_KING_SIDE | Self::BLACK_QUEEN_SIDE;
-
-    pub const NO_CASTLING: u8 = 0b0000;
-    pub const ANY_CASTLING: u8 = Self::WHITE_CASTLING | Self::BLACK_CASTLING;
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct CastlingRights(pub u8);
-
-impl CastlingRights {
-    pub fn empty() -> CastlingRights {
-        CastlingRights(Castling::NO_CASTLING)
-    }
-
-    pub fn all() -> CastlingRights {
-        CastlingRights(Castling::ANY_CASTLING)
-    }
-
-    pub fn white_king_side(self) -> bool {
-        self.0 & Castling::WHITE_KING_SIDE != 0
-    }
-
-    pub fn white_queen_side(self) -> bool {
-        self.0 & Castling::WHITE_QUEEN_SIDE != 0
-    }
-
-    pub fn black_king_side(self) -> bool {
-        self.0 & Castling::BLACK_KING_SIDE != 0
-    }
-
-    pub fn black_queen_side(self) -> bool {
-        self.0 & Castling::BLACK_QUEEN_SIDE != 0
-    }
-}
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct State {

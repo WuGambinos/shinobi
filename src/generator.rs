@@ -1,5 +1,5 @@
 use crate::{
-    get_file, get_rank, init_slider_attacks, BitBoard, Castling, CastlingRights, Move, MoveType,
+    get_file, get_rank, init_slider_attacks, BitBoard, Move, MoveType,
     Piece, Position, SMagic, Side, SquareLabel, A_FILE, BLACK_KINGSIDE_KING_SQUARE,
     BLACK_QUEENSIDE_KING_SQUARE, B_FILE, EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK, F_FILE, G_FILE,
     H_FILE, WHITE_KINGSIDE_KING_SQUARE, WHITE_QUEENSIDE_KING_SQUARE,
