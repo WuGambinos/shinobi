@@ -1,6 +1,6 @@
+pub mod bitboard;
 pub mod castling_rights;
 pub mod generator;
-pub mod bitboard;
 use crate::{
     adjacent_files, get_file, get_rank, load_fen, square_name, BitBoard, MoveGenerator, Piece,
     Side, SquareLabel, Zobrist, BLACK_KINGSIDE_KING_SQUARE, BLACK_KINGSIDE_ROOK_FROM_SQUARE,
@@ -13,8 +13,7 @@ use crate::{
 use std::fmt;
 use strum::IntoEnumIterator;
 
-use self::castling_rights::{CastlingRights, Castling};
-
+use self::castling_rights::{Castling, CastlingRights};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct State {
@@ -372,19 +371,8 @@ impl Position {
                             ep_board = ep_board >> 8;
                         }
 
-                        // Find en passant square
-                        let mut n = ep_board.0;
-                        let mut i = 0;
-                        while n > 0 {
-                            let bit = n & 1;
-                            if bit == 1 {
-                                self.state.en_passant_square = Some(SquareLabel::from(i));
-                                return Some(ep_board);
-                            }
-
-                            n = n >> 1;
-                            i += 1;
-                        }
+                        self.state.en_passant_square = Some(ep_board.bitscan_forward());
+                        return Some(ep_board);
                     }
                 }
             }

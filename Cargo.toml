@@ -23,7 +23,7 @@ features = ["image", "gfx"]
 
 [profile.release]
 debug = true
-lto = true
+#lto = true
 
 [dev-dependicies]
 criterion = {version = "0.4", features = ["html_reports"]}

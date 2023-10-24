@@ -1,5 +1,8 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use shinobi::{load_fen, perft::*, Engine, MoveGenerator, Position};
+use shinobi::{
+    load_fen, perft::*, BitBoard, Engine, IntoEnumIterator, MoveGenerator, Piece, Position, Rng,
+    Side, SquareLabel, SquareLabelIter,
+};
 
 fn perft_starting_pos_depth_1(c: &mut Criterion) {
     let depth = 1;
@@ -78,9 +81,17 @@ fn move_gen_bench(c: &mut Criterion) {
     let position = Position::from_fen(fen);
     let mut engine = Engine::new(position);
 
-    c.bench_function("Generating Moves", |b| {
-        b.iter(|| black_box(engine.move_gen.generate_moves(&mut engine.position, shinobi::Side::White)))
-    });
+    for _ in 0..5 {
+        c.bench_function("Generating Moves", |b| {
+            b.iter(|| {
+                black_box(
+                    engine
+                        .move_gen
+                        .generate_moves(&mut engine.position, shinobi::Side::White),
+                )
+            })
+        });
+    }
 }
 
 criterion_group!(

@@ -28,14 +28,38 @@ impl BitBoard {
     }
 
     pub fn bitscan_forward(&self) -> SquareLabel {
+        assert!(self.0 != 0);
         let square = self.0.trailing_zeros() as u64;
         SquareLabel::from(square)
     }
 
     pub fn bitscan_forward_reset(&mut self) -> SquareLabel {
+        assert!(self.0 != 0);
         let square = self.bitscan_forward();
         self.0 &= self.0 - 1;
         return square;
+    }
+
+    pub fn pop_count(&mut self) -> u64 {
+        let mut count = 0;
+        let mut n = self.0;
+
+        while n > 0 {
+            count += 1;
+            n &= n - 1;
+        }
+        return count;
+    }
+
+    pub fn pop_count_with_fn(&mut self) -> u64 {
+        let mut count = 0;
+        let mut n = self.0;
+
+        while n > 0 {
+            count += 1;
+            n &= n - 1;
+        }
+        return count;
     }
 
     pub fn print(&self) {
