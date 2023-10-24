@@ -1,7 +1,7 @@
 use crate::{
-    get_file, get_rank, init_slider_attacks, BitBoard, Move, MoveType, Piece, Position, SMagic,
-    Side, SquareLabel, A_FILE, BLACK_KINGSIDE_KING_SQUARE, BLACK_QUEENSIDE_KING_SQUARE, B_FILE,
-    EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK, F_FILE, G_FILE, H_FILE, WHITE_KINGSIDE_KING_SQUARE,
+    init_slider_attacks, BitBoard, Move, MoveType, Piece, Position, SMagic, Side, SquareLabel,
+    A_FILE, BLACK_KINGSIDE_KING_SQUARE, BLACK_QUEENSIDE_KING_SQUARE, B_FILE, EIGTH_RANK,
+    EMPTY_BITBOARD, FIRST_RANK, G_FILE, H_FILE, WHITE_KINGSIDE_KING_SQUARE,
     WHITE_QUEENSIDE_KING_SQUARE,
 };
 use strum::IntoEnumIterator;
@@ -208,21 +208,21 @@ impl MoveGenerator {
     }
 
     pub fn attacks_to_king(&self, position: &Position, side: Side) -> BitBoard {
-        let king_square = match side {
+        let king_square: SquareLabel = match side {
             Side::White => position.white_king_square,
             Side::Black => position.black_king_square,
         };
 
-        let enemy = match side {
+        let opponent: Side = match side {
             Side::White => Side::Black,
             Side::Black => Side::White,
         };
 
-        let opponent_pawns = position.piece_bitboard(Piece::Pawn, enemy);
-        let opponent_knights = position.piece_bitboard(Piece::Knight, enemy);
-        let opponent_rooks = position.piece_bitboard(Piece::Rook, enemy);
-        let opponent_bishop = position.piece_bitboard(Piece::Bishop, enemy);
-        let opponent_queen = position.piece_bitboard(Piece::Queen, enemy);
+        let opponent_pawns: BitBoard = position.piece_bitboard(Piece::Pawn, opponent);
+        let opponent_knights: BitBoard = position.piece_bitboard(Piece::Knight, opponent);
+        let opponent_rooks: BitBoard = position.piece_bitboard(Piece::Rook, opponent);
+        let opponent_bishop: BitBoard = position.piece_bitboard(Piece::Bishop, opponent);
+        let opponent_queen: BitBoard = position.piece_bitboard(Piece::Queen, opponent);
 
         return (self.get_bishop_moves(king_square as u64, position.main_bitboard)
             & opponent_bishop)
@@ -239,14 +239,14 @@ impl MoveGenerator {
         castle_squares: BitBoard,
     ) -> bool {
         let mut bb: BitBoard = castle_squares;
-        let enemy = position.state.opponent();
+        let opponent: Side = position.state.opponent();
 
         let mut result_board: BitBoard = EMPTY_BITBOARD;
-        let opponent_pawns: BitBoard = position.piece_bitboard(Piece::Pawn, enemy);
-        let opponent_knights: BitBoard = position.piece_bitboard(Piece::Knight, enemy);
-        let opponent_rooks: BitBoard = position.piece_bitboard(Piece::Rook, enemy);
-        let opponent_bishop: BitBoard = position.piece_bitboard(Piece::Bishop, enemy);
-        let opponent_queen: BitBoard = position.piece_bitboard(Piece::Queen, enemy);
+        let opponent_pawns: BitBoard = position.piece_bitboard(Piece::Pawn, opponent);
+        let opponent_knights: BitBoard = position.piece_bitboard(Piece::Knight, opponent);
+        let opponent_rooks: BitBoard = position.piece_bitboard(Piece::Rook, opponent);
+        let opponent_bishop: BitBoard = position.piece_bitboard(Piece::Bishop, opponent);
+        let opponent_queen: BitBoard = position.piece_bitboard(Piece::Queen, opponent);
 
         while bb.0 > 0 {
             let square = SquareLabel::from(bb.bitscan_forward_reset());
@@ -308,6 +308,7 @@ impl MoveGenerator {
         return self.get_rook_moves(square, occupancy) | self.get_bishop_moves(square, occupancy);
     }
 
+    #[inline(always)]
     pub fn create_moves(
         &mut self,
         position: &Position,
@@ -532,11 +533,12 @@ impl MoveGenerator {
         square: SquareLabel,
     ) -> Vec<Move> {
         let mut moves = Vec::new();
-        let opponent_king_moves = match side {
+        let opponent_king_moves: BitBoard = match side {
             Side::Black => self.king_moves[position.white_king_square as usize],
             Side::White => self.king_moves[position.black_king_square as usize],
         };
-        let piece_type = Piece::King;
+
+        let piece_type: Piece = Piece::King;
 
         let king_moves = if self.king_moves[square as usize] & opponent_king_moves == EMPTY_BITBOARD
         {
@@ -560,7 +562,7 @@ impl MoveGenerator {
             ),
         };
 
-        let castle_rights = match side {
+        let castle_rights: (bool, bool) = match side {
             Side::White => (
                 position.state.castling_rights.white_king_side(),
                 position.state.castling_rights.white_queen_side(),
@@ -571,11 +573,14 @@ impl MoveGenerator {
             ),
         };
 
-        // Kingside
-        if castle_rights.0 {
-            let checkers = self.attacks_to_king(position, side);
+        let kingside_castle = castle_rights.0;
+        let queenside_castle = castle_rights.1;
+
+        if kingside_castle {
+            let checkers: BitBoard = self.attacks_to_king(position, side);
             let upper = BitBoard(!1 << square as usize);
-            let king_side_squares = upper & rank & !position.piece_bitboard(Piece::Rook, side);
+            let king_side_squares: BitBoard =
+                upper & rank & !position.piece_bitboard(Piece::Rook, side);
 
             let blockers: BitBoard =
                 upper & position.main_bitboard & !position.piece_bitboard(Piece::Rook, side) & rank;
@@ -598,12 +603,12 @@ impl MoveGenerator {
             }
         }
 
-        // Queenside
-        if castle_rights.1 {
-            let checkers = self.attacks_to_king(position, side);
+        if queenside_castle {
+            let checkers: BitBoard = self.attacks_to_king(position, side);
             let lower = BitBoard((1 << square as usize) - 1);
-            let queen_side_squares = lower & rank & !position.piece_bitboard(Piece::Rook, side)
-                ^ BitBoard((1 << queenside_castle_king_square as usize) >> 1);
+            let queen_side_squares: BitBoard =
+                lower & rank & !position.piece_bitboard(Piece::Rook, side)
+                    ^ BitBoard((1 << queenside_castle_king_square as usize) >> 1);
 
             let blockers: BitBoard =
                 lower & position.main_bitboard & !position.piece_bitboard(Piece::Rook, side) & rank;
@@ -638,8 +643,8 @@ impl MoveGenerator {
         for square in SquareLabel::iter() {
             let piece: Option<(Side, Piece)> = position.pieces[square as usize];
             if let Some(p) = piece {
-                let piece_type = p.1;
-                let piece_side = p.0;
+                let piece_type: Piece = p.1;
+                let piece_side: Side = p.0;
 
                 if piece_side == side {
                     match piece_type {
