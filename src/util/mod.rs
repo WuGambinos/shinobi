@@ -2,8 +2,7 @@ pub mod constants;
 pub mod enums;
 pub mod perft;
 
-use std::fs;
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
 use crate::{
     bitboard::BitBoard, castling_rights::Castling, Color, EventPump, IntoEnumIterator, LoadTexture,
@@ -22,7 +21,114 @@ pub fn get_square_from_mouse_position(pos_x: i32, pos_y: i32) -> SquareLabel {
     SquareLabel::from(square)
 }
 
-pub fn piece_follow_mouse(
+pub fn drag_and_drop(
+    canvas: &mut WindowCanvas,
+    texture_creator: &TextureCreator<WindowContext>,
+    pieces: &Vec<PathBuf>,
+    moves: &mut Vec<Move>,
+    event_pump: &EventPump,
+    old_state: &mut MouseState,
+    position: &mut Position,
+    move_gen: &mut MoveGenerator,
+    from_square: &mut Option<SquareLabel>,
+    selected_piece: &mut Option<Piece>,
+) -> Result<(), String> {
+    // HELD DOWN
+    if old_state.is_mouse_button_pressed(Left)
+        && event_pump.mouse_state().is_mouse_button_pressed(Left)
+    {
+        piece_follow_mouse(
+            canvas,
+            texture_creator,
+            event_pump,
+            pieces,
+            position,
+            *selected_piece,
+        )?;
+
+        if let Some(p) = *selected_piece {
+            draw_moves(p, from_square.unwrap(), moves, canvas)?;
+        }
+    }
+    // Pressed
+    else if event_pump.mouse_state().is_mouse_button_pressed(Left) {
+        let state = event_pump.mouse_state();
+
+        *from_square = Some(get_square_from_mouse_position(state.x(), state.y()));
+        let boards = position.piece_bitboards[position.state.turn as usize];
+
+        *selected_piece = None;
+
+        for piece in Piece::iter() {
+            let res = boards[piece as usize].get_bit(from_square.unwrap() as u64);
+            if res != 0 {
+                *selected_piece = Some(piece);
+            }
+        }
+
+        *moves = move_gen.generate_legal_moves(&mut position.clone(), position.state.turn);
+
+        if let Some(selected_p) = selected_piece {
+            position.piece_bitboards[position.state.turn as usize][*selected_p as usize]
+                .clear_bit(from_square.unwrap());
+        }
+
+        *old_state = event_pump.mouse_state();
+    }
+    // Release Button
+    else if !event_pump.mouse_state().is_mouse_button_pressed(Left) {
+        let target_square: SquareLabel = get_square_from_mouse_position(
+            event_pump.mouse_state().x(),
+            event_pump.mouse_state().y(),
+        );
+
+        if let Some(select_piece) = selected_piece {
+            let old_turn: Side = position.state.turn;
+            let mut old_position: Position = position.clone();
+            let mut valid = false;
+            for mv in moves.iter() {
+                if is_valid_move(mv, select_piece, from_square.unwrap(), target_square) {
+                    apply_move(position, mv, &mut old_position, old_turn);
+                    valid = true;
+                    break;
+                }
+            }
+
+            // Undo visual move
+            if !valid {
+                position.piece_bitboards[position.state.turn as usize][*select_piece as usize]
+                    .set_bit(from_square.unwrap());
+            }
+        }
+        *selected_piece = None;
+        *old_state = MouseState::from_sdl_state(0);
+    }
+
+    Ok(())
+}
+
+fn draw_moves(
+    p: Piece,
+    from: SquareLabel,
+    moves: &Vec<Move>,
+    canvas: &mut WindowCanvas,
+) -> Result<(), String> {
+    for mv in moves {
+        if mv.piece == p && mv.from_square == from {
+            let file = mv.target_square as i16 % 8;
+            let rank = mv.target_square as i16 / 8;
+            canvas.filled_circle(
+                file as i16 * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
+                (7 - rank as i16) * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
+                5,
+                Color::RED,
+            )?;
+        }
+    }
+    Ok(())
+}
+
+fn piece_follow_mouse(
     canvas: &mut WindowCanvas,
     texture_creator: &TextureCreator<WindowContext>,
     event_pump: &EventPump,
@@ -58,114 +164,43 @@ pub fn piece_follow_mouse(
     Ok(())
 }
 
-pub fn drag_and_drop(
-    canvas: &mut WindowCanvas,
-    texture_creator: &TextureCreator<WindowContext>,
-    pieces: &Vec<PathBuf>,
-    moves: &mut Vec<Move>,
-    event_pump: &EventPump,
-    old_state: &mut MouseState,
+fn is_valid_move(
+    mv: &Move,
+    selected_piece: &Piece,
+    from_square: SquareLabel,
+    target_square: SquareLabel,
+) -> bool {
+    return mv.piece() == *selected_piece
+        && mv.from_square() == from_square
+        && mv.target_square() == target_square;
+}
+
+fn apply_move(position: &mut Position, mv: &Move, old_position: &mut Position, old_turn: Side) {
+    position.make_move(*mv);
+    handle_movement(
+        old_position,
+        position,
+        &mv.piece,
+        mv.from_square,
+        mv.target_square,
+        old_turn,
+    );
+}
+
+fn handle_movement(
+    old_position: &mut Position,
     position: &mut Position,
-    move_gen: &mut MoveGenerator,
-    from_square: &mut Option<SquareLabel>,
-    selected_piece: &mut Option<Piece>,
-) -> Result<(), String> {
-    // HELD DOWN
-    if old_state.is_mouse_button_pressed(Left)
-        && event_pump.mouse_state().is_mouse_button_pressed(Left)
-    {
-        piece_follow_mouse(
-            canvas,
-            texture_creator,
-            event_pump,
-            pieces,
-            position,
-            *selected_piece,
-        )?;
-
-        if let Some(p) = *selected_piece {
-            // Draw Moves
-            for mv in moves {
-                if mv.piece == p && mv.from_square == from_square.unwrap() {
-                    let file = mv.target_square as i16 % 8;
-                    let rank = mv.target_square as i16 / 8;
-                    canvas.filled_circle(
-                        file as i16 * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
-                        (7 - rank as i16) * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
-                        5,
-                        Color::RED,
-                    )?;
-                }
-            }
-        }
+    selected_piece: &Piece,
+    from_square: SquareLabel,
+    target_square: SquareLabel,
+    turn: Side,
+) {
+    let bit = old_position.side_bitboards[turn as usize].get_bit(target_square as u64);
+    if from_square != target_square && bit == 0 {
+        position.piece_bitboards[turn as usize][*selected_piece as usize].clear_bit(from_square);
+    } else {
+        position.set_bit_on_piece_bitboard(*selected_piece, turn, from_square);
     }
-    // Pressed
-    else if event_pump.mouse_state().is_mouse_button_pressed(Left) {
-        let state = event_pump.mouse_state();
-
-        *from_square = Some(get_square_from_mouse_position(state.x(), state.y()));
-        let boards = position.piece_bitboards[position.state.turn as usize];
-
-        *selected_piece = None;
-
-        for piece in Piece::iter() {
-            let res = boards[piece as usize].get_bit(from_square.unwrap() as u64);
-            if res != 0 {
-                *selected_piece = Some(piece);
-            }
-        }
-
-        *moves = move_gen.generate_legal_moves(&mut position.clone(), position.state.turn);
-
-        if let Some(selected_p) = selected_piece {
-            position.piece_bitboards[position.state.turn as usize][*selected_p as usize]
-                .clear_bit(from_square.unwrap());
-        }
-
-        *old_state = event_pump.mouse_state();
-    }
-    // Release Button
-    else if !event_pump.mouse_state().is_mouse_button_pressed(Left) {
-        let target_square: SquareLabel = get_square_from_mouse_position(
-            event_pump.mouse_state().x(),
-            event_pump.mouse_state().y(),
-        );
-
-        if selected_piece.is_some() {
-            let old_turn: Side = position.state.turn;
-            let mut old_position: Position = position.clone();
-            let mut valid = false;
-            for mv in moves.iter() {
-                if mv.piece == selected_piece.unwrap()
-                    && from_square.unwrap() == mv.from_square
-                    && mv.target_square == target_square
-                {
-                    position.make_move(*mv);
-                    handle_movement(
-                        &mut old_position,
-                        position,
-                        selected_piece,
-                        from_square,
-                        target_square,
-                        old_turn,
-                    );
-                    valid = true;
-                    break;
-                }
-            }
-
-            // Undo visual move
-            if !valid {
-                position.piece_bitboards[position.state.turn as usize]
-                    [selected_piece.unwrap() as usize]
-                    .set_bit(from_square.unwrap());
-            }
-        }
-        *selected_piece = None;
-        *old_state = MouseState::from_sdl_state(0);
-    }
-
-    Ok(())
 }
 
 pub fn draw_squares(canvas: &mut WindowCanvas) -> Result<(), String> {
@@ -215,7 +250,7 @@ pub fn draw_pieces(
     Ok(())
 }
 
-pub fn draw_white_pieces(
+fn draw_white_pieces(
     canvas: &mut WindowCanvas,
     texture_creator: &TextureCreator<WindowContext>,
     pieces: &Vec<PathBuf>,
@@ -257,7 +292,7 @@ pub fn draw_white_pieces(
     Ok(())
 }
 
-pub fn draw_black_pieces(
+fn draw_black_pieces(
     canvas: &mut WindowCanvas,
     texture_creator: &TextureCreator<WindowContext>,
     pieces: &Vec<PathBuf>,
@@ -297,23 +332,6 @@ pub fn draw_black_pieces(
     }
 
     Ok(())
-}
-
-pub fn handle_movement(
-    old_position: &mut Position,
-    position: &mut Position,
-    selected_piece: &mut Option<Piece>,
-    from_square: &mut Option<SquareLabel>,
-    target_square: SquareLabel,
-    turn: Side,
-) {
-    let bit = old_position.side_bitboards[turn as usize].get_bit(target_square as u64);
-    if from_square.unwrap() != target_square && bit == 0 {
-        position.piece_bitboards[turn as usize][selected_piece.unwrap() as usize]
-            .clear_bit(from_square.unwrap());
-    } else {
-        position.set_bit_on_piece_bitboard(selected_piece.unwrap(), turn, from_square.unwrap());
-    }
 }
 
 pub fn print_board(position: [char; 64]) {

@@ -103,19 +103,22 @@ impl Move {
     }
 
     pub fn is_double_pawn_push(&self) -> bool {
-        return self.piece.is_pawn()
-            && (self.target_square() as i8 - self.from_square() as i8).abs() == 16;
+        self.piece.is_pawn() && (self.target_square() as i8 - self.from_square() as i8).abs() == 16
     }
 
-    fn from_square(&self) -> SquareLabel {
+    pub fn piece(&self) -> Piece {
+        self.piece
+    }
+
+    pub fn from_square(&self) -> SquareLabel {
         self.from_square
     }
 
-    fn target_square(&self) -> SquareLabel {
+    pub fn target_square(&self) -> SquareLabel {
         self.target_square
     }
 
-    fn move_type(&self) -> MoveType {
+    pub fn move_type(&self) -> MoveType {
         self.move_type
     }
 }
