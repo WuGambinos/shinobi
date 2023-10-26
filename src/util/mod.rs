@@ -5,48 +5,14 @@ pub mod perft;
 use std::fs;
 use std::path::PathBuf;
 
-use crate::bitboard::BitBoard;
-use crate::Color;
-use crate::EventPump;
-use crate::IntoEnumIterator;
-use crate::LoadTexture;
-use crate::Move;
-use crate::MoveGenerator;
-use crate::MoveType;
-use crate::Piece;
-use crate::Position;
-use crate::Rect;
-use crate::Side;
-use crate::SquareLabel;
-use crate::State;
-use crate::TextureCreator;
-use crate::WindowCanvas;
-use crate::WindowContext;
-use crate::A_FILE;
-use crate::B_FILE;
-use crate::B_IMG_POS;
-use crate::C_FILE;
-use crate::DARK;
-use crate::D_FILE;
-use crate::EIGTH_RANK;
-use crate::E_FILE;
-use crate::FIFTH_RANK;
-use crate::FIRST_RANK;
-use crate::FOURTH_RANK;
-use crate::F_FILE;
-use crate::G_FILE;
-use crate::H_FILE;
-use crate::LIGHT;
-use crate::SECOND_RANK;
-use crate::SEVENTH_RANK;
-use crate::SIXTH_RANK;
-use crate::SQUARE_SIZE;
-use crate::THIRD_RANK;
-use crate::W_IMG_POS;
-use crate::castling_rights::Castling;
-use sdl2::gfx::primitives::DrawRenderer;
-use sdl2::mouse::MouseButton::Left;
-use sdl2::mouse::MouseState;
+use crate::{
+    bitboard::BitBoard, castling_rights::Castling, Color, EventPump, IntoEnumIterator, LoadTexture,
+    Move, MoveGenerator, Piece, Position, Rect, Side, SquareLabel, State, TextureCreator,
+    WindowCanvas, WindowContext, A_FILE, B_FILE, B_IMG_POS, C_FILE, DARK, D_FILE, EIGTH_RANK,
+    E_FILE, FIFTH_RANK, FIRST_RANK, FOURTH_RANK, F_FILE, G_FILE, H_FILE, LIGHT, SECOND_RANK,
+    SEVENTH_RANK, SIXTH_RANK, SQUARE_SIZE, THIRD_RANK, W_IMG_POS,
+};
+use sdl2::{gfx::primitives::DrawRenderer, mouse::MouseButton::Left, mouse::MouseState};
 
 pub fn get_square_from_mouse_position(pos_x: i32, pos_y: i32) -> SquareLabel {
     let x = pos_x / SQUARE_SIZE;
@@ -184,6 +150,7 @@ pub fn drag_and_drop(
                         old_turn,
                     );
                     valid = true;
+                    break;
                 }
             }
 
