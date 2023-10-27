@@ -1,4 +1,4 @@
-use crate::Move;
+use crate::mov::Move;
 
 const HASH_SIZE: usize = 0x400000;
 const HASH_FLAG_EXACT: i32 = 0;

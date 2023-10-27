@@ -1,4 +1,4 @@
-use crate::{Move, MoveGenerator, Position};
+use crate::{mov::Move, MoveGenerator, Position};
 
 const WEIGHTS: [i32; 6] = [100, 320, 330, 500, 900, 20000];
 const LARGE_NUM: i32 = 99999999;

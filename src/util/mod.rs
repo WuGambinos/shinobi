@@ -6,7 +6,7 @@ use std::{fs, path::PathBuf};
 
 use crate::{
     bitboard::BitBoard, castling_rights::Castling, Color, EventPump, IntoEnumIterator, LoadTexture,
-    Move, MoveGenerator, Piece, Position, Rect, Side, SquareLabel, State, TextureCreator,
+    mov::Move, MoveGenerator, Piece, Position, Rect, Side, SquareLabel, State, TextureCreator,
     WindowCanvas, WindowContext, A_FILE, B_FILE, B_IMG_POS, C_FILE, DARK, D_FILE, EIGTH_RANK,
     E_FILE, FIFTH_RANK, FIRST_RANK, FOURTH_RANK, F_FILE, G_FILE, H_FILE, LIGHT, SECOND_RANK,
     SEVENTH_RANK, SIXTH_RANK, SQUARE_SIZE, THIRD_RANK, W_IMG_POS,
