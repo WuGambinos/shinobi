@@ -5,8 +5,8 @@ pub mod perft;
 use std::{fs, path::PathBuf};
 
 use crate::{
-    bitboard::BitBoard, castling_rights::Castling, Color, EventPump, IntoEnumIterator, LoadTexture,
-    mov::Move, MoveGenerator, Piece, Position, Rect, Side, SquareLabel, State, TextureCreator,
+    bitboard::BitBoard, castling_rights::Castling, mov::Move, Color, EventPump, IntoEnumIterator,
+    LoadTexture, MoveGenerator, Piece, Position, Rect, Side, SquareLabel, State, TextureCreator,
     WindowCanvas, WindowContext, A_FILE, B_FILE, B_IMG_POS, C_FILE, DARK, D_FILE, EIGTH_RANK,
     E_FILE, FIFTH_RANK, FIRST_RANK, FOURTH_RANK, F_FILE, G_FILE, H_FILE, LIGHT, SECOND_RANK,
     SEVENTH_RANK, SIXTH_RANK, SQUARE_SIZE, THIRD_RANK, W_IMG_POS,
@@ -24,7 +24,7 @@ pub fn get_square_from_mouse_position(pos_x: i32, pos_y: i32) -> SquareLabel {
 pub fn drag_and_drop(
     canvas: &mut WindowCanvas,
     texture_creator: &TextureCreator<WindowContext>,
-    pieces: &Vec<PathBuf>,
+    pieces: &[PathBuf],
     moves: &mut Vec<Move>,
     event_pump: &EventPump,
     old_state: &mut MouseState,
@@ -118,8 +118,8 @@ fn draw_moves(
             let file = mv.target_square as i16 % 8;
             let rank = mv.target_square as i16 / 8;
             canvas.filled_circle(
-                file as i16 * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
-                (7 - rank as i16) * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
+                file * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
+                (7 - rank) * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
                 5,
                 Color::RED,
             )?;
@@ -132,7 +132,7 @@ fn piece_follow_mouse(
     canvas: &mut WindowCanvas,
     texture_creator: &TextureCreator<WindowContext>,
     event_pump: &EventPump,
-    pieces: &Vec<PathBuf>,
+    pieces: &[PathBuf],
     position: &Position,
     piece: Option<Piece>,
 ) -> Result<(), String> {
@@ -170,9 +170,9 @@ fn is_valid_move(
     from_square: SquareLabel,
     target_square: SquareLabel,
 ) -> bool {
-    return mv.piece() == *selected_piece
+    mv.piece() == *selected_piece
         && mv.from_square() == from_square
-        && mv.target_square() == target_square;
+        && mv.target_square() == target_square
 }
 
 fn apply_move(position: &mut Position, mv: &Move, old_position: &mut Position, old_turn: Side) {
@@ -242,7 +242,7 @@ pub fn get_images() -> Vec<PathBuf> {
 pub fn draw_pieces(
     canvas: &mut WindowCanvas,
     texture_creator: &TextureCreator<WindowContext>,
-    pieces: &Vec<PathBuf>,
+    pieces: &[PathBuf],
     position: &Position,
 ) -> Result<(), String> {
     draw_white_pieces(canvas, texture_creator, pieces, position)?;
@@ -253,7 +253,7 @@ pub fn draw_pieces(
 fn draw_white_pieces(
     canvas: &mut WindowCanvas,
     texture_creator: &TextureCreator<WindowContext>,
-    pieces: &Vec<PathBuf>,
+    pieces: &[PathBuf],
     position: &Position,
 ) -> Result<(), String> {
     let white_bitboards = position.piece_bitboards[Side::White as usize];
@@ -274,8 +274,8 @@ fn draw_white_pieces(
             let rank = j / 8;
             let file = j % 8;
 
-            let x = (file) * (SQUARE_SIZE as i32);
-            let y = (7 - rank) * (SQUARE_SIZE as i32);
+            let x = file * SQUARE_SIZE;
+            let y = (7 - rank) * SQUARE_SIZE;
 
             let pos = ((white_bitboards[piece as usize]) >> (j as usize)) & BitBoard(1);
 
@@ -295,7 +295,7 @@ fn draw_white_pieces(
 fn draw_black_pieces(
     canvas: &mut WindowCanvas,
     texture_creator: &TextureCreator<WindowContext>,
-    pieces: &Vec<PathBuf>,
+    pieces: &[PathBuf],
     position: &Position,
 ) -> Result<(), String> {
     let black_bitboards = position.piece_bitboards[Side::Black as usize];
@@ -316,14 +316,14 @@ fn draw_black_pieces(
             let rank = j / 8;
             let file = j % 8;
 
-            let x = (file) * (SQUARE_SIZE as i32);
-            let y = (7 - rank) * (SQUARE_SIZE as i32);
+            let x = file * SQUARE_SIZE;
+            let y = (7 - rank) * SQUARE_SIZE;
 
             let pos = ((black_bitboards[piece as usize]) >> (j as usize)) & BitBoard(1);
 
             if pos.0 == 1 {
                 let square: Rect = Rect::new(x, y, 60, 60);
-                let texture = texture_creator.load_texture(pieces[piece_index as usize].clone())?;
+                let texture = texture_creator.load_texture(pieces[piece_index].clone())?;
                 canvas.copy(&texture, None, square)?;
             }
             j += 1;
@@ -396,7 +396,7 @@ pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
     state.en_passant_square = if en_passant_square == "-" {
         None
     } else {
-        let file = en_passant_square.chars().nth(0).unwrap();
+        let file = en_passant_square.chars().next().unwrap();
         let rank = en_passant_square.chars().nth(1).unwrap();
 
         let file_num = file as u8 - b'a';

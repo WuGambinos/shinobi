@@ -27,12 +27,12 @@ impl Zobrist {
             }
         }
 
-        for square in 0..NUM_SQUARES as usize {
-            rand_en_passant_nums[square] = rng.gen::<u64>();
+        for item in rand_en_passant_nums.iter_mut().take(NUM_SQUARES as usize) {
+            *item = rng.gen::<u64>();
         }
 
-        for square in 0..16 {
-            rand_castling_rights_num[square] = rng.gen::<u64>();
+        for item in &mut rand_castling_rights_num {
+            *item = rng.gen::<u64>();
         }
 
         let rand_side_num = rng.gen::<u64>();
@@ -84,6 +84,12 @@ impl Zobrist {
 
         key ^= self.rand_castling_rights_nums[position.state.castling_rights.0 as usize];
 
-        return key;
+        key
+    }
+}
+
+impl Default for Zobrist {
+    fn default() -> Self {
+        Self::new()
     }
 }

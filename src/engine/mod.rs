@@ -1,6 +1,6 @@
+pub mod bot;
 pub mod tt;
 pub mod zobrist;
-pub mod bot;
 
 use crate::MoveGenerator;
 use crate::Position;
@@ -26,8 +26,7 @@ impl Engine {
         let turn = self.position.state.turn;
         self.move_gen
             .generate_legal_moves(&mut self.position, turn)
-            .len()
-            == 0
+            .is_empty()
     }
 
     pub fn is_draw(&mut self) -> bool {

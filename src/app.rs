@@ -54,9 +54,7 @@ pub fn start() -> InquireResult<()> {
         .with_default(START_POS)
         .prompt_skippable()?;
     let position = Position::from_fen(&fen.unwrap());
-    let mut shinobi = Engine::new(position.clone());
-
-    debug!("{}", position.clone());
+    let mut shinobi = Engine::new(position);
 
     let second_menu = vec![
         Mode::Perft,

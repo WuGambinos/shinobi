@@ -24,7 +24,7 @@ impl MyRng {
     }
 
     pub fn random_u32(&mut self) -> u32 {
-        let mut number = self.state as u32;
+        let mut number = self.state;
 
         number ^= number << 13;
         number ^= number >> 17;
@@ -40,7 +40,7 @@ impl MyRng {
         let u3: u64 = (self.random_u32() as u64) & 0xFFFF;
         let u4: u64 = (self.random_u32() as u64) & 0xFFFF;
 
-        return u1 | (u2 << 16) | (u3 << 32) | (u4 << 48);
+        u1 | (u2 << 16) | (u3 << 32) | (u4 << 48)
     }
 }
 
@@ -94,11 +94,11 @@ pub fn random_u64() -> u64 {
     let u3: u64 = (rng.gen::<u64>()) & 0xFFFF;
     let u4: u64 = (rng.gen::<u64>()) & 0xFFFF;
 
-    return u1 | (u2 << 16) | (u3 << 32) | (u4 << 48);
+    u1 | (u2 << 16) | (u3 << 32) | (u4 << 48)
 }
 
 fn random_u64_fewbits() -> u64 {
-    return random_u64() & random_u64() & random_u64();
+    random_u64() & random_u64() & random_u64()
 }
 
 fn pop_1st_bit(bb: &mut u64) -> u64 {
@@ -107,7 +107,7 @@ fn pop_1st_bit(bb: &mut u64) -> u64 {
     let fold: u32 = ((b & 0xffffffff) ^ (b >> 32)) as u32;
     *bb &= bb.wrapping_sub(1);
 
-    return BIT_TABLE[((fold.wrapping_mul(0x783A_9B23)) >> 26) as usize];
+    BIT_TABLE[((fold.wrapping_mul(0x783A_9B23)) >> 26) as usize]
 }
 
 fn index_to_u64(index: u32, bits: u32, m: u64) -> u64 {
@@ -122,7 +122,7 @@ fn index_to_u64(index: u32, bits: u32, m: u64) -> u64 {
         }
     }
 
-    return result;
+    result
 }
 
 fn rook_mask(square: u64) -> BitBoard {
@@ -147,7 +147,7 @@ fn rook_mask(square: u64) -> BitBoard {
         result |= 1u64 << (f + rank * 8);
     }
 
-    return BitBoard(result);
+    BitBoard(result)
 }
 
 fn bishop_mask(square: u64) -> BitBoard {
@@ -195,7 +195,7 @@ fn bishop_mask(square: u64) -> BitBoard {
         f -= 1;
     }
 
-    return BitBoard(result);
+    BitBoard(result)
 }
 
 fn rook_attack(square: u64, block: BitBoard) -> BitBoard {
@@ -236,7 +236,7 @@ fn rook_attack(square: u64, block: BitBoard) -> BitBoard {
         }
     }
 
-    return result;
+    result
 }
 
 fn bishop_attack(square: u64, block: BitBoard) -> BitBoard {
@@ -303,7 +303,7 @@ fn bishop_attack(square: u64, block: BitBoard) -> BitBoard {
         f -= 1;
     }
 
-    return result;
+    result
 }
 
 fn generate_attack_map(is_bishop: bool, size: usize, square: u64, mask: BitBoard) -> Vec<BitBoard> {

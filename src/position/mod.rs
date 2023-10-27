@@ -157,7 +157,7 @@ impl Position {
             zobrist: Zobrist::new(),
         };
 
-        let grid = load_fen(&fen, &mut position.state);
+        let grid = load_fen(fen, &mut position.state);
 
         for (i, ch) in grid.iter().enumerate() {
             let mask = BitBoard(1u64 << i);
@@ -202,7 +202,7 @@ impl Position {
     }
 
     pub fn opponent_bitboard(&self) -> BitBoard {
-        return self.side_bitboards[self.state.opponent() as usize];
+        self.side_bitboards[self.state.opponent() as usize]
     }
 
     pub fn set_bit_on_piece_bitboard(&mut self, piece: Piece, side: Side, square: SquareLabel) {
@@ -215,7 +215,7 @@ impl Position {
 
     pub fn king_square(&self, side: Side) -> SquareLabel {
         let king_bitboard: BitBoard = self.piece_bitboard(Piece::King, side);
-        return king_bitboard.bitscan_forward();
+        king_bitboard.bitscan_forward()
     }
 
     pub fn piece_on_square(&self, square: SquareLabel, side: Side) -> Option<Piece> {
@@ -228,7 +228,8 @@ impl Position {
                 return Some(piece);
             }
         }
-        return None;
+
+        None
     }
 
     pub fn check_en_passant(
@@ -304,7 +305,7 @@ impl Position {
         if queenside_castle {
             // Queen side squares
             let queen_side = BitBoard((1 << mv.from_square() as usize) - 1) & rank;
-            old_rook_board = old_rook_board & queen_side;
+            old_rook_board &= queen_side;
 
             let mut new_rook_board = EMPTY_BITBOARD;
             new_rook_board.set_bit(to_rook_square);
@@ -360,7 +361,7 @@ impl Position {
         if kingside_castle {
             // Kingside squares
             let king_side = BitBoard(!1 << mv.from_square() as usize) & rank;
-            old_rook_board = old_rook_board & king_side;
+            old_rook_board &= king_side;
 
             let mut new_rook_board = EMPTY_BITBOARD;
             new_rook_board.set_bit(to_rook_square);

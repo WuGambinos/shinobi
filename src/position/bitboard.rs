@@ -37,7 +37,7 @@ impl BitBoard {
         assert!(self.0 != 0);
         let square = self.bitscan_forward();
         self.0 &= self.0 - 1;
-        return square;
+        square
     }
 
     pub fn pop_count(&mut self) -> u64 {
@@ -48,7 +48,7 @@ impl BitBoard {
             count += 1;
             n &= n - 1;
         }
-        return count;
+        count
     }
 
     pub fn pop_count_with_fn(&mut self) -> u64 {
@@ -59,7 +59,7 @@ impl BitBoard {
             count += 1;
             n &= n - 1;
         }
-        return count;
+        count
     }
 
     pub fn print(&self) {

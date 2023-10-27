@@ -16,7 +16,7 @@ pub fn perft(position: &mut Position, move_generator: &mut MoveGenerator, depth:
         position.unmake();
     }
 
-    return num_positions;
+    num_positions
 }
 
 static mut NODES: u64 = 0;
