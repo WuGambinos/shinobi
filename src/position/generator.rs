@@ -236,7 +236,7 @@ impl MoveGenerator {
                 | (self.get_queen_moves(square as u64, position.main_bitboard) & opponent_queen);
         }
 
-         result_board != EMPTY_BITBOARD
+        result_board != EMPTY_BITBOARD
     }
 
     fn fill_king_moves(&mut self) {
@@ -312,17 +312,18 @@ impl MoveGenerator {
         square: SquareLabel,
     ) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::new();
-        let en_passant = position.check_en_passant(square, side);
+        let en_passant_square: Option<SquareLabel> = position.state.en_passant_square;
         let pawn_pushes = self.pawn_pushes[side as usize][square as usize];
 
-        if en_passant.is_some() {
-            let mv = Move::new(
-                Piece::Pawn,
-                square,
-                position.state.en_passant_square.unwrap(),
-                MoveType::EnPassant,
-            );
+        if let Some(ep_square) = en_passant_square {
+            let mv = Move::new(Piece::Pawn, square, ep_square, MoveType::EnPassant);
             moves.push(mv);
+        } else {
+            position.check_en_passant(square, side);
+            if let Some(ep_square) = position.state.en_passant_square {
+                let mv = Move::new(Piece::Pawn, square, ep_square, MoveType::EnPassant);
+                moves.push(mv);
+            }
         }
         self.create_moves(position, Piece::Pawn, side, pawn_pushes, square, &mut moves);
 

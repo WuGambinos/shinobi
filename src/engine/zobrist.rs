@@ -1,4 +1,4 @@
-use crate::{random_u64, MyRng, Piece, Position, Side, SquareLabel, NUM_SQUARES};
+use crate::{Piece, Position, Side, SquareLabel, NUM_SQUARES};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
 use strum::IntoEnumIterator;
@@ -7,7 +7,7 @@ const SEED: u64 = 12345;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Zobrist {
-    rand_piece_nums: [[u64; NUM_SQUARES as usize]; 12],
+    rand_piece_nums: [[[u64; NUM_SQUARES as usize]; 6]; 2],
     rand_en_passant_nums: [u64; 64],
     rand_castling_rights_nums: [u64; 16],
     rand_side_num: u64,
@@ -15,15 +15,17 @@ pub struct Zobrist {
 
 impl Zobrist {
     pub fn new() -> Zobrist {
-        let mut rand_piece_nums = [[0; NUM_SQUARES as usize]; 12];
+        let mut rand_piece_nums = [[[0; NUM_SQUARES as usize]; 6]; 2];
         let mut rand_en_passant_nums = [0; 64];
         let mut rand_castling_rights_num = [0; 16];
 
         let mut rng = ChaChaRng::seed_from_u64(SEED);
 
-        for piece in Piece::iter() {
-            for square in 0..NUM_SQUARES as usize {
-                rand_piece_nums[piece as usize][square] = rng.gen::<u64>();
+        for side in Side::iter() {
+            for piece in Piece::iter() {
+                for square in 0..NUM_SQUARES as usize {
+                    rand_piece_nums[side as usize][piece as usize][square] = rng.gen::<u64>();
+                }
             }
         }
 
@@ -45,15 +47,15 @@ impl Zobrist {
         }
     }
 
-    pub fn rand_piece_num(&self, piece: Piece, square: SquareLabel) -> u64 {
-        self.rand_piece_nums[piece as usize][square as usize]
+    pub fn rand_piece_num(&self, side: Side, piece: Piece, square: SquareLabel) -> u64 {
+        self.rand_piece_nums[side as usize][piece as usize][square as usize]
     }
     pub fn rand_en_passant(&self, square: SquareLabel) -> u64 {
         self.rand_en_passant_nums[square as usize]
     }
 
-    pub fn rand_castling_rights_num(&self, square: SquareLabel) -> u64 {
-        self.rand_castling_rights_nums[square as usize]
+    pub fn rand_castling_rights_num(&self, castle: u8) -> u64 {
+        self.rand_castling_rights_nums[castle as usize]
     }
 
     pub fn rand_side_num(&self) -> u64 {
@@ -69,7 +71,7 @@ impl Zobrist {
 
                 while piece_bitboard.0 > 0 {
                     let square = piece_bitboard.bitscan_forward_reset();
-                    key ^= self.rand_piece_nums[piece as usize][square as usize];
+                    key ^= self.rand_piece_nums[side as usize][piece as usize][square as usize];
                 }
             }
         }

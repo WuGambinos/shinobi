@@ -4,10 +4,10 @@ pub mod generator;
 pub mod mov;
 
 use crate::{
-    adjacent_files, get_file, get_rank, load_fen, mov::Move, mov::MoveType, square_name, BitBoard,
-    Piece, Side, SquareLabel, Zobrist, BLACK_KINGSIDE_KING_SQUARE, BLACK_KINGSIDE_ROOK_FROM_SQUARE,
+    adjacent_files, get_file, get_rank, load_fen, mov::Move, mov::MoveType, BitBoard, Piece, Side,
+    SquareLabel, Zobrist, BLACK_KINGSIDE_KING_SQUARE, BLACK_KINGSIDE_ROOK_FROM_SQUARE,
     BLACK_KINGSIDE_ROOK_TO_SQUARE, BLACK_QUEENSIDE_KING_SQUARE, BLACK_QUEENSIDE_ROOK_FROM_SQUARE,
-    BLACK_QUEENSIDE_ROOK_TO_SQUARE, EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK, MAX_HALF_MOVES,
+    BLACK_QUEENSIDE_ROOK_TO_SQUARE, EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK,
     WHITE_KINGSIDE_KING_SQUARE, WHITE_KINGSIDE_ROOK_FROM_SQUARE, WHITE_KINGSIDE_ROOK_TO_SQUARE,
     WHITE_QUEENSIDE_KING_SQUARE, WHITE_QUEENSIDE_ROOK_FROM_SQUARE, WHITE_QUEENSIDE_ROOK_TO_SQUARE,
 };
@@ -37,6 +37,10 @@ impl State {
             turn: Side::White,
             zobrist_key: 0,
         }
+    }
+
+    fn update_hash(&mut self, value: u64) {
+        self.zobrist_key ^= value;
     }
 
     fn change_turn(&mut self) {
@@ -329,6 +333,20 @@ impl Position {
             self.pieces[mv.from_square as usize] = None;
             self.pieces[to_rook_square as usize] = Some((self.state.turn(), Piece::Rook));
             self.pieces[from_rook_square as usize] = None;
+
+            // Remove rook from hash (from_rook_square)
+            self.state.update_hash(self.zobrist.rand_piece_num(
+                self.state.turn(),
+                Piece::Rook,
+                from_rook_square,
+            ));
+
+            // Add rook to hash (to_rook_square)
+            self.state.update_hash(self.zobrist.rand_piece_num(
+                self.state.turn(),
+                Piece::Rook,
+                to_rook_square,
+            ));
         }
     }
 
@@ -385,6 +403,79 @@ impl Position {
             self.pieces[mv.from_square as usize] = None;
             self.pieces[to_rook_square as usize] = Some((self.state.turn(), Piece::Rook));
             self.pieces[from_rook_square as usize] = None;
+
+            // Remove rook from hash (from_rook_square)
+            self.state.update_hash(self.zobrist.rand_piece_num(
+                self.state.turn(),
+                Piece::Rook,
+                from_rook_square,
+            ));
+
+            // Add rook to hash (to_rook_square)
+            self.state.update_hash(self.zobrist.rand_piece_num(
+                self.state.turn(),
+                Piece::Rook,
+                to_rook_square,
+            ));
+        }
+    }
+
+    fn update_castling_rights(&mut self, mv: Move) {
+        if mv.piece.is_king() {
+            match self.state.turn() {
+                Side::White => {
+                    self.history.prev_white_king_square = Some(self.white_king_square);
+                    self.white_king_square = mv.target_square();
+
+                    // Disable white caslting
+                    self.state.castling_rights =
+                        CastlingRights(self.state.castling_rights.0 & !Castling::WHITE_CASTLING);
+                }
+                Side::Black => {
+                    self.history.prev_black_king_square = Some(self.black_king_square);
+                    self.black_king_square = mv.target_square();
+
+                    // Disable black castling
+                    self.state.castling_rights =
+                        CastlingRights(self.state.castling_rights.0 & !Castling::BLACK_CASTLING);
+                }
+            }
+        } else if mv.piece.is_rook() {
+            match self.state.turn() {
+                Side::White => match mv.from_square() {
+                    // Disable Kingside castling
+                    WHITE_KINGSIDE_ROOK_FROM_SQUARE => {
+                        self.state.castling_rights = CastlingRights(
+                            self.state.castling_rights.0 & (!Castling::WHITE_KING_SIDE),
+                        )
+                    }
+                    // Disable Queenside castling
+                    WHITE_QUEENSIDE_ROOK_FROM_SQUARE => {
+                        self.state.castling_rights = CastlingRights(
+                            self.state.castling_rights.0 & (!Castling::WHITE_QUEEN_SIDE),
+                        )
+                    }
+
+                    _ => {}
+                },
+                Side::Black => match mv.from_square() {
+                    // Disable Kingside castling
+                    BLACK_KINGSIDE_ROOK_FROM_SQUARE => {
+                        self.state.castling_rights = CastlingRights(
+                            self.state.castling_rights.0 & (!Castling::BLACK_KING_SIDE),
+                        )
+                    }
+
+                    // Disable Queenside castling
+                    BLACK_QUEENSIDE_ROOK_FROM_SQUARE => {
+                        self.state.castling_rights = CastlingRights(
+                            self.state.castling_rights.0 & (!Castling::BLACK_QUEEN_SIDE),
+                        )
+                    }
+
+                    _ => {}
+                },
+            }
         }
     }
 
@@ -401,71 +492,27 @@ impl Position {
             self.history.prev_states.push(self.state);
             let mut pawn_move_or_capture: bool = false;
 
-            // Update hash
-            self.state.zobrist_key ^= self.zobrist.rand_piece_num(mv.piece(), mv.from_square());
-            self.state.zobrist_key ^= self.zobrist.rand_piece_num(mv.piece(), mv.target_square());
+            // Remove piece from hash (from_square)
+            self.state.update_hash(self.zobrist.rand_piece_num(
+                self.state.turn(),
+                mv.piece(),
+                mv.from_square(),
+            ));
 
-            // King move
-            if mv.piece.is_king() {
-                match self.state.turn() {
-                    Side::White => {
-                        self.history.prev_white_king_square = Some(self.white_king_square);
-                        self.white_king_square = mv.target_square();
+            // Add piece back hash (target_square)
+            self.state.update_hash(self.zobrist.rand_piece_num(
+                self.state.turn(),
+                mv.piece(),
+                mv.target_square(),
+            ));
 
-                        // Disable white caslting
-                        self.state.castling_rights = CastlingRights(
-                            self.state.castling_rights.0 & !Castling::WHITE_CASTLING,
-                        );
-                    }
-                    Side::Black => {
-                        self.history.prev_black_king_square = Some(self.black_king_square);
-                        self.black_king_square = mv.target_square();
+            //Hash castle
+            self.state.update_hash(
+                self.zobrist
+                    .rand_castling_rights_num(self.state.castling_rights.0),
+            );
 
-                        //Disable black castling
-                        self.state.castling_rights = CastlingRights(
-                            self.state.castling_rights.0 & !Castling::BLACK_CASTLING,
-                        );
-                    }
-                }
-            }
-
-            if mv.piece.is_rook() {
-                match self.state.turn() {
-                    Side::White => match mv.from_square() {
-                        // Disable Kingside castling
-                        WHITE_KINGSIDE_ROOK_FROM_SQUARE => {
-                            self.state.castling_rights = CastlingRights(
-                                self.state.castling_rights.0 & (!Castling::WHITE_KING_SIDE),
-                            )
-                        }
-                        // Disable Queenside castling
-                        WHITE_QUEENSIDE_ROOK_FROM_SQUARE => {
-                            self.state.castling_rights = CastlingRights(
-                                self.state.castling_rights.0 & (!Castling::WHITE_QUEEN_SIDE),
-                            )
-                        }
-
-                        _ => {}
-                    },
-                    Side::Black => match mv.from_square() {
-                        // Disable Kingside castling
-                        BLACK_KINGSIDE_ROOK_FROM_SQUARE => {
-                            self.state.castling_rights = CastlingRights(
-                                self.state.castling_rights.0 & (!Castling::BLACK_KING_SIDE),
-                            )
-                        }
-
-                        // Disable Queenside castling
-                        BLACK_QUEENSIDE_ROOK_FROM_SQUARE => {
-                            self.state.castling_rights = CastlingRights(
-                                self.state.castling_rights.0 & (!Castling::BLACK_QUEEN_SIDE),
-                            )
-                        }
-
-                        _ => {}
-                    },
-                }
-            }
+            self.update_castling_rights(mv);
 
             // Update history
             self.history.prev_pieces.push(self.pieces);
@@ -491,18 +538,20 @@ impl Position {
                         if capture {
                             pawn_move_or_capture = true;
                             self.capture(mv, from_bitboard, to_bitboard);
-                        }
-                        // Quiet
-                        else {
+                        } else {
                             self.quiet(mv, from_bitboard, to_bitboard);
                         }
                     }
                 }
             }
 
-            if mv.piece.is_pawn() {
-                pawn_move_or_capture = true;
-            }
+            // Hash castle
+            self.state.update_hash(
+                self.zobrist
+                    .rand_castling_rights_num(self.state.castling_rights.0),
+            );
+
+            pawn_move_or_capture |= mv.piece.is_pawn();
 
             if pawn_move_or_capture {
                 self.state.half_move_counter = 0;
@@ -517,7 +566,9 @@ impl Position {
             // Update history
             self.history.moves.push(mv);
             self.last_move = Some(mv);
-            self.state.zobrist_key ^= self.zobrist.rand_side_num();
+
+            self.state.update_hash(self.zobrist.rand_side_num());
+
             self.state.change_turn();
         }
     }
@@ -580,6 +631,27 @@ impl Position {
                 self.empty_bitboard = !self.main_bitboard;
 
                 capture = true;
+
+                // Remove captured piece from hash (target_square)
+                self.state.update_hash(self.zobrist.rand_piece_num(
+                    opponent,
+                    opponent_piece,
+                    mv.target_square(),
+                ));
+
+                // Remove pawn from hash (target_square)
+                self.state.update_hash(self.zobrist.rand_piece_num(
+                    self.state.turn(),
+                    Piece::Pawn,
+                    mv.target_square(),
+                ));
+
+                // Add promoted piece to hash (target_square)
+                self.state.update_hash(self.zobrist.rand_piece_num(
+                    self.state.turn(),
+                    mv.promotion_piece.unwrap(),
+                    mv.target_square(),
+                ));
             }
         }
 
@@ -600,18 +672,26 @@ impl Position {
 
             // Update empty bitboard
             self.empty_bitboard = !self.main_bitboard;
+
+            // Remove pawn from hash  (target_square)
+            self.state.update_hash(self.zobrist.rand_piece_num(
+                self.state.turn(),
+                Piece::Pawn,
+                mv.target_square(),
+            ));
+
+            // Add promoted piece to hash (target_square)
+            self.state.update_hash(self.zobrist.rand_piece_num(
+                self.state.turn(),
+                mv.promotion_piece.unwrap(),
+                mv.target_square(),
+            ));
         }
 
         // Update piece array board
         self.pieces[mv.target_square() as usize] =
             Some((self.state.turn(), mv.promotion_piece.unwrap()));
         self.pieces[mv.from_square() as usize] = None;
-
-        // Update Hash
-        self.state.zobrist_key ^= self.zobrist.rand_piece_num(Piece::Pawn, mv.from_square());
-        self.state.zobrist_key ^= self
-            .zobrist
-            .rand_piece_num(mv.promotion_piece.unwrap(), mv.target_square());
     }
 
     fn en_passant(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {
@@ -633,11 +713,13 @@ impl Position {
         self.pieces[mv.target_square() as usize] = Some((self.state.turn(), mv.piece()));
         self.pieces[mv.from_square() as usize] = None;
 
-        if self.state.opponent() == Side::Black {
-            self.pieces[mv.target_square() as usize - 8] = None;
+        let target_square_num: usize = if self.state.opponent() == Side::Black {
+            mv.target_square() as usize - 8
         } else {
-            self.pieces[mv.target_square() as usize + 8] = None;
-        }
+            mv.target_square() as usize + 8
+        };
+
+        self.pieces[target_square_num] = None;
 
         let mut ep_bitboard: BitBoard = EMPTY_BITBOARD;
         ep_bitboard.set_bit(mv.target_square());
@@ -660,6 +742,19 @@ impl Position {
 
         // Update empty bitboard
         self.empty_bitboard = !self.main_bitboard;
+
+        // Remove pawn taken from hash
+        self.state.update_hash(self.zobrist.rand_piece_num(
+            self.state.opponent(),
+            Piece::Pawn,
+            SquareLabel::from(target_square_num as u64),
+        ));
+
+        // Hash en passant square
+        self.state.update_hash(
+            self.zobrist
+                .rand_en_passant(self.state.en_passant_square.unwrap()),
+        );
     }
 
     pub fn capture(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {
@@ -674,10 +769,10 @@ impl Position {
 
         let opponent_piece: Piece = self.piece_on_square(mv.target_square(), opponent).unwrap();
 
-        // Update Hash
-        self.state.zobrist_key ^= self
-            .zobrist
-            .rand_piece_num(opponent_piece, mv.target_square());
+        // Hash capture
+        self.state.zobrist_key ^=
+            self.zobrist
+                .rand_piece_num(opponent, opponent_piece, mv.target_square());
 
         // Reset captured piece
         self.piece_bitboards[opponent as usize][opponent_piece as usize] ^= to_bitboard;
