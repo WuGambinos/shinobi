@@ -583,8 +583,10 @@ impl Position {
         self.pieces = self.history.prev_pieces.pop().unwrap();
 
         // Restore last move
-        if let Some(popped_move) = self.history.moves.pop() {
-            self.last_move = Some(popped_move);
+        if let Some(_) = self.history.moves.pop() {
+            if let Some(head_move) = self.history.moves.last() {
+                self.last_move = Some(*head_move);
+            }
         } else {
             self.last_move = None;
         }
