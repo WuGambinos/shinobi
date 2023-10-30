@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use shinobi::{perft::*, Engine, Position};
+use shinobi::{perft::*, Engine, Position, START_POS};
 
 fn perft_starting_pos_depth_1(c: &mut Criterion) {
     let depth = 1;

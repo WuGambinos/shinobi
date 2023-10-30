@@ -349,13 +349,20 @@ pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
     let mut file = 0;
     let mut rank = 7;
 
-    let fen_board: Vec<&str> = fen.split(' ').collect();
-    let main_string: &str = fen_board[0];
-    let turn: &str = fen_board[1];
-    let castle_rights = fen_board[2];
-    let en_passant_square = fen_board[3];
-    let half_move_counter = fen_board[4];
-    let full_move_counter = fen_board[5];
+    let fen_board: Vec<&str> = fen.trim().split(' ').collect();
+    let (main_string, turn, castle_rights, en_passant_square, half_move_counter, full_move_counter) =
+        if fen_board.len() == 4 {
+            (fen_board[0], fen_board[1], fen_board[2], "-", "0", "0")
+        } else {
+            (
+                fen_board[0],
+                fen_board[1],
+                fen_board[2],
+                fen_board[3],
+                fen_board[4],
+                fen_board[5],
+            )
+        };
 
     let split_main: Vec<&str> = main_string.split('/').collect();
 
