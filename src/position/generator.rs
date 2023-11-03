@@ -316,7 +316,7 @@ impl MoveGenerator {
         let en_passant_square: Option<SquareLabel> = position.state.en_passant_square;
         let pawn_pushes = self.pawn_pushes[side as usize][square as usize];
 
-        if en_passant.is_some() {
+        if en_passant.is_some() || en_passant_square.is_some() {
             let mv = Move::new(
                 Piece::Pawn,
                 square,

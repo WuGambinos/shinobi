@@ -545,6 +545,26 @@ impl Position {
                 }
             }
 
+            // hash enpassant if available (remove enpassant square from hash key)
+            if let Some(ep) = self.state.en_passant_square {
+                self.state.update_hash(self.zobrist.rand_en_passant(ep));
+            }
+
+            // Reset en pass square
+            self.state.en_passant_square = None;
+
+            // Handle Double pawn push
+            if mv.is_double_pawn_push() {
+                let ep_square = if self.state.turn() == Side::White {
+                    SquareLabel::from(mv.target_square() as u64 - 8)
+                } else {
+                    SquareLabel::from(mv.target_square() as u64 + 8)
+                };
+                self.state.en_passant_square = Some(ep_square);
+                self.state
+                    .update_hash(self.zobrist.rand_en_passant(ep_square));
+            }
+
             // Hash castle
             self.state.update_hash(
                 self.zobrist
@@ -751,12 +771,6 @@ impl Position {
             Piece::Pawn,
             SquareLabel::from(target_square_num as u64),
         ));
-
-        // Hash en passant square
-        self.state.update_hash(
-            self.zobrist
-                .rand_en_passant(self.state.en_passant_square.unwrap()),
-        );
     }
 
     pub fn capture(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {

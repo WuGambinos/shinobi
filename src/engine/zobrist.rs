@@ -80,6 +80,7 @@ impl Zobrist {
             key ^= self.rand_en_passant_nums[ep as usize];
         }
 
+
         if position.state.turn == Side::Black {
             key ^= self.rand_side_num;
         }
