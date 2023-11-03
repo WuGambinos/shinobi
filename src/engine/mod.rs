@@ -31,15 +31,27 @@ impl Engine {
 
     pub fn is_draw(&mut self) -> bool {
         self.draw_by_fifty_moves()
-            | self.draw_by_threefold_repitiion()
+            | self.draw_by_threefold_repetition()
             | self.draw_by_insufficient_material()
     }
     pub fn draw_by_fifty_moves(&self) -> bool {
         self.position.state.half_move_counter >= MAX_HALF_MOVES
     }
 
-    pub fn draw_by_threefold_repitiion(&mut self) -> bool {
-        let key = self.zobrist.generate_hash_key(&self.position);
+    pub fn draw_by_threefold_repetition(&mut self) -> bool {
+        let current_pos_key = self.position.state.zobrist_key;
+        let prev_states = &self.position.history.prev_states;
+        let mut count = 0;
+
+        for state in prev_states {
+            if state.zobrist_key == current_pos_key {
+                count += 1;
+            }
+
+            if count == 3 {
+                return true;
+            }
+        }
 
         false
     }

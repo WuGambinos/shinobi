@@ -131,6 +131,16 @@ pub fn run_loop(shinobi: &mut Engine, sdl_state: &mut Sdl2State) {
                 } => break 'running,
 
                 Event::KeyDown {
+                    keycode: Some(Keycode::D),
+                    ..
+                } => {
+                    println!(
+                        "DRAW BY REPETITION: {} ",
+                        shinobi.draw_by_threefold_repetition()
+                    );
+                }
+
+                Event::KeyDown {
                     keycode: Some(Keycode::I),
                     ..
                 } => {
