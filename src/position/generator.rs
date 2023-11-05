@@ -312,19 +312,20 @@ impl MoveGenerator {
         square: SquareLabel,
     ) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::new();
-        let en_passant = position.check_en_passant(square, side);
-        let en_passant_square: Option<SquareLabel> = position.state.en_passant_square;
         let pawn_pushes = self.pawn_pushes[side as usize][square as usize];
 
-        if en_passant.is_some() || en_passant_square.is_some() {
-            let mv = Move::new(
-                Piece::Pawn,
-                square,
-                position.state.en_passant_square.unwrap(),
-                MoveType::EnPassant,
-            );
-            moves.push(mv);
+        if let Some(ep_sq) = position.state.en_passant_square {
+            let ep_attacks = self.pawn_attacks[side as usize][square as usize]
+                & BitBoard(1u64 << (ep_sq as u64));
+
+            if ep_attacks != EMPTY_BITBOARD {
+                let target_ep = ep_attacks.bitscan_forward();
+                log::debug!("EP SQUARE: {:?}", target_ep);
+                let mv = Move::new(Piece::Pawn, square, ep_sq, MoveType::EnPassant);
+                moves.push(mv);
+            }
         }
+
         self.create_moves(position, Piece::Pawn, side, pawn_pushes, square, &mut moves);
 
         moves
