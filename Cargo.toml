@@ -22,8 +22,9 @@ default-features = false
 features = ["image", "gfx"]
 
 [profile.release]
-debug = true
-#lto = true
+#debug = true
+lto = "fat"
+codegen-units = 1
 
 [dev-dependicies]
 criterion = {version = "0.4", features = ["html_reports"]}

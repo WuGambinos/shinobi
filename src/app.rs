@@ -76,7 +76,13 @@ pub fn start() -> InquireResult<()> {
                 depth.parse::<u32>().unwrap(),
             );
             let end = start.elapsed();
-            println!("DEPTH: {} RES: {} TIME: {} ms", depth, res, end.as_millis());
+            println!(
+                "DEPTH: {} NODES: {} TIME: {} ms",
+                depth,
+                res,
+                end.as_millis()
+            );
+            println!("NPS: {}", (res as f64 / (end.as_secs_f64())) as u64);
         }
         _ => {
             /* VIDEO SETUP */

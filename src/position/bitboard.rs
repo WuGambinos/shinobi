@@ -51,17 +51,6 @@ impl BitBoard {
         count
     }
 
-    pub fn pop_count_with_fn(&mut self) -> u64 {
-        let mut count = 0;
-        let mut n = self.0;
-
-        while n > 0 {
-            count += 1;
-            n &= n - 1;
-        }
-        count
-    }
-
     pub fn print(&self) {
         for rank in (0..8).rev() {
             for file in 0..8 {
