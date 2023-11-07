@@ -4,12 +4,12 @@ pub mod generator;
 pub mod mov;
 
 use crate::{
-    adjacent_files, get_file, get_rank, load_fen, mov::Move, mov::MoveType, BitBoard, Piece, Side,
-    SquareLabel, Zobrist, BLACK_KINGSIDE_KING_SQUARE, BLACK_KINGSIDE_ROOK_FROM_SQUARE,
-    BLACK_KINGSIDE_ROOK_TO_SQUARE, BLACK_QUEENSIDE_KING_SQUARE, BLACK_QUEENSIDE_ROOK_FROM_SQUARE,
-    BLACK_QUEENSIDE_ROOK_TO_SQUARE, EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK,
-    WHITE_KINGSIDE_KING_SQUARE, WHITE_KINGSIDE_ROOK_FROM_SQUARE, WHITE_KINGSIDE_ROOK_TO_SQUARE,
-    WHITE_QUEENSIDE_KING_SQUARE, WHITE_QUEENSIDE_ROOK_FROM_SQUARE, WHITE_QUEENSIDE_ROOK_TO_SQUARE,
+    load_fen, mov::Move, mov::MoveType, BitBoard, Piece, Side, SquareLabel, Zobrist,
+    BLACK_KINGSIDE_KING_SQUARE, BLACK_KINGSIDE_ROOK_FROM_SQUARE, BLACK_KINGSIDE_ROOK_TO_SQUARE,
+    BLACK_QUEENSIDE_KING_SQUARE, BLACK_QUEENSIDE_ROOK_FROM_SQUARE, BLACK_QUEENSIDE_ROOK_TO_SQUARE,
+    EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK, WHITE_KINGSIDE_KING_SQUARE,
+    WHITE_KINGSIDE_ROOK_FROM_SQUARE, WHITE_KINGSIDE_ROOK_TO_SQUARE, WHITE_QUEENSIDE_KING_SQUARE,
+    WHITE_QUEENSIDE_ROOK_FROM_SQUARE, WHITE_QUEENSIDE_ROOK_TO_SQUARE,
 };
 
 use std::fmt;
@@ -68,6 +68,7 @@ pub struct History {
 
     /// previous Piece slice board
     pub prev_pieces: Vec<[Option<(Side, Piece)>; 64]>,
+    pub prev_piece_count: Vec<[[u8; 6]; 2]>,
 
     pub prev_main_bitboards: Vec<BitBoard>,
 
@@ -86,6 +87,7 @@ impl History {
         History {
             moves: Vec::with_capacity(50),
             prev_pieces: Vec::with_capacity(50),
+            prev_piece_count: Vec::with_capacity(50),
             prev_main_bitboards: Vec::with_capacity(50),
             prev_empty_bitboards: Vec::with_capacity(50),
             prev_side_bitboards: Vec::with_capacity(50),
@@ -115,6 +117,8 @@ pub struct Position {
     /// BitBoards for all pieces and each side
     pub piece_bitboards: [[BitBoard; 6]; 2],
 
+    pub piece_count: [[u8; 6]; 2],
+
     pub state: State,
     pub white_king_square: SquareLabel,
     pub black_king_square: SquareLabel,
@@ -131,6 +135,7 @@ impl Position {
             empty_bitboard: EMPTY_BITBOARD,
             side_bitboards: [EMPTY_BITBOARD; 2],
             piece_bitboards: [[EMPTY_BITBOARD; 6]; 2],
+            piece_count: [[0; 6]; 2],
 
             state: State::new(),
 
@@ -150,6 +155,7 @@ impl Position {
             empty_bitboard: EMPTY_BITBOARD,
             side_bitboards: [EMPTY_BITBOARD; 2],
             piece_bitboards: [[EMPTY_BITBOARD; 6]; 2],
+            piece_count: [[0; 6]; 2],
 
             state: State::new(),
 
@@ -188,11 +194,13 @@ impl Position {
                     position.piece_bitboards[Side::White as usize][piece] |= mask;
                     position.main_bitboard |= mask;
                     position.pieces[i] = Some((Side::White, Piece::from(*ch)));
+                    position.piece_count[Side::White as usize][Piece::from(*ch) as usize] += 1;
                 } else if ch.is_lowercase() {
                     position.side_bitboards[Side::Black as usize] |= mask;
                     position.piece_bitboards[Side::Black as usize][piece] |= mask;
                     position.main_bitboard |= mask;
                     position.pieces[i] = Some((Side::Black, Piece::from(*ch)));
+                    position.piece_count[Side::Black as usize][Piece::from(*ch) as usize] += 1;
                 } else {
                     position.empty_bitboard |= mask;
                 }
@@ -235,7 +243,6 @@ impl Position {
 
         None
     }
-
 
     fn castle(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
@@ -482,6 +489,7 @@ impl Position {
 
             // Update history
             self.history.prev_pieces.push(self.pieces);
+            self.history.prev_piece_count.push(self.piece_count);
             self.history.prev_main_bitboards.push(self.main_bitboard);
             self.history.prev_empty_bitboards.push(self.empty_bitboard);
             self.history.prev_piece_bitboards.push(self.piece_bitboards);
@@ -589,6 +597,7 @@ impl Position {
         self.side_bitboards = self.history.prev_side_bitboards.pop().unwrap();
         self.piece_bitboards = self.history.prev_piece_bitboards.pop().unwrap();
         self.pieces = self.history.prev_pieces.pop().unwrap();
+        self.piece_count = self.history.prev_piece_count.pop().unwrap();
 
         // Restore last move
         if let Some(_) = self.history.moves.pop() {
@@ -662,6 +671,8 @@ impl Position {
                     mv.promotion_piece.unwrap(),
                     mv.target_square(),
                 ));
+
+                self.piece_count[opponent as usize][opponent_piece as usize] -= 1;
             }
         }
 
@@ -702,6 +713,7 @@ impl Position {
         self.pieces[mv.target_square() as usize] =
             Some((self.state.turn(), mv.promotion_piece.unwrap()));
         self.pieces[mv.from_square() as usize] = None;
+        self.piece_count[self.state.turn() as usize][mv.promotion_piece.unwrap() as usize] += 1;
     }
 
     fn en_passant(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {
@@ -793,6 +805,8 @@ impl Position {
         // Update piece array board
         self.pieces[mv.target_square() as usize] = Some((self.state.turn(), mv.piece()));
         self.pieces[mv.from_square() as usize] = None;
+
+        self.piece_count[opponent as usize][opponent_piece as usize] -= 1;
     }
     fn quiet(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
@@ -838,6 +852,32 @@ impl Position {
 
     pub fn print_white_bitboard(&self) {
         self.side_bitboards[Side::White as usize].print();
+    }
+
+    pub fn print_piece_count(&self) {
+        let mut white_total = 0;
+        for piece in Piece::iter() {
+            white_total += self.piece_count[Side::White as usize][piece as usize];
+            print!(
+                "Piece: {:?}: COUNT: {} ",
+                piece,
+                self.piece_count[Side::White as usize][piece as usize]
+            );
+        }
+        println!("WHITE TOTAL: {}", white_total);
+        println!();
+
+        let mut black_total = 0;
+        for piece in Piece::iter() {
+            black_total += self.piece_count[Side::Black as usize][piece as usize];
+            print!(
+                "Piece: {:?}: COUNT: {} ",
+                piece,
+                self.piece_count[Side::Black as usize][piece as usize]
+            );
+        }
+        println!("BLACK TOTAL: {}", black_total);
+        println!();
     }
 }
 

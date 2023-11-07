@@ -1,11 +1,11 @@
 use core::fmt;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use crate::{
     drag_and_drop, draw_pieces, draw_squares, get_images, perft::perft, Engine, Piece, Position,
     Side, SquareLabel,
 };
-use crate::{Color, START_POS};
+use crate::{Bot, Color, START_POS};
 use inquire::Text;
 use inquire::{error::InquireResult, Select};
 use log::*;
@@ -127,7 +127,28 @@ pub fn run_loop(shinobi: &mut Engine, sdl_state: &mut Sdl2State) {
     let mut piece: Option<Piece> = None;
     let mut from_square: Option<SquareLabel> = None;
     let mut moves = Vec::new();
+    let mut bot = Bot::new();
     'running: loop {
+        let best_move = bot.think(shinobi);
+
+        if let Some(mv) = best_move {
+            shinobi.position.make_move(mv);
+        }
+        if shinobi.is_draw() {
+            println!("DRAW BY REPITITON");
+            break;
+        }
+
+        if shinobi.checkmate() {
+            println!(
+                "{:?} CHECKMATED {:?} ",
+                shinobi.position.state.turn(),
+                shinobi.position.state.opponent()
+            );
+            break;
+        }
+
+        std::thread::sleep(Duration::from_millis(200));
         for event in sdl_state.event_pump.poll_iter() {
             match event {
                 Event::Quit { .. }
@@ -137,21 +158,14 @@ pub fn run_loop(shinobi: &mut Engine, sdl_state: &mut Sdl2State) {
                 } => break 'running,
 
                 Event::KeyDown {
-                    keycode: Some(Keycode::D),
-                    ..
-                } => {
-                    println!(
-                        "DRAW BY REPETITION: {} ",
-                        shinobi.draw_by_threefold_repetition()
-                    );
-                }
-
-                Event::KeyDown {
                     keycode: Some(Keycode::I),
                     ..
                 } => {
                     println!("{}", shinobi.position);
                     let key = shinobi.zobrist.generate_hash_key(&shinobi.position);
+                    println!("PIECE COUNT");
+                    shinobi.position.print_piece_count();
+                    println!();
                     println!("EXPETED ZOBRIST KEY {:#X}", key);
                     println!(
                         "ACTUAL ZOBRIST KEY: {:#X}",
