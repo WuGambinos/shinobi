@@ -1,0 +1,17 @@
+[package]
+name = "shinobi-gui"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+env_logger = "0.10.0"
+inquire = "0.6.2"
+log = "0.4.20"
+shinobi-core = {path = "../shinobi-core"}
+
+[dependencies.sdl2]
+version  = "0.35.2" 
+default-features = false
+features = ["image", "gfx"]

@@ -1,17 +1,21 @@
-pub mod constants;
-pub mod enums;
-pub mod perft;
-
+use sdl2::*;
+use sdl2::gfx::primitives::DrawRenderer;
+use sdl2::image::LoadTexture;
+use sdl2::rect::Rect;
+use sdl2::render::{WindowCanvas, TextureCreator};
+use sdl2::video::WindowContext;
+use sdl2::{mouse::MouseButton::Left, mouse::MouseState};
+use shinobi_core::IntoEnumIterator;
+use shinobi_core::{
+    bitboard::BitBoard, castling_rights::Castling, mov::Move, MoveGenerator, Piece, Position, Side,
+    SquareLabel, State, A_FILE, B_FILE, B_IMG_POS, C_FILE, D_FILE, EIGTH_RANK, E_FILE, FIFTH_RANK,
+    FIRST_RANK, FOURTH_RANK, F_FILE, G_FILE, H_FILE, SECOND_RANK, SEVENTH_RANK, SIXTH_RANK,
+    SQUARE_SIZE, THIRD_RANK, W_IMG_POS,
+};
 use std::{fs, path::PathBuf};
 
-use crate::{
-    bitboard::BitBoard, castling_rights::Castling, mov::Move, Color, EventPump, IntoEnumIterator,
-    LoadTexture, MoveGenerator, Piece, Position, Rect, Side, SquareLabel, State, TextureCreator,
-    WindowCanvas, WindowContext, A_FILE, B_FILE, B_IMG_POS, C_FILE, DARK, D_FILE, EIGTH_RANK,
-    E_FILE, FIFTH_RANK, FIRST_RANK, FOURTH_RANK, F_FILE, G_FILE, H_FILE, LIGHT, SECOND_RANK,
-    SEVENTH_RANK, SIXTH_RANK, SQUARE_SIZE, THIRD_RANK, W_IMG_POS,
-};
-use sdl2::{gfx::primitives::DrawRenderer, mouse::MouseButton::Left, mouse::MouseState};
+pub const DARK: sdl2::pixels::Color = sdl2::pixels::Color::RGB(181, 136, 99);
+pub const LIGHT: sdl2::pixels::Color = sdl2::pixels::Color::RGB(240, 217, 181);
 
 pub fn get_square_from_mouse_position(pos_x: i32, pos_y: i32) -> SquareLabel {
     let x = pos_x / SQUARE_SIZE;
@@ -122,7 +126,7 @@ fn draw_moves(
                 file * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
                 (7 - rank) * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
                 5,
-                Color::RED,
+                sdl2::pixels::Color::RED,
             )?;
         }
     }

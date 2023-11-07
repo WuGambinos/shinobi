@@ -1,37 +1,16 @@
-[package]
-name = "shinobi"
-version = "0.1.0"
-edition = "2021"
+[workspace]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+members = [
+"shinobi-gui",
+"shinobi-core"
+]
 
-[dependencies]
-rand = "0.8.5"
-strum = "0.24.1"
-strum_macros = "0.24.3"
-criterion = "0.4.0"
-log = "0.4.20"
-inquire = "0.6.2"
-env_logger = "0.10.0"
-rand_chacha = "0.3.1"
-lazy_static = "1.4.0"
-
-[dependencies.sdl2]
-version = "0.35.2"
-default-features = false
-features = ["image", "gfx"]
 
 [profile.release]
-#debug = true
-lto = "fat"
+lto="fat"
+
+[profile.release.package.shinobi-core]
 codegen-units = 1
 
-[dev-dependicies]
-criterion = {version = "0.4", features = ["html_reports"]}
-
-[[bench]]
-name = "my_benchmark"
-harness = false
-
-[[example]]
-name = "perft"
+#[dev-dependicies]
+#criterio = {version = "0.4", features = ["html_reports"]}

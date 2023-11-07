@@ -1,10 +1,9 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use shinobi::{perft::*, Engine, Position, START_POS};
+use shinobi_core::{perft::*, Engine, Position, START_POS, Side};
 
 fn perft_starting_pos_depth_1(c: &mut Criterion) {
     let depth = 1;
-    let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let position = Position::from_fen(fen);
+    let position = Position::from_fen(START_POS);
     let mut engine = Engine::new(position);
 
     c.bench_function("Perft 1 Starting POS", |b| {
@@ -14,8 +13,7 @@ fn perft_starting_pos_depth_1(c: &mut Criterion) {
 
 fn perft_starting_pos_depth_2(c: &mut Criterion) {
     let depth = 2;
-    let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let position = Position::from_fen(fen);
+    let position = Position::from_fen(START_POS);
     let mut engine = Engine::new(position);
 
     c.bench_function("Perft 2 Starting POS", |b| {
@@ -25,8 +23,7 @@ fn perft_starting_pos_depth_2(c: &mut Criterion) {
 
 fn perft_starting_pos_depth_3(c: &mut Criterion) {
     let depth = 3;
-    let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let position = Position::from_fen(fen);
+    let position = Position::from_fen(START_POS);
     let mut engine = Engine::new(position);
 
     for _ in 0..5 {
@@ -38,8 +35,7 @@ fn perft_starting_pos_depth_3(c: &mut Criterion) {
 
 fn perft_starting_pos_depth_4(c: &mut Criterion) {
     let depth = 4;
-    let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let position = Position::from_fen(fen);
+    let position = Position::from_fen(START_POS);
     let mut engine = Engine::new(position);
     for _ in 0..5 {
         c.bench_function("Perft 4 Starting POS", |b| {
@@ -50,8 +46,7 @@ fn perft_starting_pos_depth_4(c: &mut Criterion) {
 
 fn perft_starting_pos_depth_5(c: &mut Criterion) {
     let depth = 5;
-    let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let position = Position::from_fen(fen);
+    let position = Position::from_fen(START_POS);
     let mut engine = Engine::new(position);
 
     for _ in 0..5 {
@@ -84,7 +79,7 @@ fn move_gen_bench(c: &mut Criterion) {
                 black_box(
                     engine
                         .move_gen
-                        .generate_moves(&mut engine.position, shinobi::Side::White),
+                        .generate_moves(&mut engine.position, Side::White),
                 )
             })
         });

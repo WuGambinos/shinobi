@@ -1,4 +1,4 @@
-use shinobi::{load_fen, perft::perft, Engine, Position};
+use shinobi_core::{load_fen, perft::perft, Engine, Position, START_POS};
 
 const POS_2: &str = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
 const POS_3: &str = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ";
@@ -14,8 +14,7 @@ fn test_add() {
 
 #[test]
 fn perft_starting_pos_1() {
-    let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let position = Position::from_fen(fen);
+    let position = Position::from_fen(START_POS);
     let mut shinobi = Engine::new(position);
 
     let depth = 1;
@@ -27,8 +26,7 @@ fn perft_starting_pos_1() {
 
 #[test]
 fn perft_starting_pos_2() {
-    let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let position = Position::from_fen(fen);
+    let position = Position::from_fen(START_POS);
     let mut shinobi = Engine::new(position);
 
     let depth = 2;
@@ -39,8 +37,7 @@ fn perft_starting_pos_2() {
 
 #[test]
 fn perft_starting_pos_3() {
-    let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let position = Position::from_fen(fen);
+    let position = Position::from_fen(START_POS);
     let mut shinobi = Engine::new(position);
 
     let depth = 3;
@@ -51,8 +48,7 @@ fn perft_starting_pos_3() {
 
 #[test]
 fn perft_starting_pos_4() {
-    let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let position = Position::from_fen(fen);
+    let position = Position::from_fen(START_POS);
     let mut shinobi = Engine::new(position);
 
     let depth = 4;
@@ -63,8 +59,7 @@ fn perft_starting_pos_4() {
 
 #[test]
 fn perft_starting_pos_5() {
-    let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let position = Position::from_fen(fen);
+    let position = Position::from_fen(START_POS);
     let mut shinobi = Engine::new(position);
 
     let depth = 5;
@@ -75,8 +70,7 @@ fn perft_starting_pos_5() {
 
 #[test]
 fn perft_starting_pos_6() {
-    let fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    let position = Position::from_fen(fen);
+    let position = Position::from_fen(START_POS);
     let mut shinobi = Engine::new(position);
 
     let depth = 6;

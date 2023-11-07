@@ -1,6 +1,7 @@
+pub mod app;
+pub mod util;
 use inquire::error::InquireResult;
 use log::*;
-use shinobi::app;
 
 fn main() -> InquireResult<()> {
     env_logger::init();

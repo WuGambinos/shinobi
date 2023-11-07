@@ -1,15 +1,11 @@
-use shinobi::load_fen;
-use shinobi::perft::perft;
-use shinobi::perft::perft_test;
-use shinobi::Engine;
-use shinobi::MoveGenerator;
-use shinobi::Position;
+use shinobi_core::perft::perft;
+use shinobi_core::Engine;
+use shinobi_core::Position;
 use std::env;
 use std::time::Instant;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let mut position: Position = Position::empty();
     let mut depth = "";
     let mut fen = "";
     let mut res = String::new();
