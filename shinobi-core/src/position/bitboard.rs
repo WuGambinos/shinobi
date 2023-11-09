@@ -1,4 +1,4 @@
-use crate::SquareLabel;
+use crate::Square;
 use std::ops::{
     Add, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, Mul, Not, Shl, Shr,
     Sub,
@@ -19,21 +19,21 @@ impl BitBoard {
         }
     }
 
-    pub fn set_bit(&mut self, square: SquareLabel) {
+    pub fn set_bit(&mut self, square: Square) {
         self.0 |= 1u64 << (square as u64);
     }
 
-    pub fn clear_bit(&mut self, square: SquareLabel) {
+    pub fn clear_bit(&mut self, square: Square) {
         self.0 &= !(1u64 << (square as u64));
     }
 
-    pub fn bitscan_forward(&self) -> SquareLabel {
+    pub fn bitscan_forward(&self) -> Square {
         assert!(self.0 != 0);
         let square = self.0.trailing_zeros() as u64;
-        SquareLabel::from(square)
+        Square::from(square)
     }
 
-    pub fn bitscan_forward_reset(&mut self) -> SquareLabel {
+    pub fn bitscan_forward_reset(&mut self) -> Square {
         assert!(self.0 != 0);
         let square = self.bitscan_forward();
         self.0 &= self.0 - 1;

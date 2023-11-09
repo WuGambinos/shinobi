@@ -1,5 +1,4 @@
-
-use crate::{BitBoard, SquareLabel};
+use crate::{BitBoard, Square};
 
 pub const NUM_SQUARES: u8 = 64;
 pub const SQUARE_SIZE: i32 = 60;
@@ -59,20 +58,20 @@ pub const CHECK_POS2: &str = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ";
 pub const TEST_POS4: &str = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1";
 
 // Castling
-pub const WHITE_KINGSIDE_KING_SQUARE: SquareLabel = SquareLabel::G1;
-pub const WHITE_KINGSIDE_ROOK_TO_SQUARE: SquareLabel = SquareLabel::F1;
-pub const WHITE_KINGSIDE_ROOK_FROM_SQUARE: SquareLabel = SquareLabel::H1;
+pub const WHITE_KINGSIDE_KING: Square = Square::G1;
+pub const WHITE_KINGSIDE_ROOK_TO: Square = Square::F1;
+pub const WHITE_KINGSIDE_ROOK_FROM: Square = Square::H1;
 
-pub const WHITE_QUEENSIDE_KING_SQUARE: SquareLabel = SquareLabel::C1;
-pub const WHITE_QUEENSIDE_ROOK_TO_SQUARE: SquareLabel = SquareLabel::D1;
-pub const WHITE_QUEENSIDE_ROOK_FROM_SQUARE: SquareLabel = SquareLabel::A1;
+pub const WHITE_QUEENSIDE_KING: Square = Square::C1;
+pub const WHITE_QUEENSIDE_ROOK_TO: Square = Square::D1;
+pub const WHITE_QUEENSIDE_ROOK_FROM: Square = Square::A1;
 
-pub const BLACK_KINGSIDE_KING_SQUARE: SquareLabel = SquareLabel::G8;
-pub const BLACK_KINGSIDE_ROOK_TO_SQUARE: SquareLabel = SquareLabel::F8;
-pub const BLACK_KINGSIDE_ROOK_FROM_SQUARE: SquareLabel = SquareLabel::H8;
+pub const BLACK_KINGSIDE_KING: Square = Square::G8;
+pub const BLACK_KINGSIDE_ROOK_TO: Square = Square::F8;
+pub const BLACK_KINGSIDE_ROOK_FROM: Square = Square::H8;
 
-pub const BLACK_QUEENSIDE_KING_SQUARE: SquareLabel = SquareLabel::C8;
-pub const BLACK_QUEENSIDE_ROOK_TO_SQUARE: SquareLabel = SquareLabel::D8;
-pub const BLACK_QUEENSIDE_ROOK_FROM_SQUARE: SquareLabel = SquareLabel::A8;
+pub const BLACK_QUEENSIDE_KING: Square = Square::C8;
+pub const BLACK_QUEENSIDE_ROOK_TO: Square = Square::D8;
+pub const BLACK_QUEENSIDE_ROOK_FROM: Square = Square::A8;
 
 pub const MAX_HALF_MOVES: u8 = 100;

@@ -2,17 +2,17 @@ pub mod constants;
 pub mod enums;
 pub mod perft;
 use crate::{
-    bitboard::BitBoard, castling_rights::Castling, Side, SquareLabel, State, A_FILE, B_FILE,
+    bitboard::BitBoard, castling_rights::Castling, Side, Square, State, A_FILE, B_FILE, C_FILE,
     D_FILE, EIGTH_RANK, E_FILE, FIFTH_RANK, FIRST_RANK, FOURTH_RANK, F_FILE, G_FILE, H_FILE,
-    SECOND_RANK, SEVENTH_RANK, SIXTH_RANK, SQUARE_SIZE, THIRD_RANK, C_FILE,
+    SECOND_RANK, SEVENTH_RANK, SIXTH_RANK, SQUARE_SIZE, THIRD_RANK,
 };
 
-pub fn get_square_from_mouse_position(pos_x: i32, pos_y: i32) -> SquareLabel {
+pub fn get_square_from_mouse_position(pos_x: i32, pos_y: i32) -> Square {
     let x = pos_x / SQUARE_SIZE;
     let y = (pos_y / SQUARE_SIZE - 7).abs();
 
     let square = ((8 * y) + x) as u64;
-    SquareLabel::from(square)
+    Square::from(square)
 }
 
 pub fn print_board(position: [char; 64]) {
@@ -30,19 +30,25 @@ pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
     let mut rank = 7;
 
     let fen_board: Vec<&str> = fen.trim().split(' ').collect();
-    let (main_string, turn, castle_rights, en_passant_square, half_move_counter, full_move_counter) =
-        if fen_board.len() == 4 {
-            (fen_board[0], fen_board[1], fen_board[2], "-", "0", "0")
-        } else {
-            (
-                fen_board[0],
-                fen_board[1],
-                fen_board[2],
-                fen_board[3],
-                fen_board[4],
-                fen_board[5],
-            )
-        };
+    let (main_string, turn, castle_rights, en_passant, half_move_counter, full_move_counter): (
+        &str,
+        &str,
+        &str,
+        &str,
+        &str,
+        &str,
+    ) = if fen_board.len() == 4 {
+        (fen_board[0], fen_board[1], fen_board[2], "-", "0", "0")
+    } else {
+        (
+            fen_board[0],
+            fen_board[1],
+            fen_board[2],
+            fen_board[3],
+            fen_board[4],
+            fen_board[5],
+        )
+    };
 
     let split_main: Vec<&str> = main_string.split('/').collect();
 
@@ -81,18 +87,18 @@ pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
         }
     }
 
-    state.en_passant_square = if en_passant_square == "-" {
+    state.en_passant = if en_passant == "-" {
         None
     } else {
-        let file = en_passant_square.chars().next().unwrap();
-        let rank = en_passant_square.chars().nth(1).unwrap();
+        let file = en_passant.chars().next().unwrap();
+        let rank = en_passant.chars().nth(1).unwrap();
 
         let file_num = file as u8 - b'a';
         let rank_num = rank.to_digit(10).unwrap() as u8;
 
         let square = (rank_num - 1) * 8 + file_num;
 
-        Some(SquareLabel::from(square as u64))
+        Some(Square::from(square as u64))
     };
 
     state.half_move_counter = half_move_counter.parse::<u8>().unwrap();
@@ -106,7 +112,7 @@ pub fn square_name(square: u8) -> String {
     format!("{file}{rank}")
 }
 
-pub fn adjacent_files(square: SquareLabel) -> BitBoard {
+pub fn adjacent_files(square: Square) -> BitBoard {
     let file = square as u64 % 8;
 
     match file {
@@ -121,7 +127,7 @@ pub fn adjacent_files(square: SquareLabel) -> BitBoard {
         _ => panic!("NOT A FILE"),
     }
 }
-pub fn get_file(square: SquareLabel) -> BitBoard {
+pub fn get_file(square: Square) -> BitBoard {
     let file = square as u64 % 8;
 
     match file {
@@ -138,7 +144,7 @@ pub fn get_file(square: SquareLabel) -> BitBoard {
     }
 }
 
-pub fn get_rank(square: SquareLabel) -> BitBoard {
+pub fn get_rank(square: Square) -> BitBoard {
     let rank = square as u64 / 8;
 
     match rank {

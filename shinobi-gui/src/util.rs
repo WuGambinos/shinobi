@@ -8,7 +8,7 @@ use sdl2::{mouse::MouseButton::Left, mouse::MouseState};
 use shinobi_core::IntoEnumIterator;
 use shinobi_core::{
     bitboard::BitBoard, castling_rights::Castling, mov::Move, MoveGenerator, Piece, Position, Side,
-    SquareLabel, State, A_FILE, B_FILE, B_IMG_POS, C_FILE, D_FILE, EIGTH_RANK, E_FILE, FIFTH_RANK,
+    Square, State, A_FILE, B_FILE, B_IMG_POS, C_FILE, D_FILE, EIGTH_RANK, E_FILE, FIFTH_RANK,
     FIRST_RANK, FOURTH_RANK, F_FILE, G_FILE, H_FILE, SECOND_RANK, SEVENTH_RANK, SIXTH_RANK,
     SQUARE_SIZE, THIRD_RANK, W_IMG_POS,
 };
@@ -17,12 +17,12 @@ use std::{fs, path::PathBuf};
 pub const DARK: sdl2::pixels::Color = sdl2::pixels::Color::RGB(181, 136, 99);
 pub const LIGHT: sdl2::pixels::Color = sdl2::pixels::Color::RGB(240, 217, 181);
 
-pub fn get_square_from_mouse_position(pos_x: i32, pos_y: i32) -> SquareLabel {
+pub fn get_square_from_mouse_position(pos_x: i32, pos_y: i32) -> Square {
     let x = pos_x / SQUARE_SIZE;
     let y = (pos_y / SQUARE_SIZE - 7).abs();
 
     let square = ((8 * y) + x) as u64;
-    SquareLabel::from(square)
+    Square::from(square)
 }
 
 pub fn drag_and_drop(
@@ -34,7 +34,7 @@ pub fn drag_and_drop(
     old_state: &mut MouseState,
     position: &mut Position,
     move_gen: &mut MoveGenerator,
-    from_square: &mut Option<SquareLabel>,
+    from_square: &mut Option<Square>,
     selected_piece: &mut Option<Piece>,
 ) -> Result<(), String> {
     // HELD DOWN
@@ -82,7 +82,7 @@ pub fn drag_and_drop(
     }
     // Release Button
     else if !event_pump.mouse_state().is_mouse_button_pressed(Left) {
-        let target_square: SquareLabel = get_square_from_mouse_position(
+        let target_square: Square = get_square_from_mouse_position(
             event_pump.mouse_state().x(),
             event_pump.mouse_state().y(),
         );
@@ -114,14 +114,14 @@ pub fn drag_and_drop(
 
 fn draw_moves(
     p: Piece,
-    from: SquareLabel,
+    from: Square,
     moves: &Vec<Move>,
     canvas: &mut WindowCanvas,
 ) -> Result<(), String> {
     for mv in moves {
-        if mv.piece == p && mv.from_square == from {
-            let file = mv.target_square as i16 % 8;
-            let rank = mv.target_square as i16 / 8;
+        if mv.piece == p && mv.from == from {
+            let file = mv.target as i16 % 8;
+            let rank = mv.target as i16 / 8;
             canvas.filled_circle(
                 file * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
                 (7 - rank) * SQUARE_SIZE as i16 + (SQUARE_SIZE / 2) as i16,
@@ -172,12 +172,12 @@ fn piece_follow_mouse(
 fn is_valid_move(
     mv: &Move,
     selected_piece: &Piece,
-    from_square: SquareLabel,
-    target_square: SquareLabel,
+    from_square: Square,
+    target_square: Square,
 ) -> bool {
     mv.piece() == *selected_piece
-        && mv.from_square() == from_square
-        && mv.target_square() == target_square
+        && mv.from() == from_square
+        && mv.target() == target_square
 }
 
 fn apply_move(position: &mut Position, mv: &Move, old_position: &mut Position, old_turn: Side) {
@@ -186,8 +186,8 @@ fn apply_move(position: &mut Position, mv: &Move, old_position: &mut Position, o
         old_position,
         position,
         &mv.piece,
-        mv.from_square,
-        mv.target_square,
+        mv.from,
+        mv.target,
         old_turn,
     );
 }
@@ -196,8 +196,8 @@ fn handle_movement(
     old_position: &mut Position,
     position: &mut Position,
     selected_piece: &Piece,
-    from_square: SquareLabel,
-    target_square: SquareLabel,
+    from_square: Square,
+    target_square: Square,
     turn: Side,
 ) {
     let bit = old_position.side_bitboards[turn as usize].get_bit(target_square as u64);
@@ -405,7 +405,7 @@ pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
         }
     }
 
-    state.en_passant_square = if en_passant_square == "-" {
+    state.en_passant = if en_passant_square == "-" {
         None
     } else {
         let file = en_passant_square.chars().next().unwrap();
@@ -416,7 +416,7 @@ pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
 
         let square = (rank_num - 1) * 8 + file_num;
 
-        Some(SquareLabel::from(square as u64))
+        Some(Square::from(square as u64))
     };
 
     state.half_move_counter = half_move_counter.parse::<u8>().unwrap();
@@ -430,7 +430,7 @@ pub fn square_name(square: u8) -> String {
     format!("{file}{rank}")
 }
 
-pub fn adjacent_files(square: SquareLabel) -> BitBoard {
+pub fn adjacent_files(square: Square) -> BitBoard {
     let file = square as u64 % 8;
 
     match file {
@@ -445,7 +445,7 @@ pub fn adjacent_files(square: SquareLabel) -> BitBoard {
         _ => panic!("NOT A FILE"),
     }
 }
-pub fn get_file(square: SquareLabel) -> BitBoard {
+pub fn get_file(square: Square) -> BitBoard {
     let file = square as u64 % 8;
 
     match file {
@@ -462,7 +462,7 @@ pub fn get_file(square: SquareLabel) -> BitBoard {
     }
 }
 
-pub fn get_rank(square: SquareLabel) -> BitBoard {
+pub fn get_rank(square: Square) -> BitBoard {
     let rank = square as u64 / 8;
 
     match rank {

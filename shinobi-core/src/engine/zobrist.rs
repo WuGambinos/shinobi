@@ -1,4 +1,4 @@
-use crate::{Piece, Position, Side, SquareLabel, NUM_SQUARES};
+use crate::{Piece, Position, Side, Square, NUM_SQUARES};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
 use strum::IntoEnumIterator;
@@ -47,10 +47,10 @@ impl Zobrist {
         }
     }
 
-    pub fn rand_piece_num(&self, side: Side, piece: Piece, square: SquareLabel) -> u64 {
+    pub fn rand_piece_num(&self, side: Side, piece: Piece, square: Square) -> u64 {
         self.rand_piece_nums[side as usize][piece as usize][square as usize]
     }
-    pub fn rand_en_passant(&self, square: SquareLabel) -> u64 {
+    pub fn rand_en_passant(&self, square: Square) -> u64 {
         self.rand_en_passant_nums[square as usize]
     }
 
@@ -76,7 +76,7 @@ impl Zobrist {
             }
         }
 
-        if let Some(ep) = position.state.en_passant_square {
+        if let Some(ep) = position.state.en_passant {
             key ^= self.rand_en_passant_nums[ep as usize];
         }
 

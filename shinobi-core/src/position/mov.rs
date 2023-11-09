@@ -1,6 +1,6 @@
 use core::fmt;
 
-use crate::{square_name, Piece, Side, SquareLabel};
+use crate::{square_name, Piece, Side, Square};
 
 #[derive(Eq, PartialEq, Debug, Clone, Copy)]
 pub enum MoveType {
@@ -14,23 +14,18 @@ pub enum MoveType {
 #[derive(Debug, Clone, Copy)]
 pub struct Move {
     pub piece: Piece,
-    pub from_square: SquareLabel,
-    pub target_square: SquareLabel,
+    pub from: Square,
+    pub target: Square,
     pub move_type: MoveType,
     pub promotion_piece: Option<Piece>,
 }
 
 impl Move {
-    pub fn new(
-        piece: Piece,
-        from_square: SquareLabel,
-        target_square: SquareLabel,
-        move_type: MoveType,
-    ) -> Move {
+    pub fn new(piece: Piece, from: Square, target: Square, move_type: MoveType) -> Move {
         Move {
             piece,
-            from_square,
-            target_square,
+            from,
+            target,
             move_type,
             promotion_piece: None,
         }
@@ -38,34 +33,34 @@ impl Move {
 
     pub fn with_promotion_piece(
         piece: Piece,
-        from_square: SquareLabel,
-        target_square: SquareLabel,
+        from: Square,
+        target: Square,
         move_type: MoveType,
         promotion_piece: Option<Piece>,
     ) -> Move {
         Move {
             piece,
-            from_square,
-            target_square,
+            from,
+            target,
             move_type,
             promotion_piece,
         }
     }
 
     pub fn is_double_pawn_push(&self) -> bool {
-        self.piece.is_pawn() && (self.target_square() as i8 - self.from_square() as i8).abs() == 16
+        self.piece.is_pawn() && (self.target() as i8 - self.from() as i8).abs() == 16
     }
 
     pub fn piece(&self) -> Piece {
         self.piece
     }
 
-    pub fn from_square(&self) -> SquareLabel {
-        self.from_square
+    pub fn from(&self) -> Square {
+        self.from
     }
 
-    pub fn target_square(&self) -> SquareLabel {
-        self.target_square
+    pub fn target(&self) -> Square {
+        self.target
     }
 
     pub fn move_type(&self) -> MoveType {
@@ -83,16 +78,16 @@ impl std::fmt::Display for Move {
             write!(
                 f,
                 "{}{}{}",
-                square_name(self.from_square() as u8),
-                square_name(self.target_square() as u8),
+                square_name(self.from() as u8),
+                square_name(self.target() as u8),
                 self.promotion_piece.unwrap().to_char(Side::Black)
             )
         } else {
             write!(
                 f,
                 "{}{}",
-                square_name(self.from_square() as u8),
-                square_name(self.target_square() as u8)
+                square_name(self.from() as u8),
+                square_name(self.target() as u8)
             )
         }
     }

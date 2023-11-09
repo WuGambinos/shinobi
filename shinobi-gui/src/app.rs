@@ -15,7 +15,7 @@ use sdl2::{
     EventPump,
 };
 use shinobi_core::perft::perft;
-use shinobi_core::{Engine, Piece, Position, Side, SquareLabel, START_POS};
+use shinobi_core::{Engine, Piece, Position, Side, Square, START_POS};
 
 #[derive(Debug)]
 enum Mode {
@@ -123,7 +123,7 @@ pub fn run_loop(shinobi: &mut Engine, sdl_state: &mut Sdl2State) {
     /* IMAGE STUFF */
     let images = get_images();
     let mut piece: Option<Piece> = None;
-    let mut from_square: Option<SquareLabel> = None;
+    let mut from_square: Option<Square> = None;
     let mut moves = Vec::new();
     'running: loop {
         for event in sdl_state.event_pump.poll_iter() {

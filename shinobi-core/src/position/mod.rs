@@ -4,12 +4,12 @@ pub mod generator;
 pub mod mov;
 
 use crate::{
-    load_fen, mov::Move, mov::MoveType, BitBoard, Piece, Side, SquareLabel, Zobrist,
-    BLACK_KINGSIDE_KING_SQUARE, BLACK_KINGSIDE_ROOK_FROM_SQUARE, BLACK_KINGSIDE_ROOK_TO_SQUARE,
-    BLACK_QUEENSIDE_KING_SQUARE, BLACK_QUEENSIDE_ROOK_FROM_SQUARE, BLACK_QUEENSIDE_ROOK_TO_SQUARE,
-    EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK, WHITE_KINGSIDE_KING_SQUARE,
-    WHITE_KINGSIDE_ROOK_FROM_SQUARE, WHITE_KINGSIDE_ROOK_TO_SQUARE, WHITE_QUEENSIDE_KING_SQUARE,
-    WHITE_QUEENSIDE_ROOK_FROM_SQUARE, WHITE_QUEENSIDE_ROOK_TO_SQUARE,
+    load_fen, mov::Move, mov::MoveType, BitBoard, Piece, Side, Square, Zobrist,
+    BLACK_KINGSIDE_KING, BLACK_KINGSIDE_ROOK_FROM, BLACK_KINGSIDE_ROOK_TO,
+    BLACK_QUEENSIDE_KING, BLACK_QUEENSIDE_ROOK_FROM, BLACK_QUEENSIDE_ROOK_TO,
+    EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK, WHITE_KINGSIDE_KING,
+    WHITE_KINGSIDE_ROOK_FROM, WHITE_KINGSIDE_ROOK_TO, WHITE_QUEENSIDE_KING,
+    WHITE_QUEENSIDE_ROOK_FROM, WHITE_QUEENSIDE_ROOK_TO,
 };
 
 use std::fmt;
@@ -20,7 +20,7 @@ use self::castling_rights::{Castling, CastlingRights};
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct State {
     pub castling_rights: CastlingRights,
-    pub en_passant_square: Option<SquareLabel>,
+    pub en_passant: Option<Square>,
     pub half_move_counter: u8,
     pub full_move_counter: u8,
     pub turn: Side,
@@ -31,7 +31,7 @@ impl State {
     fn new() -> State {
         State {
             castling_rights: CastlingRights::empty(),
-            en_passant_square: None,
+            en_passant: None,
             half_move_counter: 0,
             full_move_counter: 1,
             turn: Side::White,
@@ -78,8 +78,8 @@ pub struct History {
     pub prev_piece_bitboards: Vec<[[BitBoard; 6]; 2]>,
     pub prev_states: Vec<State>,
 
-    pub prev_white_king_square: Option<SquareLabel>,
-    pub prev_black_king_square: Option<SquareLabel>,
+    pub prev_white_king: Option<Square>,
+    pub prev_black_king: Option<Square>,
 }
 
 impl History {
@@ -93,8 +93,8 @@ impl History {
             prev_side_bitboards: Vec::with_capacity(50),
             prev_piece_bitboards: Vec::with_capacity(50),
             prev_states: Vec::with_capacity(50),
-            prev_white_king_square: None,
-            prev_black_king_square: None,
+            prev_white_king: None,
+            prev_black_king: None,
         }
     }
 }
@@ -120,8 +120,8 @@ pub struct Position {
     pub piece_count: [[u8; 6]; 2],
 
     pub state: State,
-    pub white_king_square: SquareLabel,
-    pub black_king_square: SquareLabel,
+    pub white_king: Square,
+    pub black_king: Square,
     pub history: History,
     pub last_move: Option<Move>,
     pub zobrist: Zobrist,
@@ -139,8 +139,8 @@ impl Position {
 
             state: State::new(),
 
-            white_king_square: SquareLabel::A1,
-            black_king_square: SquareLabel::A1,
+            white_king: Square::A1,
+            black_king: Square::A1,
 
             history: History::new(),
             last_move: None,
@@ -159,8 +159,8 @@ impl Position {
 
             state: State::new(),
 
-            white_king_square: SquareLabel::A1,
-            black_king_square: SquareLabel::A1,
+            white_king: Square::A1,
+            black_king: Square::A1,
 
             history: History::new(),
             last_move: None,
@@ -183,9 +183,9 @@ impl Position {
             };
 
             if *ch == 'K' {
-                position.white_king_square = SquareLabel::from(i as u64);
+                position.white_king = Square::from(i as u64);
             } else if *ch == 'k' {
-                position.black_king_square = SquareLabel::from(i as u64);
+                position.black_king = Square::from(i as u64);
             }
 
             if ch.is_ascii() {
@@ -217,7 +217,7 @@ impl Position {
         self.side_bitboards[self.state.opponent() as usize]
     }
 
-    pub fn set_bit_on_piece_bitboard(&mut self, piece: Piece, side: Side, square: SquareLabel) {
+    pub fn set_bit_on_piece_bitboard(&mut self, piece: Piece, side: Side, square: Square) {
         self.piece_bitboards[side as usize][piece as usize].set_bit(square);
     }
 
@@ -225,12 +225,12 @@ impl Position {
         self.piece_bitboards[side as usize][piece as usize]
     }
 
-    pub fn king_square(&self, side: Side) -> SquareLabel {
+    pub fn king(&self, side: Side) -> Square {
         let king_bitboard: BitBoard = self.piece_bitboard(Piece::King, side);
         king_bitboard.bitscan_forward()
     }
 
-    pub fn piece_on_square(&self, square: SquareLabel, side: Side) -> Option<Piece> {
+    pub fn piece_on_square(&self, square: Square, side: Side) -> Option<Piece> {
         let pieces: [BitBoard; 6] = self.piece_bitboards[side as usize];
 
         for piece in Piece::iter() {
@@ -258,34 +258,34 @@ impl Position {
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
         let mut old_rook_board: BitBoard = self.piece_bitboard(Piece::Rook, self.state.turn());
 
-        let (castle_king_square, from_rook_square, to_rook_square, rank): (
-            SquareLabel,
-            SquareLabel,
-            SquareLabel,
+        let (castle_king, from_rook, to_rook, rank): (
+            Square,
+            Square,
+            Square,
             BitBoard,
         ) = match self.state.turn {
             Side::White => (
-                WHITE_QUEENSIDE_KING_SQUARE,
-                WHITE_QUEENSIDE_ROOK_FROM_SQUARE,
-                WHITE_QUEENSIDE_ROOK_TO_SQUARE,
+                WHITE_QUEENSIDE_KING,
+                WHITE_QUEENSIDE_ROOK_FROM,
+                WHITE_QUEENSIDE_ROOK_TO,
                 FIRST_RANK,
             ),
             Side::Black => (
-                BLACK_QUEENSIDE_KING_SQUARE,
-                BLACK_QUEENSIDE_ROOK_FROM_SQUARE,
-                BLACK_QUEENSIDE_ROOK_TO_SQUARE,
+                BLACK_QUEENSIDE_KING,
+                BLACK_QUEENSIDE_ROOK_FROM,
+                BLACK_QUEENSIDE_ROOK_TO,
                 EIGTH_RANK,
             ),
         };
 
-        let queenside_castle = mv.target_square() == castle_king_square;
+        let queenside_castle = mv.target() == castle_king;
         if queenside_castle {
             // Queen side squares
-            let queen_side = BitBoard((1 << mv.from_square() as usize) - 1) & rank;
+            let queen_side = BitBoard((1 << mv.from() as usize) - 1) & rank;
             old_rook_board &= queen_side;
 
             let mut new_rook_board = EMPTY_BITBOARD;
-            new_rook_board.set_bit(to_rook_square);
+            new_rook_board.set_bit(to_rook);
 
             let rook_to = old_rook_board ^ new_rook_board;
 
@@ -302,23 +302,23 @@ impl Position {
             self.empty_bitboard = !self.main_bitboard;
 
             // Update piece array board
-            self.pieces[mv.target_square() as usize] = Some((self.state.turn(), mv.piece));
-            self.pieces[mv.from_square as usize] = None;
-            self.pieces[to_rook_square as usize] = Some((self.state.turn(), Piece::Rook));
-            self.pieces[from_rook_square as usize] = None;
+            self.pieces[mv.target() as usize] = Some((self.state.turn(), mv.piece));
+            self.pieces[mv.from as usize] = None;
+            self.pieces[to_rook as usize] = Some((self.state.turn(), Piece::Rook));
+            self.pieces[from_rook as usize] = None;
 
             // Remove rook from hash (from_rook_square)
             self.state.update_hash(self.zobrist.rand_piece_num(
                 self.state.turn(),
                 Piece::Rook,
-                from_rook_square,
+                from_rook,
             ));
 
             // Add rook to hash (to_rook_square)
             self.state.update_hash(self.zobrist.rand_piece_num(
                 self.state.turn(),
                 Piece::Rook,
-                to_rook_square,
+                to_rook,
             ));
         }
     }
@@ -327,35 +327,35 @@ impl Position {
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
         let mut old_rook_board: BitBoard = self.piece_bitboard(Piece::Rook, self.state.turn());
 
-        let (castle_king_square, from_rook_square, to_rook_square, rank): (
-            SquareLabel,
-            SquareLabel,
-            SquareLabel,
+        let (castle_king, from_rook, to_rook, rank): (
+            Square,
+            Square,
+            Square,
             BitBoard,
         ) = match self.state.turn() {
             Side::White => (
-                WHITE_KINGSIDE_KING_SQUARE,
-                WHITE_KINGSIDE_ROOK_FROM_SQUARE,
-                WHITE_KINGSIDE_ROOK_TO_SQUARE,
+                WHITE_KINGSIDE_KING,
+                WHITE_KINGSIDE_ROOK_FROM,
+                WHITE_KINGSIDE_ROOK_TO,
                 FIRST_RANK,
             ),
             Side::Black => (
-                BLACK_KINGSIDE_KING_SQUARE,
-                BLACK_KINGSIDE_ROOK_FROM_SQUARE,
-                BLACK_KINGSIDE_ROOK_TO_SQUARE,
+                BLACK_KINGSIDE_KING,
+                BLACK_KINGSIDE_ROOK_FROM,
+                BLACK_KINGSIDE_ROOK_TO,
                 EIGTH_RANK,
             ),
         };
 
         // Kingside castle
-        let kingside_castle = mv.target_square() == castle_king_square;
+        let kingside_castle = mv.target() == castle_king;
         if kingside_castle {
             // Kingside squares
-            let king_side = BitBoard(!1 << mv.from_square() as usize) & rank;
+            let king_side = BitBoard(!1 << mv.from() as usize) & rank;
             old_rook_board &= king_side;
 
             let mut new_rook_board = EMPTY_BITBOARD;
-            new_rook_board.set_bit(to_rook_square);
+            new_rook_board.set_bit(to_rook);
 
             let rook_to = old_rook_board ^ new_rook_board;
 
@@ -372,23 +372,23 @@ impl Position {
             self.empty_bitboard = !self.main_bitboard;
 
             // Update piece array board
-            self.pieces[mv.target_square() as usize] = Some((self.state.turn(), mv.piece()));
-            self.pieces[mv.from_square as usize] = None;
-            self.pieces[to_rook_square as usize] = Some((self.state.turn(), Piece::Rook));
-            self.pieces[from_rook_square as usize] = None;
+            self.pieces[mv.target() as usize] = Some((self.state.turn(), mv.piece()));
+            self.pieces[mv.from as usize] = None;
+            self.pieces[to_rook as usize] = Some((self.state.turn(), Piece::Rook));
+            self.pieces[from_rook as usize] = None;
 
             // Remove rook from hash (from_rook_square)
             self.state.update_hash(self.zobrist.rand_piece_num(
                 self.state.turn(),
                 Piece::Rook,
-                from_rook_square,
+                from_rook,
             ));
 
             // Add rook to hash (to_rook_square)
             self.state.update_hash(self.zobrist.rand_piece_num(
                 self.state.turn(),
                 Piece::Rook,
-                to_rook_square,
+                to_rook,
             ));
         }
     }
@@ -397,16 +397,16 @@ impl Position {
         if mv.piece.is_king() {
             match self.state.turn() {
                 Side::White => {
-                    self.history.prev_white_king_square = Some(self.white_king_square);
-                    self.white_king_square = mv.target_square();
+                    self.history.prev_white_king = Some(self.white_king);
+                    self.white_king = mv.target();
 
                     // Disable white caslting
                     self.state.castling_rights =
                         CastlingRights(self.state.castling_rights.0 & !Castling::WHITE_CASTLING);
                 }
                 Side::Black => {
-                    self.history.prev_black_king_square = Some(self.black_king_square);
-                    self.black_king_square = mv.target_square();
+                    self.history.prev_black_king = Some(self.black_king);
+                    self.black_king = mv.target();
 
                     // Disable black castling
                     self.state.castling_rights =
@@ -415,15 +415,15 @@ impl Position {
             }
         } else if mv.piece.is_rook() {
             match self.state.turn() {
-                Side::White => match mv.from_square() {
+                Side::White => match mv.from() {
                     // Disable Kingside castling
-                    WHITE_KINGSIDE_ROOK_FROM_SQUARE => {
+                    WHITE_KINGSIDE_ROOK_FROM => {
                         self.state.castling_rights = CastlingRights(
                             self.state.castling_rights.0 & (!Castling::WHITE_KING_SIDE),
                         )
                     }
                     // Disable Queenside castling
-                    WHITE_QUEENSIDE_ROOK_FROM_SQUARE => {
+                    WHITE_QUEENSIDE_ROOK_FROM => {
                         self.state.castling_rights = CastlingRights(
                             self.state.castling_rights.0 & (!Castling::WHITE_QUEEN_SIDE),
                         )
@@ -431,16 +431,16 @@ impl Position {
 
                     _ => {}
                 },
-                Side::Black => match mv.from_square() {
+                Side::Black => match mv.from() {
                     // Disable Kingside castling
-                    BLACK_KINGSIDE_ROOK_FROM_SQUARE => {
+                    BLACK_KINGSIDE_ROOK_FROM => {
                         self.state.castling_rights = CastlingRights(
                             self.state.castling_rights.0 & (!Castling::BLACK_KING_SIDE),
                         )
                     }
 
                     // Disable Queenside castling
-                    BLACK_QUEENSIDE_ROOK_FROM_SQUARE => {
+                    BLACK_QUEENSIDE_ROOK_FROM => {
                         self.state.castling_rights = CastlingRights(
                             self.state.castling_rights.0 & (!Castling::BLACK_QUEEN_SIDE),
                         )
@@ -453,12 +453,12 @@ impl Position {
     }
 
     pub fn make_move(&mut self, mv: Move) {
-        let from_bitboard: BitBoard = BitBoard(1) << (mv.from_square() as usize);
-        let to_bitboard: BitBoard = BitBoard(1) << (mv.target_square() as usize);
+        let from_bitboard: BitBoard = BitBoard(1) << (mv.from() as usize);
+        let to_bitboard: BitBoard = BitBoard(1) << (mv.target() as usize);
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
 
-        let can_move = mv.from_square() != mv.target_square()
-            && self.side_bitboards[self.state.turn() as usize].get_bit(mv.target_square() as u64)
+        let can_move = mv.from() != mv.target()
+            && self.side_bitboards[self.state.turn() as usize].get_bit(mv.target() as u64)
                 == 0;
 
         if can_move {
@@ -469,14 +469,14 @@ impl Position {
             self.state.update_hash(self.zobrist.rand_piece_num(
                 self.state.turn(),
                 mv.piece(),
-                mv.from_square(),
+                mv.from(),
             ));
 
             // Add piece back hash (target_square)
             self.state.update_hash(self.zobrist.rand_piece_num(
                 self.state.turn(),
                 mv.piece(),
-                mv.target_square(),
+                mv.target(),
             ));
 
             //Hash castle
@@ -503,11 +503,11 @@ impl Position {
                 MoveType::EnPassant => self.en_passant(mv, from_bitboard, to_bitboard),
                 _ => {
                     let piece_on_from_square = self.side_bitboards[self.state.turn as usize]
-                        .get_bit(mv.from_square as u64)
+                        .get_bit(mv.from as u64)
                         != 0;
                     if piece_on_from_square {
                         let capture = self.side_bitboards[self.state.opponent() as usize]
-                            .get_bit(mv.target_square as u64)
+                            .get_bit(mv.target as u64)
                             == 1;
                         if capture {
                             pawn_move_or_capture = true;
@@ -519,46 +519,24 @@ impl Position {
                 }
             }
 
-            /*
             // hash enpassant if available (remove enpassant square from hash key)
-            if let Some(ep) = self.state.en_passant_square {
+            if let Some(ep) = self.state.en_passant {
                 self.state.update_hash(self.zobrist.rand_en_passant(ep));
             }
 
             // Reset en pass square
-            self.state.en_passant_square = None;
+            self.state.en_passant = None;
 
             // Handle Double pawn push
             if mv.is_double_pawn_push() {
-                let ep_square = if self.state.turn() == Side::White {
-                    SquareLabel::from(mv.target_square() as u64 - 8)
+                let en_passant = if self.state.turn() == Side::White {
+                    Square::from(mv.target() as u64 - 8)
                 } else {
-                    SquareLabel::from(mv.target_square() as u64 + 8)
+                    Square::from(mv.target() as u64 + 8)
                 };
-                self.state.en_passant_square = Some(ep_square);
+                self.state.en_passant = Some(en_passant);
                 self.state
-                    .update_hash(self.zobrist.rand_en_passant(ep_square));
-            }
-            */
-
-            // hash enpassant if available (remove enpassant square from hash key)
-            if let Some(ep) = self.state.en_passant_square {
-                self.state.update_hash(self.zobrist.rand_en_passant(ep));
-            }
-
-            // Reset en pass square
-            self.state.en_passant_square = None;
-
-            // Handle Double pawn push
-            if mv.is_double_pawn_push() {
-                let ep_square = if self.state.turn() == Side::White {
-                    SquareLabel::from(mv.target_square() as u64 - 8)
-                } else {
-                    SquareLabel::from(mv.target_square() as u64 + 8)
-                };
-                self.state.en_passant_square = Some(ep_square);
-                self.state
-                    .update_hash(self.zobrist.rand_en_passant(ep_square));
+                    .update_hash(self.zobrist.rand_en_passant(en_passant));
             }
 
             // Hash castle
@@ -609,8 +587,8 @@ impl Position {
         }
 
         // Restore king square
-        self.white_king_square = self.king_square(Side::White);
-        self.black_king_square = self.king_square(Side::Black);
+        self.white_king = self.king(Side::White);
+        self.black_king = self.king(Side::Black);
 
         self.state = self.history.prev_states.pop().unwrap();
     }
@@ -619,12 +597,12 @@ impl Position {
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
 
         // Promotion Capture
-        let possible_piece: Option<(Side, Piece)> = self.pieces[mv.target_square() as usize];
+        let possible_piece: Option<(Side, Piece)> = self.pieces[mv.target() as usize];
         let mut capture: bool = false;
         if let Some(possible_p) = possible_piece {
             if possible_p.0 != self.state.turn() {
                 let opponent: Side = self.state.opponent();
-                let opponent_piece = self.piece_on_square(mv.target_square(), opponent).unwrap();
+                let opponent_piece = self.piece_on_square(mv.target(), opponent).unwrap();
 
                 // Update piece bitboard
                 self.piece_bitboards[self.state.turn() as usize][mv.piece() as usize] &=
@@ -655,21 +633,21 @@ impl Position {
                 self.state.update_hash(self.zobrist.rand_piece_num(
                     opponent,
                     opponent_piece,
-                    mv.target_square(),
+                    mv.target(),
                 ));
 
                 // Remove pawn from hash (target_square)
                 self.state.update_hash(self.zobrist.rand_piece_num(
                     self.state.turn(),
                     Piece::Pawn,
-                    mv.target_square(),
+                    mv.target(),
                 ));
 
                 // Add promoted piece to hash (target_square)
                 self.state.update_hash(self.zobrist.rand_piece_num(
                     self.state.turn(),
                     mv.promotion_piece.unwrap(),
-                    mv.target_square(),
+                    mv.target(),
                 ));
 
                 self.piece_count[opponent as usize][opponent_piece as usize] -= 1;
@@ -698,21 +676,21 @@ impl Position {
             self.state.update_hash(self.zobrist.rand_piece_num(
                 self.state.turn(),
                 Piece::Pawn,
-                mv.target_square(),
+                mv.target(),
             ));
 
             // Add promoted piece to hash (target_square)
             self.state.update_hash(self.zobrist.rand_piece_num(
                 self.state.turn(),
                 mv.promotion_piece.unwrap(),
-                mv.target_square(),
+                mv.target(),
             ));
         }
 
         // Update piece array board
-        self.pieces[mv.target_square() as usize] =
+        self.pieces[mv.target() as usize] =
             Some((self.state.turn(), mv.promotion_piece.unwrap()));
-        self.pieces[mv.from_square() as usize] = None;
+        self.pieces[mv.from() as usize] = None;
         self.piece_count[self.state.turn() as usize][mv.promotion_piece.unwrap() as usize] += 1;
     }
 
@@ -732,19 +710,19 @@ impl Position {
         self.empty_bitboard = !self.main_bitboard;
 
         // Update pieces
-        self.pieces[mv.target_square() as usize] = Some((self.state.turn(), mv.piece()));
-        self.pieces[mv.from_square() as usize] = None;
+        self.pieces[mv.target() as usize] = Some((self.state.turn(), mv.piece()));
+        self.pieces[mv.from() as usize] = None;
 
         let target_square_num: usize = if self.state.opponent() == Side::Black {
-            mv.target_square() as usize - 8
+            mv.target() as usize - 8
         } else {
-            mv.target_square() as usize + 8
+            mv.target() as usize + 8
         };
 
         self.pieces[target_square_num] = None;
 
         let mut ep_bitboard: BitBoard = EMPTY_BITBOARD;
-        ep_bitboard.set_bit(mv.target_square());
+        ep_bitboard.set_bit(mv.target());
 
         if self.state.opponent() == Side::White {
             ep_bitboard = ep_bitboard << 8;
@@ -769,7 +747,7 @@ impl Position {
         self.state.update_hash(self.zobrist.rand_piece_num(
             self.state.opponent(),
             Piece::Pawn,
-            SquareLabel::from(target_square_num as u64),
+            Square::from(target_square_num as u64),
         ));
     }
 
@@ -783,12 +761,12 @@ impl Position {
         // Update white or black bitboard
         self.side_bitboards[self.state.turn() as usize] ^= from_to_bitboard;
 
-        let opponent_piece: Piece = self.piece_on_square(mv.target_square(), opponent).unwrap();
+        let opponent_piece: Piece = self.piece_on_square(mv.target(), opponent).unwrap();
 
         // Hash capture
         self.state.zobrist_key ^=
             self.zobrist
-                .rand_piece_num(opponent, opponent_piece, mv.target_square());
+                .rand_piece_num(opponent, opponent_piece, mv.target());
 
         // Reset captured piece
         self.piece_bitboards[opponent as usize][opponent_piece as usize] ^= to_bitboard;
@@ -803,8 +781,8 @@ impl Position {
         self.empty_bitboard = !self.main_bitboard;
 
         // Update piece array board
-        self.pieces[mv.target_square() as usize] = Some((self.state.turn(), mv.piece()));
-        self.pieces[mv.from_square() as usize] = None;
+        self.pieces[mv.target() as usize] = Some((self.state.turn(), mv.piece()));
+        self.pieces[mv.from() as usize] = None;
 
         self.piece_count[opponent as usize][opponent_piece as usize] -= 1;
     }
@@ -824,8 +802,8 @@ impl Position {
         self.empty_bitboard = !self.main_bitboard;
 
         // Update piece array board
-        self.pieces[mv.target_square() as usize] = Some((self.state.turn(), mv.piece()));
-        self.pieces[mv.from_square() as usize] = None;
+        self.pieces[mv.target() as usize] = Some((self.state.turn(), mv.piece()));
+        self.pieces[mv.from() as usize] = None;
     }
 
     pub fn print_black_piece_bitboards(&self) {
@@ -910,6 +888,6 @@ impl std::fmt::Display for Position {
         writeln!(f,)?;
         writeln!(f, "Castling Rights: {:?}", self.state.castling_rights)?;
         writeln!(f,)?;
-        writeln!(f, "En Passant Square: {:?}", self.state.en_passant_square)
+        writeln!(f, "En Passant Square: {:?}", self.state.en_passant)
     }
 }

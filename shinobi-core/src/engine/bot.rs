@@ -34,7 +34,7 @@ impl Bot {
 
     pub fn score_move(&self, engine: &mut Engine, mv: Move) -> i32 {
         if mv.move_type() == MoveType::Capture {
-            let piece_captured = engine.position.pieces[mv.target_square() as usize]
+            let piece_captured = engine.position.pieces[mv.target() as usize]
                 .unwrap()
                 .1;
             return WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10;
