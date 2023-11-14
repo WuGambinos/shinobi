@@ -95,6 +95,20 @@ pub enum Square {
   A8, B8, C8, D8, E8, F8, G8, H8,
 }
 
+impl From<&str> for Square {
+    fn from(sq: &str) -> Square {
+        let file = sq.chars().next().unwrap();
+        let rank = sq.chars().nth(1).unwrap();
+
+        let file_num = file as u8 - b'a';
+        let rank_num = rank.to_digit(10).unwrap() as u8;
+
+        let sq = (rank_num - 1) * 8 + file_num;
+
+        Square::from(sq as u64)
+    }
+}
+
 impl From<u64> for Square {
     fn from(value: u64) -> Square {
         match value {

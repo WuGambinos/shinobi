@@ -104,19 +104,6 @@ impl MoveGenerator {
         (bitboard >> 17) & !H_FILE
     }
 
-    /*
-    fn white_pawns_able_double_push(&self, position: &Position) -> BitBoard {
-        const RANK4: BitBoard = BitBoard(0x0000_0000_FF00_0000);
-        let empty_rank_3 =
-            self.south_one(position.empty_bitboard & RANK4) & position.empty_bitboard;
-
-        self.white_pawns_able_push(position, empty_rank_3)
-    }
-
-    fn white_pawns_able_push(&self, position: &Position, empty: BitBoard) -> BitBoard {
-        self.south_one(empty) & position.piece_bitboards[Side::White as usize][Piece::Pawn as usize]
-    }
-    */
     fn fill_pawn_moves(&mut self, position: &Position, side: Side) {
         self.fill_pawn_pushes(position, side);
         self.fill_pawn_attacks(side);

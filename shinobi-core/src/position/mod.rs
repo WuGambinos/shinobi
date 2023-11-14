@@ -4,12 +4,11 @@ pub mod generator;
 pub mod mov;
 
 use crate::{
-    load_fen, mov::Move, mov::MoveType, BitBoard, Piece, Side, Square, Zobrist,
-    BLACK_KINGSIDE_KING, BLACK_KINGSIDE_ROOK_FROM, BLACK_KINGSIDE_ROOK_TO,
-    BLACK_QUEENSIDE_KING, BLACK_QUEENSIDE_ROOK_FROM, BLACK_QUEENSIDE_ROOK_TO,
-    EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK, WHITE_KINGSIDE_KING,
-    WHITE_KINGSIDE_ROOK_FROM, WHITE_KINGSIDE_ROOK_TO, WHITE_QUEENSIDE_KING,
-    WHITE_QUEENSIDE_ROOK_FROM, WHITE_QUEENSIDE_ROOK_TO,
+    load_fen, mov::Move, mov::MoveType, BitBoard, MoveGenerator, Piece, Side, Square, Zobrist,
+    BLACK_KINGSIDE_KING, BLACK_KINGSIDE_ROOK_FROM, BLACK_KINGSIDE_ROOK_TO, BLACK_QUEENSIDE_KING,
+    BLACK_QUEENSIDE_ROOK_FROM, BLACK_QUEENSIDE_ROOK_TO, EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK,
+    MAX_HALF_MOVES, WHITE_KINGSIDE_KING, WHITE_KINGSIDE_ROOK_FROM, WHITE_KINGSIDE_ROOK_TO,
+    WHITE_QUEENSIDE_KING, WHITE_QUEENSIDE_ROOK_FROM, WHITE_QUEENSIDE_ROOK_TO,
 };
 
 use std::fmt;
@@ -258,25 +257,21 @@ impl Position {
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
         let mut old_rook_board: BitBoard = self.piece_bitboard(Piece::Rook, self.state.turn());
 
-        let (castle_king, from_rook, to_rook, rank): (
-            Square,
-            Square,
-            Square,
-            BitBoard,
-        ) = match self.state.turn {
-            Side::White => (
-                WHITE_QUEENSIDE_KING,
-                WHITE_QUEENSIDE_ROOK_FROM,
-                WHITE_QUEENSIDE_ROOK_TO,
-                FIRST_RANK,
-            ),
-            Side::Black => (
-                BLACK_QUEENSIDE_KING,
-                BLACK_QUEENSIDE_ROOK_FROM,
-                BLACK_QUEENSIDE_ROOK_TO,
-                EIGTH_RANK,
-            ),
-        };
+        let (castle_king, from_rook, to_rook, rank): (Square, Square, Square, BitBoard) =
+            match self.state.turn {
+                Side::White => (
+                    WHITE_QUEENSIDE_KING,
+                    WHITE_QUEENSIDE_ROOK_FROM,
+                    WHITE_QUEENSIDE_ROOK_TO,
+                    FIRST_RANK,
+                ),
+                Side::Black => (
+                    BLACK_QUEENSIDE_KING,
+                    BLACK_QUEENSIDE_ROOK_FROM,
+                    BLACK_QUEENSIDE_ROOK_TO,
+                    EIGTH_RANK,
+                ),
+            };
 
         let queenside_castle = mv.target() == castle_king;
         if queenside_castle {
@@ -327,25 +322,21 @@ impl Position {
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
         let mut old_rook_board: BitBoard = self.piece_bitboard(Piece::Rook, self.state.turn());
 
-        let (castle_king, from_rook, to_rook, rank): (
-            Square,
-            Square,
-            Square,
-            BitBoard,
-        ) = match self.state.turn() {
-            Side::White => (
-                WHITE_KINGSIDE_KING,
-                WHITE_KINGSIDE_ROOK_FROM,
-                WHITE_KINGSIDE_ROOK_TO,
-                FIRST_RANK,
-            ),
-            Side::Black => (
-                BLACK_KINGSIDE_KING,
-                BLACK_KINGSIDE_ROOK_FROM,
-                BLACK_KINGSIDE_ROOK_TO,
-                EIGTH_RANK,
-            ),
-        };
+        let (castle_king, from_rook, to_rook, rank): (Square, Square, Square, BitBoard) =
+            match self.state.turn() {
+                Side::White => (
+                    WHITE_KINGSIDE_KING,
+                    WHITE_KINGSIDE_ROOK_FROM,
+                    WHITE_KINGSIDE_ROOK_TO,
+                    FIRST_RANK,
+                ),
+                Side::Black => (
+                    BLACK_KINGSIDE_KING,
+                    BLACK_KINGSIDE_ROOK_FROM,
+                    BLACK_KINGSIDE_ROOK_TO,
+                    EIGTH_RANK,
+                ),
+            };
 
         // Kingside castle
         let kingside_castle = mv.target() == castle_king;
@@ -458,8 +449,7 @@ impl Position {
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
 
         let can_move = mv.from() != mv.target()
-            && self.side_bitboards[self.state.turn() as usize].get_bit(mv.target() as u64)
-                == 0;
+            && self.side_bitboards[self.state.turn() as usize].get_bit(mv.target() as u64) == 0;
 
         if can_move {
             self.history.prev_states.push(self.state);
@@ -502,9 +492,8 @@ impl Position {
                 }
                 MoveType::EnPassant => self.en_passant(mv, from_bitboard, to_bitboard),
                 _ => {
-                    let piece_on_from_square = self.side_bitboards[self.state.turn as usize]
-                        .get_bit(mv.from as u64)
-                        != 0;
+                    let piece_on_from_square =
+                        self.side_bitboards[self.state.turn as usize].get_bit(mv.from as u64) != 0;
                     if piece_on_from_square {
                         let capture = self.side_bitboards[self.state.opponent() as usize]
                             .get_bit(mv.target as u64)
@@ -688,8 +677,7 @@ impl Position {
         }
 
         // Update piece array board
-        self.pieces[mv.target() as usize] =
-            Some((self.state.turn(), mv.promotion_piece.unwrap()));
+        self.pieces[mv.target() as usize] = Some((self.state.turn(), mv.promotion_piece.unwrap()));
         self.pieces[mv.from() as usize] = None;
         self.piece_count[self.state.turn() as usize][mv.promotion_piece.unwrap() as usize] += 1;
     }
@@ -804,6 +792,42 @@ impl Position {
         // Update piece array board
         self.pieces[mv.target() as usize] = Some((self.state.turn(), mv.piece()));
         self.pieces[mv.from() as usize] = None;
+    }
+
+    pub fn checkmate(&mut self, move_gen: &mut MoveGenerator) -> bool {
+        let turn = self.state.turn;
+        move_gen.generate_legal_moves(self, turn).is_empty()
+    }
+
+    pub fn is_draw(&mut self) -> bool {
+        self.draw_by_fifty_moves()
+            | self.draw_by_threefold_repetition()
+            | self.draw_by_insufficient_material()
+    }
+    pub fn draw_by_fifty_moves(&self) -> bool {
+        self.state.half_move_counter >= MAX_HALF_MOVES
+    }
+
+    pub fn draw_by_threefold_repetition(&mut self) -> bool {
+        let current_pos_key = self.state.zobrist_key;
+        let prev_states = &self.history.prev_states;
+        let mut count = 0;
+
+        for state in prev_states {
+            if state.zobrist_key == current_pos_key {
+                count += 1;
+            }
+
+            if count == 3 {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    pub fn draw_by_insufficient_material(&self) -> bool {
+        false
     }
 
     pub fn print_black_piece_bitboards(&self) {
