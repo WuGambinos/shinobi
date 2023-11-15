@@ -794,7 +794,7 @@ impl Position {
         self.pieces[mv.from() as usize] = None;
     }
 
-    pub fn checkmate(&mut self, move_gen: &mut MoveGenerator) -> bool {
+    pub fn checkmate(&mut self, move_gen: &MoveGenerator) -> bool {
         let turn = self.state.turn;
         move_gen.generate_legal_moves(self, turn).is_empty()
     }

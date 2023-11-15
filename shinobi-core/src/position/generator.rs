@@ -1,20 +1,21 @@
 use crate::{
     init_slider_attacks, mov::Move, mov::MoveType, BitBoard, Piece, Position, SMagic, Side, Square,
     A_FILE, BLACK_KINGSIDE_KING, BLACK_QUEENSIDE_KING, B_FILE, EIGTH_RANK, EMPTY_BITBOARD,
-    FIRST_RANK, G_FILE, H_FILE, WHITE_KINGSIDE_KING, WHITE_QUEENSIDE_KING,
+    FIFTH_RANK, FIRST_RANK, FOURTH_RANK, G_FILE, H_FILE, NUM_SIDES, NUM_SQUARES,
+    WHITE_KINGSIDE_KING, WHITE_QUEENSIDE_KING,
 };
 use strum::IntoEnumIterator;
 
 #[derive(Clone, Copy, Debug)]
 pub struct MoveGenerator {
-    pub knight_moves: [BitBoard; 64],
-    pub pawn_pushes: [[BitBoard; 64]; 2],
-    pub pawn_attacks: [[BitBoard; 64]; 2],
-    pub king_moves: [BitBoard; 64],
+    pub knight_moves: [BitBoard; NUM_SQUARES],
+    pub pawn_pushes: [[BitBoard; NUM_SQUARES]; NUM_SIDES],
+    pub pawn_attacks: [[BitBoard; NUM_SQUARES]; NUM_SIDES],
+    pub king_moves: [BitBoard; NUM_SQUARES],
     pub rook_moves: [BitBoard; 102400],
     pub bishop_moves: [BitBoard; 5248],
-    pub bishop_tbl: [SMagic; 64],
-    pub rook_tbl: [SMagic; 64],
+    pub bishop_tbl: [SMagic; NUM_SQUARES],
+    pub rook_tbl: [SMagic; NUM_SQUARES],
 }
 
 impl MoveGenerator {
@@ -22,12 +23,12 @@ impl MoveGenerator {
         let mut move_gen = MoveGenerator {
             rook_moves: [EMPTY_BITBOARD; 102400],
             bishop_moves: [EMPTY_BITBOARD; 5248],
-            knight_moves: [EMPTY_BITBOARD; 64],
-            pawn_pushes: [[EMPTY_BITBOARD; 64]; 2],
-            pawn_attacks: [[EMPTY_BITBOARD; 64]; 2],
-            king_moves: [EMPTY_BITBOARD; 64],
-            bishop_tbl: [SMagic::new(0, 0, 0, 0); 64],
-            rook_tbl: [SMagic::new(0, 0, 0, 0); 64],
+            knight_moves: [EMPTY_BITBOARD; NUM_SQUARES],
+            pawn_pushes: [[EMPTY_BITBOARD; NUM_SQUARES]; NUM_SIDES],
+            pawn_attacks: [[EMPTY_BITBOARD; NUM_SQUARES]; NUM_SIDES],
+            king_moves: [EMPTY_BITBOARD; NUM_SQUARES],
+            bishop_tbl: [SMagic::new(0, 0, 0, 0); NUM_SQUARES],
+            rook_tbl: [SMagic::new(0, 0, 0, 0); NUM_SQUARES],
         };
 
         move_gen.fill_knight_moves();
@@ -106,7 +107,7 @@ impl MoveGenerator {
 
     fn fill_pawn_moves(&mut self, position: &Position, side: Side) {
         self.fill_pawn_pushes(position, side);
-        self.fill_pawn_attacks(side);
+        //self.fill_pawn_attacks(side);
     }
 
     fn fill_pawn_pushes(&mut self, position: &Position, side: Side) {
@@ -136,11 +137,39 @@ impl MoveGenerator {
         }
     }
 
+    fn pawns(&self, position: &Position) -> Vec<Move> {
+        let mut moves: Vec<Move> = Vec::new();
+        let turn = position.state.turn();
+        let mut pawn: BitBoard = position.piece_bitboard(Piece::Pawn, turn);
+
+        while pawn != EMPTY_BITBOARD {
+            let mut pushes = EMPTY_BITBOARD;
+            let mut bb_pawns: BitBoard = EMPTY_BITBOARD;
+            let from = pawn.bitscan_forward_reset();
+            bb_pawns.set_bit(from);
+
+            if turn == Side::White {
+                let single_push = self.white_single_push_target(position, bb_pawns);
+                let double_push = self.white_double_push_target(position, bb_pawns);
+                pushes |= single_push;
+                if single_push != EMPTY_BITBOARD {
+                    pushes |= double_push;
+                }
+            } else {
+                pushes |= self.black_single_push_target(position, bb_pawns);
+                pushes |= self.black_double_push_target(position, bb_pawns);
+            }
+
+            self.create_moves(position, Piece::Pawn, turn, pushes, from, &mut moves);
+        }
+
+        return moves;
+    }
+
     fn white_double_push_target(&self, position: &Position, bitboard: BitBoard) -> BitBoard {
-        const RANK4: BitBoard = BitBoard(0x0000_0000_FF00_0000);
         let single_pushes = self.white_single_push_target(position, bitboard);
 
-        self.north_one(single_pushes) & position.empty_bitboard & RANK4
+        self.north_one(single_pushes) & position.empty_bitboard & FOURTH_RANK
     }
 
     fn white_single_push_target(&self, position: &Position, bitboard: BitBoard) -> BitBoard {
@@ -148,10 +177,9 @@ impl MoveGenerator {
     }
 
     fn black_double_push_target(&self, position: &Position, bitboard: BitBoard) -> BitBoard {
-        const RANK5: BitBoard = BitBoard(0x0000_00FF_0000_0000);
         let single_pushes = self.black_single_push_target(position, bitboard);
 
-        self.south_one(single_pushes) & position.empty_bitboard & RANK5
+        self.south_one(single_pushes) & position.empty_bitboard & FIFTH_RANK
     }
 
     fn black_single_push_target(&self, position: &Position, bitboard: BitBoard) -> BitBoard {
@@ -212,7 +240,7 @@ impl MoveGenerator {
         let opponent_bishop: BitBoard = position.piece_bitboard(Piece::Bishop, opponent);
         let opponent_queen: BitBoard = position.piece_bitboard(Piece::Queen, opponent);
 
-        while bb.0 > 0 {
+        while bb != EMPTY_BITBOARD {
             let square = bb.bitscan_forward_reset();
             result_board |= (self.get_bishop_moves(square as u64, position.main_bitboard)
                 & opponent_bishop)
@@ -274,7 +302,7 @@ impl MoveGenerator {
         self.rook_moves[index]
     }
 
-    pub fn generate_legal_moves(&mut self, position: &mut Position, side: Side) -> Vec<Move> {
+    pub fn generate_legal_moves(&self, position: &mut Position, side: Side) -> Vec<Move> {
         let mut moves: Vec<Move> = self.generate_moves(position, side);
 
         for i in (0..moves.len()).rev() {
@@ -292,13 +320,12 @@ impl MoveGenerator {
     }
 
     fn generate_pawn_moves(
-        &mut self,
+        &self,
         position: &mut Position,
         side: Side,
         square: Square,
     ) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::new();
-        let pawn_pushes = self.pawn_pushes[side as usize][square as usize];
 
         if let Some(ep_sq) = position.state.en_passant {
             let ep_attacks = self.pawn_attacks[side as usize][square as usize]
@@ -306,19 +333,16 @@ impl MoveGenerator {
 
             if ep_attacks != EMPTY_BITBOARD {
                 let target_ep = ep_attacks.bitscan_forward();
-                log::debug!("EP SQUARE: {:?}", target_ep);
+                //log::debug!("EP SQUARE: {:?}", target_ep);
                 let mv = Move::new(Piece::Pawn, square, ep_sq, MoveType::EnPassant);
                 moves.push(mv);
             }
         }
-
-        self.create_moves(position, Piece::Pawn, side, pawn_pushes, square, &mut moves);
-
         moves
     }
 
     fn generate_knight_moves(
-        &mut self,
+        &self,
         position: &mut Position,
         side: Side,
         square: Square,
@@ -338,7 +362,7 @@ impl MoveGenerator {
     }
 
     fn generate_queen_moves(
-        &mut self,
+        &self,
         position: &mut Position,
         side: Side,
         square: Square,
@@ -358,7 +382,7 @@ impl MoveGenerator {
     }
 
     fn generate_rook_moves(
-        &mut self,
+        &self,
         position: &mut Position,
         side: Side,
         square: Square,
@@ -371,7 +395,7 @@ impl MoveGenerator {
     }
 
     fn generate_bishop_moves(
-        &mut self,
+        &self,
         position: &mut Position,
         side: Side,
         square: Square,
@@ -390,7 +414,7 @@ impl MoveGenerator {
     }
 
     fn generate_king_moves(
-        &mut self,
+        &self,
         position: &mut Position,
         side: Side,
         square: Square,
@@ -508,7 +532,7 @@ impl MoveGenerator {
     }
 
     fn create_moves(
-        &mut self,
+        &self,
         position: &Position,
         piece: Piece,
         side: Side,
@@ -517,7 +541,7 @@ impl MoveGenerator {
         moves: &mut Vec<Move>,
     ) {
         let mut bb: BitBoard = piece_moves & (!position.main_bitboard);
-        while bb.0 > 0 {
+        while bb != EMPTY_BITBOARD {
             let target: Square = bb.bitscan_forward_reset();
             let rank = match side {
                 Side::White => EIGTH_RANK,
@@ -567,7 +591,7 @@ impl MoveGenerator {
             piece_moves & (position.opponent_bitboard())
         };
 
-        while bb_2.0 > 0 {
+        while bb_2 != EMPTY_BITBOARD {
             let target: Square = bb_2.bitscan_forward_reset();
             let rank = match side {
                 Side::White => EIGTH_RANK,
@@ -611,27 +635,28 @@ impl MoveGenerator {
         }
     }
 
-    pub fn generate_moves(&mut self, position: &mut Position, side: Side) -> Vec<Move> {
+    pub fn generate_moves(&self, position: &mut Position, side: Side) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::with_capacity(60);
 
-        self.fill_pawn_moves(position, side);
+        // Add Pawn Moves
+        let pawn_moves = self.pawns(position);
+        moves.extend(pawn_moves);
 
         for square in Square::iter() {
             let piece: Option<(Side, Piece)> = position.pieces[square as usize];
             if let Some(p) = piece {
-                let piece_type: Piece = p.1;
-                let piece_side: Side = p.0;
+                let (piece_side, piece_type) = p;
 
                 if piece_side == side {
                     match piece_type {
-                        Piece::Pawn => {
-                            moves.extend(self.generate_pawn_moves(position, side, square))
+                        Piece::King => {
+                            moves.extend(self.generate_king_moves(position, side, square))
                         }
                         Piece::Knight => {
                             moves.extend(self.generate_knight_moves(position, side, square))
                         }
-                        Piece::Queen => {
-                            moves.extend(self.generate_queen_moves(position, side, square))
+                        Piece::Pawn => {
+                            moves.extend(self.generate_pawn_moves(position, side, square))
                         }
                         Piece::Rook => {
                             moves.extend(self.generate_rook_moves(position, side, square))
@@ -639,8 +664,8 @@ impl MoveGenerator {
                         Piece::Bishop => {
                             moves.extend(self.generate_bishop_moves(position, side, square))
                         }
-                        Piece::King => {
-                            moves.extend(self.generate_king_moves(position, side, square))
+                        Piece::Queen => {
+                            moves.extend(self.generate_queen_moves(position, side, square))
                         }
                     }
                 }

@@ -1,4 +1,4 @@
-use crate::{Piece, Position, Side, Square, NUM_SQUARES};
+use crate::{Piece, Position, Side, Square, EMPTY_BITBOARD, NUM_SQUARES};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
 use strum::IntoEnumIterator;
@@ -7,15 +7,15 @@ const SEED: u64 = 12345;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Zobrist {
-    rand_piece_nums: [[[u64; NUM_SQUARES as usize]; 6]; 2],
-    rand_en_passant_nums: [u64; 64],
+    rand_piece_nums: [[[u64; NUM_SQUARES]; 6]; 2],
+    rand_en_passant_nums: [u64; NUM_SQUARES],
     rand_castling_rights_nums: [u64; 16],
     rand_side_num: u64,
 }
 
 impl Zobrist {
     pub fn new() -> Zobrist {
-        let mut rand_piece_nums = [[[0; NUM_SQUARES as usize]; 6]; 2];
+        let mut rand_piece_nums = [[[0; NUM_SQUARES]; 6]; 2];
         let mut rand_en_passant_nums = [0; 64];
         let mut rand_castling_rights_num = [0; 16];
 
@@ -23,13 +23,13 @@ impl Zobrist {
 
         for side in Side::iter() {
             for piece in Piece::iter() {
-                for square in 0..NUM_SQUARES as usize {
+                for square in 0..NUM_SQUARES {
                     rand_piece_nums[side as usize][piece as usize][square] = rng.gen::<u64>();
                 }
             }
         }
 
-        for item in rand_en_passant_nums.iter_mut().take(NUM_SQUARES as usize) {
+        for item in rand_en_passant_nums.iter_mut().take(NUM_SQUARES) {
             *item = rng.gen::<u64>();
         }
 
@@ -69,7 +69,7 @@ impl Zobrist {
             for piece in Piece::iter() {
                 let mut piece_bitboard = position.piece_bitboard(piece, side);
 
-                while piece_bitboard.0 > 0 {
+                while piece_bitboard != EMPTY_BITBOARD {
                     let square = piece_bitboard.bitscan_forward_reset();
                     key ^= self.rand_piece_nums[side as usize][piece as usize][square as usize];
                 }
@@ -79,7 +79,6 @@ impl Zobrist {
         if let Some(ep) = position.state.en_passant {
             key ^= self.rand_en_passant_nums[ep as usize];
         }
-
 
         if position.state.turn == Side::Black {
             key ^= self.rand_side_num;

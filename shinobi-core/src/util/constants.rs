@@ -1,6 +1,7 @@
 use crate::{BitBoard, Square};
 
-pub const NUM_SQUARES: u8 = 64;
+pub const NUM_SQUARES: usize = 64;
+pub const NUM_SIDES: usize = 2;
 pub const SQUARE_SIZE: i32 = 60;
 pub const SCALE: i32 = 1;
 pub const RADIUS: i32 = 5;

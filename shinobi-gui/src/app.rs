@@ -15,7 +15,7 @@ use sdl2::{
     EventPump,
 };
 use shinobi_core::perft::perft;
-use shinobi_core::{Engine, Piece, Position, Side, Square, START_POS};
+use shinobi_core::{Engine, Piece, Position, Side, Square, START_POS, Bot};
 
 #[derive(Debug)]
 enum Mode {
@@ -125,7 +125,24 @@ pub fn run_loop(shinobi: &mut Engine, sdl_state: &mut Sdl2State) {
     let mut piece: Option<Piece> = None;
     let mut from_square: Option<Square> = None;
     let mut moves = Vec::new();
+    let mut bot = Bot::new();
     'running: loop {
+        if shinobi.position.checkmate(&shinobi.move_gen) {
+            println!("CHECKMAKE!!!");
+            println!("{}", shinobi.position);
+            std::process::exit(0);
+        }
+        if shinobi.position.is_draw() {
+            println!("DRAW...");
+            println!("{}", shinobi.position);
+            std::process::exit(0);
+        }
+
+        let mv = bot.think(&mut shinobi.position, &shinobi.move_gen);
+        if let Some(m) = mv {
+            shinobi.position.make_move(m);
+        }
+
         for event in sdl_state.event_pump.poll_iter() {
             match event {
                 Event::Quit { .. }
@@ -214,5 +231,6 @@ pub fn run_loop(shinobi: &mut Engine, sdl_state: &mut Sdl2State) {
         .expect("Drag and Drop Error");
 
         sdl_state.canvas.present();
+        std::thread::sleep(Duration::from_millis(250));
     }
 }
