@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use crate::{MoveGenerator, Position};
 
-pub fn perft(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) -> u64 {
+pub fn perft(position: &mut Position, move_generator: &MoveGenerator, depth: u32) -> u64 {
     let mut num_positions: u64 = 0;
     let moves = move_generator.generate_legal_moves(position, position.state.turn);
 
@@ -21,7 +21,7 @@ pub fn perft(position: &mut Position, move_generator: &mut MoveGenerator, depth:
 
 static mut NODES: u64 = 0;
 
-pub fn perft_test(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) {
+pub fn perft_test(position: &mut Position, move_generator: &MoveGenerator, depth: u32) {
     //println!(" PERFORMANCE TEST");
 
     let moves = move_generator.generate_legal_moves(position, position.state.turn);
@@ -51,7 +51,7 @@ pub fn perft_test(position: &mut Position, move_generator: &mut MoveGenerator, d
     }
 }
 
-pub fn perft_driver(position: &mut Position, move_generator: &mut MoveGenerator, depth: u32) {
+pub fn perft_driver(position: &mut Position, move_generator: &MoveGenerator, depth: u32) {
     let moves = move_generator.generate_legal_moves(position, position.state.turn);
     if depth == 1 {
         unsafe {

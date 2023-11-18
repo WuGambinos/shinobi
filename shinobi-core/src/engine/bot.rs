@@ -29,7 +29,7 @@ impl Bot {
     }
 
     pub fn think(&mut self, position: &mut Position, move_gen: &MoveGenerator) -> Option<Move> {
-        self.negamax_alpha_beta(position, move_gen, -LARGE_NUM, LARGE_NUM, MAX_DEPTH);
+        self.search_position(position, move_gen, -LARGE_NUM, LARGE_NUM, MAX_DEPTH);
         return self.best_move;
     }
 
@@ -78,6 +78,16 @@ impl Bot {
         return material_score * side_to_move;
     }
 
+    pub fn search_position(
+        &mut self,
+        position: &mut Position,
+        move_gen: &MoveGenerator,
+        alpha: i32,
+        beta: i32,
+        depth: i32,
+    ) {
+        self.negamax_alpha_beta(position, move_gen, alpha, beta, depth);
+    }
     pub fn negamax_alpha_beta(
         &mut self,
         position: &mut Position,
