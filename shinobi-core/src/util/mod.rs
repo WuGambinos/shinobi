@@ -7,6 +7,9 @@ use crate::{
     SECOND_RANK, SEVENTH_RANK, SIXTH_RANK, SQUARE_SIZE, THIRD_RANK,
 };
 
+/**
+ * Returns the square that mouse cursor is hovering over when called
+ * */
 pub fn get_square_from_mouse_position(pos_x: i32, pos_y: i32) -> Square {
     let x = pos_x / SQUARE_SIZE;
     let y = (pos_y / SQUARE_SIZE - 7).abs();
@@ -15,6 +18,7 @@ pub fn get_square_from_mouse_position(pos_x: i32, pos_y: i32) -> Square {
     Square::from(square)
 }
 
+/*
 pub fn print_board(position: [char; 64]) {
     for i in 0..8 {
         for j in 0..8 {
@@ -24,6 +28,7 @@ pub fn print_board(position: [char; 64]) {
         println!();
     }
 }
+*/
 
 pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
     let mut file = 0;
@@ -112,6 +117,9 @@ pub fn square_name(square: u8) -> String {
     format!("{file}{rank}")
 }
 
+/**
+ * Returns a Bitboard with the files adjacent to square all set
+ * */
 pub fn adjacent_files(square: Square) -> BitBoard {
     let file = square as u64 % 8;
 
@@ -127,6 +135,10 @@ pub fn adjacent_files(square: Square) -> BitBoard {
         _ => panic!("NOT A FILE"),
     }
 }
+
+/**
+ * Returns a Bitboard with all the squares in the same file as the given square set
+ * */
 pub fn get_file(square: Square) -> BitBoard {
     let file = square as u64 % 8;
 
@@ -144,6 +156,9 @@ pub fn get_file(square: Square) -> BitBoard {
     }
 }
 
+/**
+ * Returns a Bitboard with all the squares in the same rank as the given square set
+ * */
 pub fn get_rank(square: Square) -> BitBoard {
     let rank = square as u64 / 8;
 

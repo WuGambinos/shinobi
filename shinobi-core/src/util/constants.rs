@@ -6,7 +6,7 @@ pub const SQUARE_SIZE: i32 = 60;
 pub const SCALE: i32 = 1;
 pub const RADIUS: i32 = 5;
 
-// Hexadecimal Constants
+// BitBoard Constants
 pub const A_FILE: BitBoard = BitBoard(0x0101_0101_0101_0101);
 pub const B_FILE: BitBoard = BitBoard(0x0202_0202_0202_0202);
 pub const C_FILE: BitBoard = BitBoard(0x0404_0404_0404_0404);
@@ -54,11 +54,8 @@ pub const TEST_POS2: &str = "8/8/3p4/1Pp4r/K4p1k/8/4P1P1/1R6 b - - 0 1";
 pub const CHECK_POS: &str = "4k3/8/6n1/3Q1/8/8/8/4K3 w - - 0 1";
 pub const PIN_POS: &str = "4k3/8/8/4r3/8/4Q3/8/3K4 w - - 0 1";
 
-// All Depths valid
-pub const CHECK_POS2: &str = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ";
-pub const TEST_POS4: &str = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1";
 
-// Castling
+// Castling Squares
 pub const WHITE_KINGSIDE_KING: Square = Square::G1;
 pub const WHITE_KINGSIDE_ROOK_TO: Square = Square::F1;
 pub const WHITE_KINGSIDE_ROOK_FROM: Square = Square::H1;

@@ -105,39 +105,7 @@ impl MoveGenerator {
         (bitboard >> 17) & !H_FILE
     }
 
-    fn fill_pawn_moves(&mut self, position: &Position, side: Side) {
-        self.fill_pawn_pushes(position, side);
-        //self.fill_pawn_attacks(side);
-    }
-
-    fn fill_pawn_pushes(&mut self, position: &Position, side: Side) {
-        for square in Square::iter() {
-            let mut pushes: BitBoard = EMPTY_BITBOARD;
-
-            match side {
-                Side::White => {
-                    let mut white_pawns: BitBoard = EMPTY_BITBOARD;
-                    white_pawns.set_bit(square);
-                    let single_push = self.white_single_push_target(position, white_pawns);
-                    let double_push = self.white_double_push_target(position, white_pawns);
-                    pushes |= single_push;
-                    if single_push != EMPTY_BITBOARD {
-                        pushes |= double_push;
-                    }
-                    self.pawn_pushes[side as usize][square as usize] = pushes;
-                }
-                Side::Black => {
-                    let mut black_pawns: BitBoard = EMPTY_BITBOARD;
-                    black_pawns.set_bit(square);
-                    pushes |= self.black_single_push_target(position, black_pawns);
-                    pushes |= self.black_double_push_target(position, black_pawns);
-                    self.pawn_pushes[side as usize][square as usize] = pushes;
-                }
-            };
-        }
-    }
-
-    fn pawns(&self, position: &Position) -> Vec<Move> {
+    fn gen_pawn_moves(&self, position: &Position) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::new();
         let turn = position.state.turn();
         let mut pawn: BitBoard = position.piece_bitboard(Piece::Pawn, turn);
@@ -186,7 +154,7 @@ impl MoveGenerator {
         self.south_one(bitboard) & position.empty_bitboard
     }
 
-    pub fn fill_pawn_attacks(&mut self, side: Side) {
+    fn fill_pawn_attacks(&mut self, side: Side) {
         for square in Square::iter() {
             let mut moves: BitBoard = EMPTY_BITBOARD;
             let mut bitboard: BitBoard = EMPTY_BITBOARD;
@@ -319,6 +287,12 @@ impl MoveGenerator {
         moves
     }
 
+    /**
+     * Returns a BitBoard that if that shows attacks to king 
+     *
+     * If the BitBoard is empty then there are no attacks on king, otherwise there are attacks on
+     * the:king
+     * */
     pub fn attacks_to_king(&self, position: &Position, side: Side) -> BitBoard {
         let king: Square = match side {
             Side::White => position.white_king,
@@ -447,7 +421,7 @@ impl MoveGenerator {
         }
     }
 
-    pub fn help_gen_sliding_pieces(
+    fn help_gen_sliding_pieces(
         &self,
         piece: Piece,
         piece_bb: BitBoard,
@@ -483,67 +457,7 @@ impl MoveGenerator {
         moves
     }
 
-    pub fn help_gen_non_sliding_pieces(
-        &self,
-        piece: Piece,
-        piece_bb: BitBoard,
-        position: &Position,
-        side: Side,
-    ) {
-        let mut moves: Vec<Move> = Vec::new();
-        let mut bb = piece_bb;
-        while bb != EMPTY_BITBOARD {
-            let from: Square = bb.bitscan_forward_reset();
-            let mut piece_moves = match piece {
-                Piece::Knight => self.knight_moves[from as usize],
-                _ => panic!("Not non sliding piece"),
-            } & !position.side_bitboards[side as usize];
-            let p_moves = piece_moves;
-
-            while piece_moves != EMPTY_BITBOARD {
-                let target = piece_moves.bitscan_forward_reset();
-                let target_bb = BitBoard(1u64 << target as u64);
-
-                if (p_moves & target_bb) & position.opponent_bitboard() != EMPTY_BITBOARD {
-                    let mv = Move::new(Piece::Rook, from, target, MoveType::Capture);
-                    moves.push(mv);
-                } else {
-                    let mv = Move::new(Piece::Rook, from, target, MoveType::Quiet);
-                    moves.push(mv);
-                }
-            }
-        }
-    }
-
-    pub fn gen_rook_moves(&self, position: &mut Position, side: Side) -> Vec<Move> {
-        let mut moves = Vec::new();
-        let mut rooks = position.piece_bitboard(Piece::Rook, side);
-
-        while rooks != EMPTY_BITBOARD {
-            let from: Square = rooks.bitscan_forward_reset();
-            let mut piece_moves = self.get_rook_moves(from as u64, position.main_bitboard)
-                & !position.side_bitboards[side as usize];
-            let p_moves = self.get_rook_moves(from as u64, position.main_bitboard)
-                & !position.side_bitboards[side as usize];
-
-            while piece_moves != EMPTY_BITBOARD {
-                let target = piece_moves.bitscan_forward_reset();
-                let target_bb = BitBoard(1u64 << target as u64);
-
-                if (p_moves & target_bb) & position.opponent_bitboard() != EMPTY_BITBOARD {
-                    let mv = Move::new(Piece::Rook, from, target, MoveType::Capture);
-                    moves.push(mv);
-                } else {
-                    let mv = Move::new(Piece::Rook, from, target, MoveType::Quiet);
-                    moves.push(mv);
-                }
-            }
-        }
-
-        moves
-    }
-
-    pub fn gen_knight_moves(&self, position: &mut Position, side: Side) -> Vec<Move> {
+    fn gen_knight_moves(&self, position: &mut Position, side: Side) -> Vec<Move> {
         let mut moves = Vec::new();
         let mut knights = position.piece_bitboard(Piece::Knight, side);
         let knight_moves = self.knight_moves;
@@ -675,7 +589,7 @@ impl MoveGenerator {
         moves
     }
 
-    pub fn gen_en_passant_moves(&self, position: &Position, side: Side) -> Vec<Move> {
+    fn gen_en_passant_moves(&self, position: &Position, side: Side) -> Vec<Move> {
         let mut pawns = position.piece_bitboard(Piece::Pawn, side);
         let mut moves = Vec::new();
         while pawns != EMPTY_BITBOARD {
@@ -698,7 +612,7 @@ impl MoveGenerator {
     pub fn generate_moves(&self, position: &mut Position, side: Side) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::with_capacity(60);
 
-        let pawn_moves = self.pawns(position);
+        let pawn_moves = self.gen_pawn_moves(position);
         let ep_moves = self.gen_en_passant_moves(position, side);
 
         let knight_moves = self.gen_knight_moves(position, side);

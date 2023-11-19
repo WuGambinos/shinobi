@@ -68,9 +68,10 @@ impl Move {
     }
 }
 
-/// Prints Move in format like "a1b2"
-///
-/// Where a1 is the from square and b2 is the target_square
+/**
+ * Prints Move in format like "a1b2"
+ * Where a1 is the from square and b2 is the target_square
+ */
 impl std::fmt::Display for Move {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.move_type == MoveType::Promotion {

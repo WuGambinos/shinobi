@@ -5,44 +5,9 @@ use crate::BIT_TABLE;
 use crate::EMPTY_BITBOARD;
 use crate::ROOK_MAGICS;
 use rand::prelude::*;
-use rand_chacha::ChaCha8Rng;
 
 pub mod magic_constants;
 
-const SEED: u64 = 1804289383;
-pub struct MyRng {
-    state: u32,
-    rng: ChaCha8Rng,
-}
-
-impl MyRng {
-    pub fn new() -> MyRng {
-        MyRng {
-            state: SEED as u32,
-            rng: ChaCha8Rng::seed_from_u64(SEED),
-        }
-    }
-
-    pub fn random_u32(&mut self) -> u32 {
-        let mut number = self.state;
-
-        number ^= number << 13;
-        number ^= number >> 17;
-        number ^= number << 5;
-
-        self.state = number;
-
-        number
-    }
-    pub fn random_u64(&mut self) -> u64 {
-        let u1: u64 = (self.random_u32() as u64) & 0xFFFF;
-        let u2: u64 = (self.random_u32() as u64) & 0xFFFF;
-        let u3: u64 = (self.random_u32() as u64) & 0xFFFF;
-        let u4: u64 = (self.random_u32() as u64) & 0xFFFF;
-
-        u1 | (u2 << 16) | (u3 << 32) | (u4 << 48)
-    }
-}
 
 #[derive(Clone, Copy, Debug)]
 pub struct MagicEntry {
@@ -86,6 +51,9 @@ impl SMagic {
     }
 }
 
+/**
+ * Generates random 64-bit integer
+ * */
 pub fn random_u64() -> u64 {
     let mut rng = rand::thread_rng();
 
@@ -351,6 +319,10 @@ fn try_magic_number(
     Ok(())
 }
 
+/**
+ * Returns MagicEntry for square, depending on bishop or rool
+ *
+ * */
 pub fn find_magic(square: u64, is_bishop: bool) -> MagicEntry {
     let mask = if is_bishop {
         bishop_mask(square)
@@ -381,6 +353,9 @@ pub fn find_magic(square: u64, is_bishop: bool) -> MagicEntry {
     panic!("MAGIC NUMBER NOT FOUND");
 }
 
+/**
+ * Fills attack tables for bishop and rook
+ * */
 pub fn init_slider_attacks(move_gen: &mut MoveGenerator, is_bishop: bool) {
     for square in 0..64 {
         let bishop_magic: SMagic = BISHOP_MAGICS[square as usize];
