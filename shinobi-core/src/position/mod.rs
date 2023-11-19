@@ -795,14 +795,22 @@ impl Position {
     }
 
     pub fn checkmate(&mut self, move_gen: &MoveGenerator) -> bool {
-        let turn = self.state.turn;
-        move_gen.generate_legal_moves(self, turn).is_empty()
+        let side = self.state.turn;
+        move_gen.generate_legal_moves(self, side).is_empty()
+            && move_gen.attacks_to_king(self, side) != EMPTY_BITBOARD
     }
 
-    pub fn is_draw(&mut self) -> bool {
+    pub fn is_draw(&mut self, move_gen: &MoveGenerator) -> bool {
         self.draw_by_fifty_moves()
             | self.draw_by_threefold_repetition()
             | self.draw_by_insufficient_material()
+            | self.stalemate(move_gen)
+    }
+
+    pub fn stalemate(&mut self, move_gen: &MoveGenerator) -> bool {
+        let side = self.state.turn();
+        move_gen.generate_legal_moves(self, side).is_empty()
+            && move_gen.attacks_to_king(self, side) != EMPTY_BITBOARD
     }
     pub fn draw_by_fifty_moves(&self) -> bool {
         self.state.half_move_counter >= MAX_HALF_MOVES

@@ -9,27 +9,9 @@ use crate::Position;
 use crate::Side;
 use crate::Zobrist;
 use crate::START_POS;
-use std::i8::MAX;
 use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
-
-pub static mut negamax_count: i32 = 0;
-
-#[derive(Clone, Copy)]
-pub struct SearchInfo {
-    searching: bool,
-    depth: u32,
-}
-
-impl SearchInfo {
-    fn new() -> SearchInfo {
-        SearchInfo {
-            searching: true,
-            depth: 0,
-        }
-    }
-}
 
 #[derive(Clone, Copy)]
 pub enum PositionToken {
@@ -59,7 +41,6 @@ pub struct Engine {
     pub zobrist: Zobrist,
     pub uci: Uci,
     pub mode: EngineMode,
-    pub search_info: SearchInfo,
     pub search: Search,
 }
 
@@ -72,7 +53,6 @@ impl Engine {
             zobrist: Zobrist::new(),
             uci: Uci::new(),
             mode: EngineMode::Waiting,
-            search_info: SearchInfo::new(),
             search: Search::new(),
         }
     }
@@ -128,11 +108,10 @@ impl Engine {
     fn handle_go(&mut self, parts: Vec<&str>) {
         let arc_mg = Arc::new(self.move_gen);
         let mut pos = self.position.clone();
-        let s_info = Arc::new(self.search_info);
         let mut search = self.search.clone();
         search.best_move = None;
         self.search_thread = Some(thread::spawn(move || {
-            search.search_position(&mut pos, &arc_mg, &s_info);
+            search.search_position(&mut pos, &arc_mg);
         }));
         /*
         for part in parts {
@@ -144,7 +123,7 @@ impl Engine {
     }
 
     fn handle_stop(&mut self) {
-        self.search_info.searching = false;
+        self.search.searching = false;
         log::info!("STOP TRIGGERED");
     }
 
@@ -221,39 +200,38 @@ fn search_position(position: &mut Position, move_gen: &MoveGenerator, search_inf
 
 const WEIGHTS: [i32; 6] = [100, 320, 330, 500, 900, 20000];
 const LARGE_NUM: i32 = 99999999;
-const MAX_DEPTH: i32 = 6;
+const MAX_DEPTH: i32 = 4;
 pub static mut BEST_MOVE: Option<Move> = None;
 
 #[derive(Clone, Copy)]
 pub struct Search {
+    searching: bool,
+    depth: u8,
+    nodes: u32,
     best_move: Option<Move>,
 }
 
 impl Search {
     fn new() -> Search {
-        Search { best_move: None }
+        Search {
+            searching: true,
+            depth: 0,
+            nodes: 0,
+            best_move: None,
+        }
     }
 
-    fn search_position(
-        &mut self,
-        position: &mut Position,
-        move_gen: &MoveGenerator,
-        search_info: &SearchInfo,
-    ) {
+    fn search_position(&mut self, position: &mut Position, move_gen: &MoveGenerator) {
         log::info!("SEARCHED STARTED");
         /*
         for i in 1..=(MAX_DEPTH) {
             self.negamax_alpha_beta(position, move_gen, search_info, -LARGE_NUM, LARGE_NUM, i);
         }
         */
-        self.negamax_alpha_beta(
-            position,
-            move_gen,
-            search_info,
-            -LARGE_NUM,
-            LARGE_NUM,
-            MAX_DEPTH,
-        );
+        self.negamax_alpha_beta(position, move_gen, -LARGE_NUM, LARGE_NUM, MAX_DEPTH);
+        if let Some(best_move) = self.best_move {
+            println!("BEST_MOVE: {:?} NODES: {}", best_move, self.nodes);
+        }
         log::info!("SEARCH ENDED");
     }
 
@@ -261,15 +239,11 @@ impl Search {
         &mut self,
         position: &mut Position,
         move_gen: &MoveGenerator,
-        search_info: &SearchInfo,
         alpha: i32,
         beta: i32,
         depth: i32,
     ) -> i32 {
-        unsafe {
-            negamax_count += 1;
-        }
-        if position.is_draw() {
+        if position.is_draw(move_gen) {
             return 0;
         }
 
@@ -286,24 +260,18 @@ impl Search {
             return self.evalutate(position);
         }
 
+        self.nodes += 1;
+
         let mut max_eval = -LARGE_NUM;
         for mv in moves {
-            if !search_info.searching {
+            if !self.searching {
                 log::info!("SEARCHING STOPPED");
                 log::info!("best move: {}", mv);
                 break;
             }
 
             position.make_move(mv);
-            let eval = -1
-                * self.negamax_alpha_beta(
-                    position,
-                    move_gen,
-                    search_info,
-                    -beta,
-                    -alpha,
-                    depth - 1,
-                );
+            let eval = -1 * self.negamax_alpha_beta(position, move_gen, -beta, -alpha, depth - 1);
             position.unmake();
 
             if eval > max_eval {
@@ -363,4 +331,3 @@ impl Search {
         return material_score * side_to_move;
     }
 }
-

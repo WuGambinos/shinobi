@@ -319,7 +319,7 @@ impl MoveGenerator {
         moves
     }
 
-    fn attacks_to_king(&self, position: &Position, side: Side) -> BitBoard {
+    pub fn attacks_to_king(&self, position: &Position, side: Side) -> BitBoard {
         let king: Square = match side {
             Side::White => position.white_king,
             Side::Black => position.black_king,
@@ -698,12 +698,8 @@ impl MoveGenerator {
     pub fn generate_moves(&self, position: &mut Position, side: Side) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::with_capacity(60);
 
-        // Add Pawn Moves
         let pawn_moves = self.pawns(position);
-        moves.extend(pawn_moves);
-
         let ep_moves = self.gen_en_passant_moves(position, side);
-        moves.extend(ep_moves);
 
         let knight_moves = self.gen_knight_moves(position, side);
 
@@ -719,10 +715,12 @@ impl MoveGenerator {
         let king_moves = self.gen_king_moves(position, side);
 
         moves.extend(king_moves);
-        moves.extend(knight_moves);
         moves.extend(rook_moves);
         moves.extend(bishop_moves);
         moves.extend(queen_moves);
+        moves.extend(knight_moves);
+        moves.extend(pawn_moves);
+        moves.extend(ep_moves);
 
         moves
     }

@@ -45,9 +45,6 @@ impl Bot {
             let piece_captured = position.pieces[mv.target() as usize].unwrap().1;
             let score = MVV_LVA[piece_captured as usize][mv.piece() as usize] as i32;
             return score;
-            /*
-            return WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10;
-            */
         } else {
             let score = 0;
             return score;
@@ -96,12 +93,22 @@ impl Bot {
         beta: i32,
         depth: i32,
     ) -> i32 {
-        if position.is_draw() {
+        if position.is_draw(move_gen) {
             return -20;
         }
 
-        let side = position.state.turn();
-        let mut moves = move_gen.generate_legal_moves(position, side);
+        let turn = position.state.turn;
+        let mut moves = move_gen.generate_legal_moves(position, turn);
+
+        self.order_moves(position, &mut moves);
+
+        if depth == 0 || moves.len() == 0 {
+            if position.checkmate(move_gen) {
+                return -9999999;
+            }
+
+            return self.evalutate(position);
+        }
 
         let mut max_eval = -LARGE_NUM;
         for mv in moves {

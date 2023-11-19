@@ -125,15 +125,14 @@ pub fn run_loop(shinobi: &mut Engine, sdl_state: &mut Sdl2State) {
     let mut piece: Option<Piece> = None;
     let mut from_square: Option<Square> = None;
     let mut moves = Vec::new();
-    //let mut bot = Bot::new();
+    let mut bot = Bot::new();
     'running: loop {
-        /*
         if shinobi.position.checkmate(&shinobi.move_gen) {
             println!("CHECKMAKE!!!");
             println!("{}", shinobi.position);
             std::process::exit(0);
         }
-        if shinobi.position.is_draw() {
+        if shinobi.position.is_draw(&shinobi.move_gen) {
             println!("DRAW...");
             println!("{}", shinobi.position);
             std::process::exit(0);
@@ -143,7 +142,6 @@ pub fn run_loop(shinobi: &mut Engine, sdl_state: &mut Sdl2State) {
         if let Some(m) = mv {
             shinobi.position.make_move(m);
         }
-        */
 
         for event in sdl_state.event_pump.poll_iter() {
             match event {
@@ -233,6 +231,6 @@ pub fn run_loop(shinobi: &mut Engine, sdl_state: &mut Sdl2State) {
         .expect("Drag and Drop Error");
 
         sdl_state.canvas.present();
-        //std::thread::sleep(Duration::from_millis(250));
+        std::thread::sleep(Duration::from_millis(250));
     }
 }
