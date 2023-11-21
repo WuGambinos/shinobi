@@ -107,7 +107,7 @@ impl MoveGenerator {
 
     fn gen_pawn_moves(&self, position: &Position) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::new();
-        let turn = position.state.turn();
+        let turn = position.state.current_turn();
         let mut pawn: BitBoard = position.piece_bitboard(Piece::Pawn, turn);
 
         while pawn != EMPTY_BITBOARD {

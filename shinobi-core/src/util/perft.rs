@@ -3,7 +3,7 @@ use std::time::Instant;
 
 pub fn perft(position: &mut Position, move_generator: &MoveGenerator, depth: u32) -> u64 {
     let mut num_positions: u64 = 0;
-    let moves = move_generator.generate_legal_moves(position, position.state.turn);
+    let moves = move_generator.generate_legal_moves(position, position.state.current_turn());
 
     if depth == 1 {
         return moves.len() as u64;
@@ -23,7 +23,7 @@ static mut NODES: u64 = 0;
 pub fn perft_test(position: &mut Position, move_generator: &MoveGenerator, depth: u32) {
     //println!(" PERFORMANCE TEST");
 
-    let moves = move_generator.generate_legal_moves(position, position.state.turn);
+    let moves = move_generator.generate_legal_moves(position, position.state.current_turn());
 
     for mv in moves {
         position.make_move(mv);
@@ -51,7 +51,7 @@ pub fn perft_test(position: &mut Position, move_generator: &MoveGenerator, depth
 }
 
 fn perft_driver(position: &mut Position, move_generator: &MoveGenerator, depth: u32) {
-    let moves = move_generator.generate_legal_moves(position, position.state.turn);
+    let moves = move_generator.generate_legal_moves(position, position.state.current_turn());
     if depth == 1 {
         unsafe {
             NODES += moves.len() as u64;

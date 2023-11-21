@@ -163,7 +163,7 @@ impl Engine {
         }
 
         for mv in moves {
-            let side = self.position.state.turn();
+            let side = self.position.state.current_turn();
             let moves = self.move_gen.generate_legal_moves(&mut self.position, side);
             for gen_move in moves {
                 if mv == gen_move.to_string() {
@@ -247,7 +247,7 @@ impl Search {
             return 0;
         }
 
-        let turn = position.state.turn;
+        let turn = position.state.current_turn();
         let mut moves = move_gen.generate_legal_moves(position, turn);
 
         //self.order_moves(position, &mut moves);
@@ -322,7 +322,7 @@ impl Search {
         }
 
         let material_score = white_score + black_score;
-        let side_to_move = if position.state.turn() == Side::White {
+        let side_to_move = if position.state.current_turn() == Side::White {
             1
         } else {
             -1

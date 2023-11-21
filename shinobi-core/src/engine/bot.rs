@@ -66,7 +66,7 @@ impl Bot {
         }
 
         let material_score = white_score + black_score;
-        let side_to_move = if position.state.turn() == Side::White {
+        let side_to_move = if position.state.current_turn() == Side::White {
             1
         } else {
             -1
@@ -97,7 +97,7 @@ impl Bot {
             return -20;
         }
 
-        let turn = position.state.turn;
+        let turn = position.state.current_turn();
         let mut moves = move_gen.generate_legal_moves(position, turn);
 
         self.order_moves(position, &mut moves);

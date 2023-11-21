@@ -22,8 +22,8 @@ pub struct State {
     pub en_passant: Option<Square>,
     pub half_move_counter: u8,
     pub full_move_counter: u8,
-    pub turn: Side,
-    pub zobrist_key: u64,
+    pub current_turn: Side,
+    pub zobrist_hash: u64,
 }
 
 impl State {
@@ -33,28 +33,28 @@ impl State {
             en_passant: None,
             half_move_counter: 0,
             full_move_counter: 1,
-            turn: Side::White,
-            zobrist_key: 0,
+            current_turn: Side::White,
+            zobrist_hash: 0,
         }
     }
 
     fn update_hash(&mut self, value: u64) {
-        self.zobrist_key ^= value;
+        self.zobrist_hash ^= value;
     }
 
     fn change_turn(&mut self) {
-        match self.turn {
-            Side::White => self.turn = Side::Black,
-            Side::Black => self.turn = Side::White,
+        match self.current_turn {
+            Side::White => self.current_turn = Side::Black,
+            Side::Black => self.current_turn = Side::White,
         }
     }
 
-    pub fn turn(&self) -> Side {
-        self.turn
+    pub fn current_turn(&self) -> Side {
+        self.current_turn
     }
 
     pub fn opponent(&self) -> Side {
-        match self.turn {
+        match self.current_turn {
             Side::White => Side::Black,
             Side::Black => Side::White,
         }
@@ -98,9 +98,11 @@ impl History {
     }
 }
 
-/// Struct that contains all the bitboards, state, history, current king_squares,
-///
-/// and last move.
+/**
+ * Struct that contains all the bitboards, state, history, current king_squares,
+ *
+ * and last move.
+ * */
 #[derive(Debug, Clone)]
 pub struct Position {
     /// Piece array board
@@ -207,7 +209,7 @@ impl Position {
         }
 
         let mut z = position.zobrist;
-        position.state.zobrist_key = z.generate_hash_key(&position);
+        position.state.zobrist_hash = z.generate_hash(&position);
 
         position
     }
@@ -247,7 +249,8 @@ impl Position {
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
 
         // Update king bitboard
-        self.piece_bitboards[self.state.turn() as usize][mv.piece as usize] ^= from_to_bitboard;
+        self.piece_bitboards[self.state.current_turn() as usize][mv.piece as usize] ^=
+            from_to_bitboard;
 
         self.queen_side_castle(mv, from_bitboard, to_bitboard);
         self.king_side_castle(mv, from_bitboard, to_bitboard);
@@ -255,10 +258,11 @@ impl Position {
 
     fn queen_side_castle(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
-        let mut old_rook_board: BitBoard = self.piece_bitboard(Piece::Rook, self.state.turn());
+        let mut old_rook_board: BitBoard =
+            self.piece_bitboard(Piece::Rook, self.state.current_turn());
 
         let (castle_king, from_rook, to_rook, rank): (Square, Square, Square, BitBoard) =
-            match self.state.turn {
+            match self.state.current_turn {
                 Side::White => (
                     WHITE_QUEENSIDE_KING,
                     WHITE_QUEENSIDE_ROOK_FROM,
@@ -285,10 +289,11 @@ impl Position {
             let rook_to = old_rook_board ^ new_rook_board;
 
             // Move rook
-            self.piece_bitboards[self.state.turn() as usize][Piece::Rook as usize] ^= rook_to;
+            self.piece_bitboards[self.state.current_turn() as usize][Piece::Rook as usize] ^=
+                rook_to;
 
             // Update white or black bitboard
-            self.side_bitboards[self.state.turn() as usize] ^= from_to_bitboard ^ rook_to;
+            self.side_bitboards[self.state.current_turn() as usize] ^= from_to_bitboard ^ rook_to;
 
             // Update main_bitboard
             self.main_bitboard ^= from_to_bitboard ^ rook_to;
@@ -297,21 +302,21 @@ impl Position {
             self.empty_bitboard = !self.main_bitboard;
 
             // Update piece array board
-            self.pieces[mv.target() as usize] = Some((self.state.turn(), mv.piece));
+            self.pieces[mv.target() as usize] = Some((self.state.current_turn(), mv.piece));
             self.pieces[mv.from as usize] = None;
-            self.pieces[to_rook as usize] = Some((self.state.turn(), Piece::Rook));
+            self.pieces[to_rook as usize] = Some((self.state.current_turn(), Piece::Rook));
             self.pieces[from_rook as usize] = None;
 
             // Remove rook from hash (from_rook_square)
             self.state.update_hash(self.zobrist.rand_piece_num(
-                self.state.turn(),
+                self.state.current_turn(),
                 Piece::Rook,
                 from_rook,
             ));
 
             // Add rook to hash (to_rook_square)
             self.state.update_hash(self.zobrist.rand_piece_num(
-                self.state.turn(),
+                self.state.current_turn(),
                 Piece::Rook,
                 to_rook,
             ));
@@ -320,10 +325,11 @@ impl Position {
 
     fn king_side_castle(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
-        let mut old_rook_board: BitBoard = self.piece_bitboard(Piece::Rook, self.state.turn());
+        let mut old_rook_board: BitBoard =
+            self.piece_bitboard(Piece::Rook, self.state.current_turn());
 
         let (castle_king, from_rook, to_rook, rank): (Square, Square, Square, BitBoard) =
-            match self.state.turn() {
+            match self.state.current_turn() {
                 Side::White => (
                     WHITE_KINGSIDE_KING,
                     WHITE_KINGSIDE_ROOK_FROM,
@@ -351,10 +357,11 @@ impl Position {
             let rook_to = old_rook_board ^ new_rook_board;
 
             // Move rook
-            self.piece_bitboards[self.state.turn() as usize][Piece::Rook as usize] ^= rook_to;
+            self.piece_bitboards[self.state.current_turn() as usize][Piece::Rook as usize] ^=
+                rook_to;
 
             // Update white or black bitboard
-            self.side_bitboards[self.state.turn() as usize] ^= from_to_bitboard ^ rook_to;
+            self.side_bitboards[self.state.current_turn() as usize] ^= from_to_bitboard ^ rook_to;
 
             // Update main_bitboard
             self.main_bitboard ^= from_to_bitboard ^ rook_to;
@@ -363,21 +370,21 @@ impl Position {
             self.empty_bitboard = !self.main_bitboard;
 
             // Update piece array board
-            self.pieces[mv.target() as usize] = Some((self.state.turn(), mv.piece()));
+            self.pieces[mv.target() as usize] = Some((self.state.current_turn(), mv.piece()));
             self.pieces[mv.from as usize] = None;
-            self.pieces[to_rook as usize] = Some((self.state.turn(), Piece::Rook));
+            self.pieces[to_rook as usize] = Some((self.state.current_turn(), Piece::Rook));
             self.pieces[from_rook as usize] = None;
 
             // Remove rook from hash (from_rook_square)
             self.state.update_hash(self.zobrist.rand_piece_num(
-                self.state.turn(),
+                self.state.current_turn(),
                 Piece::Rook,
                 from_rook,
             ));
 
             // Add rook to hash (to_rook_square)
             self.state.update_hash(self.zobrist.rand_piece_num(
-                self.state.turn(),
+                self.state.current_turn(),
                 Piece::Rook,
                 to_rook,
             ));
@@ -386,7 +393,7 @@ impl Position {
 
     fn update_castling_rights(&mut self, mv: Move) {
         if mv.piece.is_king() {
-            match self.state.turn() {
+            match self.state.current_turn() {
                 Side::White => {
                     self.history.prev_white_king = Some(self.white_king);
                     self.white_king = mv.target();
@@ -405,7 +412,7 @@ impl Position {
                 }
             }
         } else if mv.piece.is_rook() {
-            match self.state.turn() {
+            match self.state.current_turn() {
                 Side::White => match mv.from() {
                     // Disable Kingside castling
                     WHITE_KINGSIDE_ROOK_FROM => {
@@ -449,7 +456,8 @@ impl Position {
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
 
         let can_move = mv.from() != mv.target()
-            && self.side_bitboards[self.state.turn() as usize].get_bit(mv.target() as u64) == 0;
+            && self.side_bitboards[self.state.current_turn() as usize].get_bit(mv.target() as u64)
+                == 0;
 
         if can_move {
             self.history.prev_states.push(self.state);
@@ -457,14 +465,14 @@ impl Position {
 
             // Remove piece from hash (from_square)
             self.state.update_hash(self.zobrist.rand_piece_num(
-                self.state.turn(),
+                self.state.current_turn(),
                 mv.piece(),
                 mv.from(),
             ));
 
             // Add piece back hash (target_square)
             self.state.update_hash(self.zobrist.rand_piece_num(
-                self.state.turn(),
+                self.state.current_turn(),
                 mv.piece(),
                 mv.target(),
             ));
@@ -492,8 +500,10 @@ impl Position {
                 }
                 MoveType::EnPassant => self.en_passant(mv, from_bitboard, to_bitboard),
                 _ => {
-                    let piece_on_from_square =
-                        self.side_bitboards[self.state.turn as usize].get_bit(mv.from as u64) != 0;
+                    let piece_on_from_square = self.side_bitboards
+                        [self.state.current_turn as usize]
+                        .get_bit(mv.from as u64)
+                        != 0;
                     if piece_on_from_square {
                         let capture = self.side_bitboards[self.state.opponent() as usize]
                             .get_bit(mv.target as u64)
@@ -508,7 +518,7 @@ impl Position {
                 }
             }
 
-            // hash enpassant if available (remove enpassant square from hash key)
+            // hash enpassant if available (remove enpassant square from hash )
             if let Some(ep) = self.state.en_passant {
                 self.state.update_hash(self.zobrist.rand_en_passant(ep));
             }
@@ -518,7 +528,7 @@ impl Position {
 
             // Handle Double pawn push
             if mv.is_double_pawn_push() {
-                let en_passant = if self.state.turn() == Side::White {
+                let en_passant = if self.state.current_turn() == Side::White {
                     Square::from(mv.target() as u64 - 8)
                 } else {
                     Square::from(mv.target() as u64 + 8)
@@ -542,7 +552,7 @@ impl Position {
                 self.state.half_move_counter += 1;
             }
 
-            if self.state.turn == Side::Black {
+            if self.state.current_turn == Side::Black {
                 self.state.full_move_counter += 1;
             }
 
@@ -556,7 +566,9 @@ impl Position {
         }
     }
 
-    /// Undoes the previous move made
+    /**
+     * Restores position back to state it was in before previous move was made
+     */
     pub fn unmake(&mut self) {
         // Revert BitBoards
         self.main_bitboard = self.history.prev_main_bitboards.pop().unwrap();
@@ -568,8 +580,8 @@ impl Position {
 
         // Restore last move
         if let Some(_) = self.history.moves.pop() {
-            if let Some(head_move) = self.history.moves.last() {
-                self.last_move = Some(*head_move);
+            if let Some(last) = self.history.moves.last() {
+                self.last_move = Some(*last);
             }
         } else {
             self.last_move = None;
@@ -579,6 +591,7 @@ impl Position {
         self.white_king = self.king(Side::White);
         self.black_king = self.king(Side::Black);
 
+        // Revert state
         self.state = self.history.prev_states.pop().unwrap();
     }
 
@@ -589,20 +602,20 @@ impl Position {
         let possible_piece: Option<(Side, Piece)> = self.pieces[mv.target() as usize];
         let mut capture: bool = false;
         if let Some(possible_p) = possible_piece {
-            if possible_p.0 != self.state.turn() {
+            if possible_p.0 != self.state.current_turn() {
                 let opponent: Side = self.state.opponent();
                 let opponent_piece = self.piece_on_square(mv.target(), opponent).unwrap();
 
                 // Update piece bitboard
-                self.piece_bitboards[self.state.turn() as usize][mv.piece() as usize] &=
+                self.piece_bitboards[self.state.current_turn() as usize][mv.piece() as usize] &=
                     !from_bitboard;
 
                 // Promote to new piece
-                self.piece_bitboards[self.state.turn() as usize]
+                self.piece_bitboards[self.state.current_turn() as usize]
                     [mv.promotion_piece.unwrap() as usize] ^= to_bitboard;
 
                 // Update side bitboard for side making the move
-                self.side_bitboards[self.state.turn() as usize] ^= from_bitboard;
+                self.side_bitboards[self.state.current_turn() as usize] ^= from_bitboard;
 
                 // Reset captured piece
                 self.piece_bitboards[opponent as usize][opponent_piece as usize] ^= to_bitboard;
@@ -627,14 +640,14 @@ impl Position {
 
                 // Remove pawn from hash (target_square)
                 self.state.update_hash(self.zobrist.rand_piece_num(
-                    self.state.turn(),
+                    self.state.current_turn(),
                     Piece::Pawn,
                     mv.target(),
                 ));
 
                 // Add promoted piece to hash (target_square)
                 self.state.update_hash(self.zobrist.rand_piece_num(
-                    self.state.turn(),
+                    self.state.current_turn(),
                     mv.promotion_piece.unwrap(),
                     mv.target(),
                 ));
@@ -646,14 +659,15 @@ impl Position {
         // Quiet Promotion
         if !capture {
             // Update piece bitboard
-            self.piece_bitboards[self.state.turn() as usize][mv.piece() as usize] &= !from_bitboard;
+            self.piece_bitboards[self.state.current_turn() as usize][mv.piece() as usize] &=
+                !from_bitboard;
 
             // Promote to new piece
-            self.piece_bitboards[self.state.turn() as usize]
+            self.piece_bitboards[self.state.current_turn() as usize]
                 [mv.promotion_piece.unwrap() as usize] ^= to_bitboard;
 
             // Update white or black bitboard
-            self.side_bitboards[self.state.turn() as usize] ^= from_bitboard;
+            self.side_bitboards[self.state.current_turn() as usize] ^= from_bitboard;
 
             // Update main_bitboard
             self.main_bitboard ^= from_bitboard;
@@ -663,33 +677,36 @@ impl Position {
 
             // Remove pawn from hash  (target_square)
             self.state.update_hash(self.zobrist.rand_piece_num(
-                self.state.turn(),
+                self.state.current_turn(),
                 Piece::Pawn,
                 mv.target(),
             ));
 
             // Add promoted piece to hash (target_square)
             self.state.update_hash(self.zobrist.rand_piece_num(
-                self.state.turn(),
+                self.state.current_turn(),
                 mv.promotion_piece.unwrap(),
                 mv.target(),
             ));
         }
 
         // Update piece array board
-        self.pieces[mv.target() as usize] = Some((self.state.turn(), mv.promotion_piece.unwrap()));
+        self.pieces[mv.target() as usize] =
+            Some((self.state.current_turn(), mv.promotion_piece.unwrap()));
         self.pieces[mv.from() as usize] = None;
-        self.piece_count[self.state.turn() as usize][mv.promotion_piece.unwrap() as usize] += 1;
+        self.piece_count[self.state.current_turn() as usize]
+            [mv.promotion_piece.unwrap() as usize] += 1;
     }
 
     fn en_passant(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
 
         // Update piece bitboard
-        self.piece_bitboards[self.state.turn() as usize][mv.piece() as usize] ^= from_to_bitboard;
+        self.piece_bitboards[self.state.current_turn() as usize][mv.piece() as usize] ^=
+            from_to_bitboard;
 
         // Update white or black bitboard
-        self.side_bitboards[self.state.turn() as usize] ^= from_to_bitboard;
+        self.side_bitboards[self.state.current_turn() as usize] ^= from_to_bitboard;
 
         // Update main_bitboard
         self.main_bitboard ^= from_to_bitboard;
@@ -698,7 +715,7 @@ impl Position {
         self.empty_bitboard = !self.main_bitboard;
 
         // Update pieces
-        self.pieces[mv.target() as usize] = Some((self.state.turn(), mv.piece()));
+        self.pieces[mv.target() as usize] = Some((self.state.current_turn(), mv.piece()));
         self.pieces[mv.from() as usize] = None;
 
         let target_square_num: usize = if self.state.opponent() == Side::Black {
@@ -744,17 +761,19 @@ impl Position {
         let opponent: Side = self.state.opponent();
 
         // Update piece bitboard
-        self.piece_bitboards[self.state.turn() as usize][mv.piece() as usize] ^= from_to_bitboard;
+        self.piece_bitboards[self.state.current_turn() as usize][mv.piece() as usize] ^=
+            from_to_bitboard;
 
         // Update white or black bitboard
-        self.side_bitboards[self.state.turn() as usize] ^= from_to_bitboard;
+        self.side_bitboards[self.state.current_turn() as usize] ^= from_to_bitboard;
 
         let opponent_piece: Piece = self.piece_on_square(mv.target(), opponent).unwrap();
 
         // Hash capture
-        self.state.zobrist_key ^=
+        self.state.update_hash(
             self.zobrist
-                .rand_piece_num(opponent, opponent_piece, mv.target());
+                .rand_piece_num(opponent, opponent_piece, mv.target()),
+        );
 
         // Reset captured piece
         self.piece_bitboards[opponent as usize][opponent_piece as usize] ^= to_bitboard;
@@ -769,7 +788,7 @@ impl Position {
         self.empty_bitboard = !self.main_bitboard;
 
         // Update piece array board
-        self.pieces[mv.target() as usize] = Some((self.state.turn(), mv.piece()));
+        self.pieces[mv.target() as usize] = Some((self.state.current_turn(), mv.piece()));
         self.pieces[mv.from() as usize] = None;
 
         self.piece_count[opponent as usize][opponent_piece as usize] -= 1;
@@ -778,10 +797,11 @@ impl Position {
         let from_to_bitboard: BitBoard = from_bitboard ^ to_bitboard;
 
         // Update piece bitboard
-        self.piece_bitboards[self.state.turn() as usize][mv.piece() as usize] ^= from_to_bitboard;
+        self.piece_bitboards[self.state.current_turn() as usize][mv.piece() as usize] ^=
+            from_to_bitboard;
 
         // Update white or black bitboard
-        self.side_bitboards[self.state.turn() as usize] ^= from_to_bitboard;
+        self.side_bitboards[self.state.current_turn() as usize] ^= from_to_bitboard;
 
         // Update main_bitboard
         self.main_bitboard ^= from_to_bitboard;
@@ -790,12 +810,12 @@ impl Position {
         self.empty_bitboard = !self.main_bitboard;
 
         // Update piece array board
-        self.pieces[mv.target() as usize] = Some((self.state.turn(), mv.piece()));
+        self.pieces[mv.target() as usize] = Some((self.state.current_turn(), mv.piece()));
         self.pieces[mv.from() as usize] = None;
     }
 
     pub fn checkmate(&mut self, move_gen: &MoveGenerator) -> bool {
-        let side = self.state.turn;
+        let side = self.state.current_turn();
         move_gen.generate_legal_moves(self, side).is_empty()
             && move_gen.attacks_to_king(self, side) != EMPTY_BITBOARD
     }
@@ -807,22 +827,23 @@ impl Position {
             | self.stalemate(move_gen)
     }
 
-    pub fn stalemate(&mut self, move_gen: &MoveGenerator) -> bool {
-        let side = self.state.turn();
+    fn stalemate(&mut self, move_gen: &MoveGenerator) -> bool {
+        let side = self.state.current_turn();
         move_gen.generate_legal_moves(self, side).is_empty()
             && move_gen.attacks_to_king(self, side) != EMPTY_BITBOARD
     }
-    pub fn draw_by_fifty_moves(&self) -> bool {
+
+    fn draw_by_fifty_moves(&self) -> bool {
         self.state.half_move_counter >= MAX_HALF_MOVES
     }
 
-    pub fn draw_by_threefold_repetition(&mut self) -> bool {
-        let current_pos_key = self.state.zobrist_key;
+    fn draw_by_threefold_repetition(&mut self) -> bool {
+        let current_pos_hash = self.state.zobrist_hash;
         let prev_states = &self.history.prev_states;
         let mut count = 0;
 
         for state in prev_states {
-            if state.zobrist_key == current_pos_key {
+            if state.zobrist_hash == current_pos_hash {
                 count += 1;
             }
 
@@ -834,6 +855,10 @@ impl Position {
         false
     }
 
+    /**
+     * TODO
+     *
+     * */
     pub fn draw_by_insufficient_material(&self) -> bool {
         false
     }
@@ -912,7 +937,7 @@ impl std::fmt::Display for Position {
         }
 
         writeln!(f)?;
-        writeln!(f, "Side To Move: {:?}", self.state.turn)?;
+        writeln!(f, "Side To Move: {:?}", self.state.current_turn)?;
         writeln!(f,)?;
         writeln!(f, "Half Move Counter: {}", self.state.half_move_counter)?;
         writeln!(f,)?;

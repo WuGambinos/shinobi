@@ -156,14 +156,14 @@ pub fn run_loop(shinobi: &mut Engine, sdl_state: &mut Sdl2State) {
                     ..
                 } => {
                     println!("{}", shinobi.position);
-                    let key = shinobi.zobrist.generate_hash_key(&shinobi.position);
+                    let key = shinobi.zobrist.generate_hash(&shinobi.position);
                     println!("PIECE COUNT");
                     shinobi.position.print_piece_count();
                     println!();
                     println!("EXPETED ZOBRIST KEY {:#X}", key);
                     println!(
                         "ACTUAL ZOBRIST KEY: {:#X}",
-                        shinobi.position.state.zobrist_key
+                        shinobi.position.state.zobrist_hash
                     );
                     println!();
                 }

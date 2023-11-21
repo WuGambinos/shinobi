@@ -59,7 +59,7 @@ pub fn drag_and_drop(
         let state = event_pump.mouse_state();
 
         *from_square = Some(get_square_from_mouse_position(state.x(), state.y()));
-        let boards = position.piece_bitboards[position.state.turn as usize];
+        let boards = position.piece_bitboards[position.state.current_turn() as usize];
 
         *selected_piece = None;
 
@@ -70,11 +70,11 @@ pub fn drag_and_drop(
             }
         }
 
-        let turn = position.state.turn;
+        let turn = position.state.current_turn();
         *moves = move_gen.generate_legal_moves(position, turn);
 
         if let Some(selected_p) = selected_piece {
-            position.piece_bitboards[position.state.turn as usize][*selected_p as usize]
+            position.piece_bitboards[position.state.current_turn() as usize][*selected_p as usize]
                 .clear_bit(from_square.unwrap());
         }
 
@@ -88,7 +88,7 @@ pub fn drag_and_drop(
         );
 
         if let Some(select_piece) = selected_piece {
-            let old_turn: Side = position.state.turn;
+            let old_turn: Side = position.state.current_turn();
             let mut old_position: Position = position.clone();
             let mut valid = false;
             for mv in moves.iter() {
@@ -101,7 +101,7 @@ pub fn drag_and_drop(
 
             // Undo visual move
             if !valid {
-                position.piece_bitboards[position.state.turn as usize][*select_piece as usize]
+                position.piece_bitboards[position.state.current_turn() as usize][*select_piece as usize]
                     .set_bit(from_square.unwrap());
             }
         }
@@ -142,7 +142,7 @@ fn piece_follow_mouse(
     piece: Option<Piece>,
 ) -> Result<(), String> {
     if let Some(p) = piece {
-        let piece_offset: usize = match position.state.turn {
+        let piece_offset: usize = match position.state.current_turn() {
             Side::White => W_IMG_POS,
             Side::Black => B_IMG_POS,
         };
@@ -373,9 +373,9 @@ pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
     let mut grid: [char; 64] = ['.'; 64];
 
     if turn == "b" {
-        state.turn = Side::Black;
+        state.current_turn = Side::Black;
     } else if turn == "w" {
-        state.turn = Side::White;
+        state.current_turn = Side::White;
     }
 
     for s in split_main {

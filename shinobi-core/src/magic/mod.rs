@@ -8,7 +8,6 @@ use rand::prelude::*;
 
 pub mod magic_constants;
 
-
 #[derive(Clone, Copy, Debug)]
 pub struct MagicEntry {
     pub mask: u64,
@@ -54,7 +53,7 @@ impl SMagic {
 /**
  * Generates random 64-bit integer
  * */
-pub fn random_u64() -> u64 {
+fn random_u64() -> u64 {
     let mut rng = rand::thread_rng();
 
     let u1: u64 = (rng.gen::<u64>()) & 0xFFFF;
@@ -65,6 +64,9 @@ pub fn random_u64() -> u64 {
     u1 | (u2 << 16) | (u3 << 32) | (u4 << 48)
 }
 
+/**
+ * Generate random 64-bit integer with a "low" number of bits set
+ * */
 fn random_u64_fewbits() -> u64 {
     random_u64() & random_u64() & random_u64()
 }
@@ -93,6 +95,13 @@ fn index_to_u64(index: u32, bits: u32, m: u64) -> u64 {
     result
 }
 
+/**
+ *
+ * Returns a BitBoard where set bits represent the moves a rook can make
+ * when on given square. Does not account for blockers
+ *
+ * Edge squares are excluded because they do not affect attack set
+ * */
 fn rook_mask(square: u64) -> BitBoard {
     let mut result: u64 = 0;
 
@@ -118,6 +127,13 @@ fn rook_mask(square: u64) -> BitBoard {
     BitBoard(result)
 }
 
+/**
+ *
+ * Returns a BitBoard where set bits represent the moves a bishop can make
+ * when on given square. Does not account for blockers
+ *
+ * Edge squares are excluded because they do not affect attack set
+ * */
 fn bishop_mask(square: u64) -> BitBoard {
     let mut result: u64 = 0;
 
@@ -166,7 +182,14 @@ fn bishop_mask(square: u64) -> BitBoard {
     BitBoard(result)
 }
 
-fn rook_attack(square: u64, block: BitBoard) -> BitBoard {
+/**
+ *
+ * Returns a BitBoard where set bits represent the moves a rook can make
+ * when on given square.
+ *
+ * Accounts for blockers
+ * */
+fn rook_attack(square: u64, blockers: BitBoard) -> BitBoard {
     let mut result: BitBoard = BitBoard(0);
 
     let rank: i32 = (square / 8) as i32;
@@ -175,7 +198,7 @@ fn rook_attack(square: u64, block: BitBoard) -> BitBoard {
     for r in (rank + 1)..8 {
         let mask = BitBoard(1u64 << (file + r * 8));
         result |= mask;
-        if block & (mask) != EMPTY_BITBOARD {
+        if blockers & (mask) != EMPTY_BITBOARD {
             break;
         }
     }
@@ -183,7 +206,7 @@ fn rook_attack(square: u64, block: BitBoard) -> BitBoard {
     for r in (0..=(rank - 1)).rev() {
         let mask = BitBoard(1u64 << (file + r * 8));
         result |= mask;
-        if block & (mask) != EMPTY_BITBOARD {
+        if blockers & (mask) != EMPTY_BITBOARD {
             break;
         }
     }
@@ -191,7 +214,7 @@ fn rook_attack(square: u64, block: BitBoard) -> BitBoard {
     for f in (file + 1)..8 {
         let mask = BitBoard(1u64 << (f + rank * 8));
         result |= mask;
-        if block & mask != EMPTY_BITBOARD {
+        if blockers & mask != EMPTY_BITBOARD {
             break;
         }
     }
@@ -199,7 +222,7 @@ fn rook_attack(square: u64, block: BitBoard) -> BitBoard {
     for f in (0..=(file - 1)).rev() {
         let mask = BitBoard(1u64 << (f + rank * 8));
         result |= mask;
-        if block & mask != EMPTY_BITBOARD {
+        if blockers & mask != EMPTY_BITBOARD {
             break;
         }
     }
@@ -207,7 +230,14 @@ fn rook_attack(square: u64, block: BitBoard) -> BitBoard {
     result
 }
 
-fn bishop_attack(square: u64, block: BitBoard) -> BitBoard {
+/**
+ *
+ * Returns a BitBoard where set bits represent the moves a bishop can make
+ * when on given square.
+ *
+ * Accounts for blockers
+ * */
+fn bishop_attack(square: u64, blockers: BitBoard) -> BitBoard {
     let mut result: BitBoard = BitBoard(0);
 
     let rank: i32 = (square / 8) as i32;
@@ -220,7 +250,7 @@ fn bishop_attack(square: u64, block: BitBoard) -> BitBoard {
         let mask = BitBoard(1u64 << (f + r * 8));
         result |= mask;
 
-        if block & mask != EMPTY_BITBOARD {
+        if blockers & mask != EMPTY_BITBOARD {
             break;
         }
         r += 1;
@@ -234,7 +264,7 @@ fn bishop_attack(square: u64, block: BitBoard) -> BitBoard {
         let mask = BitBoard(1u64 << (f + r * 8));
         result |= mask;
 
-        if block & mask != EMPTY_BITBOARD {
+        if blockers & mask != EMPTY_BITBOARD {
             break;
         }
         r += 1;
@@ -248,7 +278,7 @@ fn bishop_attack(square: u64, block: BitBoard) -> BitBoard {
         let mask = BitBoard(1u64 << (f + r * 8));
         result |= mask;
 
-        if block & mask != EMPTY_BITBOARD {
+        if blockers & mask != EMPTY_BITBOARD {
             break;
         }
 
@@ -263,7 +293,7 @@ fn bishop_attack(square: u64, block: BitBoard) -> BitBoard {
         let mask = BitBoard(1u64 << (f + r * 8));
         result |= mask;
 
-        if block & mask != EMPTY_BITBOARD {
+        if blockers & mask != EMPTY_BITBOARD {
             break;
         }
 
@@ -274,28 +304,37 @@ fn bishop_attack(square: u64, block: BitBoard) -> BitBoard {
     result
 }
 
+/*
+ * Returns a Vec of BitBoards that represent the attacks for given slider piece for each
+ * subset of the mask BitBoard
+ * */
 fn generate_attack_map(is_bishop: bool, size: usize, square: u64, mask: BitBoard) -> Vec<BitBoard> {
     let mut map = vec![EMPTY_BITBOARD; size];
+    let mut blockers = BitBoard(0);
 
-    let mut occupancies = BitBoard(0);
+    // Iterate over all subsets of mask bitboard
+    // giving us all the blockers
+    // and storing attack bitboards for each blocker BitBoard in the map vec
     for attacks in map.iter_mut() {
         *attacks = if is_bishop {
-            bishop_attack(square, occupancies)
+            bishop_attack(square, blockers)
         } else {
-            rook_attack(square, occupancies)
+            rook_attack(square, blockers)
         };
-        occupancies = BitBoard(occupancies.0.wrapping_sub(mask.0) & mask.0);
+        blockers = BitBoard(blockers.0.wrapping_sub(mask.0) & mask.0);
     }
-
     map
 }
 
 struct MagicNumberCollision;
 
-fn is_collision_detected(actual: &[BitBoard], hash: usize, attacks: BitBoard) -> bool {
+fn collision_detected(actual: &[BitBoard], hash: usize, attacks: BitBoard) -> bool {
     actual[hash] != EMPTY_BITBOARD && actual[hash] != attacks
 }
 
+/**
+ * Attempts to fill hashmap with magic number
+ */
 fn try_magic_number(
     mask: BitBoard,
     magic: u64,
@@ -309,7 +348,7 @@ fn try_magic_number(
     for &attacks in expected.iter() {
         let hash = (occupancies.wrapping_mul(magic) >> shift) as usize;
 
-        if is_collision_detected(&actual, hash, attacks) {
+        if collision_detected(&actual, hash, attacks) {
             return Err(MagicNumberCollision);
         }
         actual[hash] = attacks;
@@ -322,8 +361,9 @@ fn try_magic_number(
 /**
  * Returns MagicEntry for square, depending on bishop or rool
  *
+ * panics if magic number not found
  * */
-pub fn find_magic(square: u64, is_bishop: bool) -> MagicEntry {
+fn find_magic(square: u64, is_bishop: bool) -> MagicEntry {
     let mask = if is_bishop {
         bishop_mask(square)
     } else {
@@ -332,7 +372,9 @@ pub fn find_magic(square: u64, is_bishop: bool) -> MagicEntry {
 
     let ones = mask.0.count_ones();
     let size = 1 << ones;
-    let expected = generate_attack_map(is_bishop, size, square, mask);
+    let attacks: Vec<BitBoard> = generate_attack_map(is_bishop, size, square, mask);
+
+    // Attempt to find magic number 100_000_000 times
     for _ in 0..100_000_000 {
         // Possible magic number
         let magic = random_u64_fewbits();
@@ -342,9 +384,10 @@ pub fn find_magic(square: u64, is_bishop: bool) -> MagicEntry {
             continue;
         }
 
-        if try_magic_number(mask, magic, &expected).is_ok() {
+        // Attempt putting magic number in hashmap
+        if try_magic_number(mask, magic, &attacks).is_ok() {
             let shift = 64 - ones;
-            let size: usize = expected.len();
+            let size: usize = attacks.len();
 
             return MagicEntry::new(mask.0, magic, shift, size);
         }

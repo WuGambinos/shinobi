@@ -1,4 +1,4 @@
-use shinobi_core::{perft::perft, Bot, Engine, Piece, Position, START_POS};
+use shinobi_core::{perft::perft, print_magics, Bot, Engine, Piece, Position, START_POS};
 
 fn main() {
     env_logger::init();

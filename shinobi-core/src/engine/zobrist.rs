@@ -5,6 +5,9 @@ use strum::IntoEnumIterator;
 
 const SEED: u64 = 12345;
 
+/**
+ * Struct used to caclulate zobrist hash
+ * */
 #[derive(Debug, Clone, Copy)]
 pub struct Zobrist {
     rand_piece_nums: [[[u64; NUM_SQUARES]; 6]; 2],
@@ -62,7 +65,7 @@ impl Zobrist {
         self.rand_side_num
     }
 
-    pub fn generate_hash_key(&mut self, position: &Position) -> u64 {
+    pub fn generate_hash(&mut self, position: &Position) -> u64 {
         let mut key = 0;
 
         for side in Side::iter() {
@@ -80,7 +83,7 @@ impl Zobrist {
             key ^= self.rand_en_passant_nums[ep as usize];
         }
 
-        if position.state.turn == Side::Black {
+        if position.state.current_turn == Side::Black {
             key ^= self.rand_side_num;
         }
 

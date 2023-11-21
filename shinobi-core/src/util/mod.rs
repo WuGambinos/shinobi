@@ -60,9 +60,9 @@ pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
     let mut grid: [char; 64] = ['.'; 64];
 
     if turn == "b" {
-        state.turn = Side::Black;
+        state.current_turn = Side::Black;
     } else if turn == "w" {
-        state.turn = Side::White;
+        state.current_turn = Side::White;
     }
 
     for s in split_main {
