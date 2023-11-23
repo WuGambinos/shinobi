@@ -2,13 +2,19 @@ pub mod bot;
 pub mod tt;
 pub mod zobrist;
 
+use strum::IntoEnumIterator;
+
 use crate::mov::Move;
 use crate::mov::MoveType;
 use crate::MoveGenerator;
+use crate::Piece;
 use crate::Position;
 use crate::Side;
 use crate::Zobrist;
+use crate::EMPTY_BITBOARD;
 use crate::START_POS;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
@@ -113,17 +119,12 @@ impl Engine {
         self.search_thread = Some(thread::spawn(move || {
             search.search_position(&mut pos, &arc_mg);
         }));
-        /*
-        for part in parts {
-            if part == "ponder" {}
 
-            if part == "searchmoves" {}
-        }
-        */
+        self.search.searching.store(true, Ordering::Relaxed);
     }
 
     fn handle_stop(&mut self) {
-        self.search.searching = false;
+        self.search.searching.store(false, Ordering::Relaxed);
         log::info!("STOP TRIGGERED");
     }
 
@@ -152,8 +153,6 @@ impl Engine {
             }
         }
 
-        println!("MOVES: {:?}", moves);
-
         if fen.is_empty() {
             let position = Position::from_fen(START_POS);
             self.position = position;
@@ -174,38 +173,87 @@ impl Engine {
     }
 }
 
-/*
-fn search_position_thread(
-    position: &mut Position,
-    move_gen: Arc<MoveGenerator>,
-    search_info: Arc<SearchInfo>,
-) {
-    search_position(position, &move_gen, &search_info);
-}
-*/
-
-/*
-fn search_position(position: &mut Position, move_gen: &MoveGenerator, search_info: &SearchInfo) {
-    log::info!("SEARCHED STARTED");
-    negamax_alpha_beta(
-        position,
-        move_gen,
-        search_info,
-        -LARGE_NUM,
-        LARGE_NUM,
-        MAX_DEPTH,
-    );
-}
-*/
-
 const WEIGHTS: [i32; 6] = [100, 320, 330, 500, 900, 20000];
-const LARGE_NUM: i32 = 99999999;
+const LARGE_NUM: i32 = 99_999_999;
 const MAX_DEPTH: i32 = 4;
 pub static mut BEST_MOVE: Option<Move> = None;
 
-#[derive(Clone, Copy)]
+// PIECE SQUARE TABLES
+
+#[rustfmt::skip]
+const PAWNS_SQ: [[i32; 8]; 8] = [
+    [ 0,  0,  0,    0,   0,   0,  0,  0],
+    [50, 50,  50,  50,  50,  50, 50, 50],
+    [10, 10,  20,  30,  30,  20, 10, 10],
+    [ 5,  5,  10,  25,  25,  10,  5,  5],
+    [ 0,  0,   0,  20,  20,   0,  0,  0],
+    [ 5, -5, -10,   0,   0, -10, -5,  5],
+    [ 5, 10,  10, -20, -20,  10, 10,  5],
+    [ 0,  0,   0,   0,   0,   0,  0,  0],
+];
+
+#[rustfmt::skip]
+const KNIGHT_SQ: [[i32; 8]; 8] = [
+    [-50, -40, -30, -30, -30, -30, -40, -50],
+    [-40, -20,   0,   0,   0,   0, -20, -40],
+    [-30,   0,  10,  15,  15,  10,   0, -30],
+    [-30,   5,  15,  20,  20,  15,   5, -30],
+    [-30,   0,  15,  20,  20,  15,   0, -30],
+    [-30,   5,  10,  15,  15,  10,   5, -30],
+    [-40, -20,   0,   5,   5,   0, -20, -40],
+    [-50, -40, -30, -30, -30, -30, -40, -50],
+];
+
+#[rustfmt::skip]
+const BISHOP_SQ: [[i32; 8]; 8] = [
+    [-20, -10, -10, -10, -10, -10, -10, -20],
+    [-10,   0,   0,   0,   0,   0,   0, -10],
+    [-10,   0,   5,  10,  10,   5,   0, -10],
+    [-10,   5,   5,  10,  10,   5,   5, -10],
+    [-10,   0,  10,  10,  10,  10,   0, -10],
+    [-10,  10,  10,  10,  10,  10,  10, -10],
+    [-10,   5,   0,   0,   0,   0,   5, -10],
+    [-20, -10, -10, -10, -10, -10, -10, -20],
+];
+
+#[rustfmt::skip]
+const ROOK_SQ: [[i32; 8]; 8] = [
+    [ 0,  0,  0,  0,  0,  0,  0,  0],
+    [ 5, 10, 10, 10, 10, 10, 10,  5],
+    [-5,  0,  0,  0,  0,  0,  0, -5],
+    [-5,  0,  0,  0,  0,  0,  0, -5],
+    [-5,  0,  0,  0,  0,  0,  0, -5],
+    [-5,  0,  0,  0,  0,  0,  0, -5],
+    [-5,  0,  0,  0,  0,  0,  0, -5],
+    [ 0,  0,  0,  5,  5,  0,  0,  0],
+];
+
+#[rustfmt::skip]
+const QUEEN_SQ: [[i32; 8]; 8] = [
+    [-20, -10, -10, -5, -5, -10, -10, -20],
+    [-10,   0,   0,  0,  0,   0,   0, -10],
+    [-10,   0,   5,  5,  5,   5,   0, -10],
+    [ -5,   0,   5,  5,  5,   5,   0,  -5],
+    [  0,   0,   5,  5,  5,   5,   0,  -5],
+    [-10,   5,   5,  5,  5,   5,   0, -10],
+    [-10,   0,   5,  0,  0,   0,   0, -10],
+    [-20, -10, -10, -5, -5, -10, -10, -20],
+];
+
+// MVV_VLA[victim][attacker]
+const MVV_LVA: [[i32; 7]; 7] = [
+    [0, 0, 0, 0, 0, 0, 0],       // victim K, attacker K, Q, R, B, N, P, None
+    [50, 51, 52, 53, 54, 55, 0], // victim Q, attacker K, Q, R, B, N, P, None
+    [40, 41, 42, 43, 44, 45, 0], // victim R, attacker K, Q, R, B, N, P, None
+    [30, 31, 32, 33, 34, 35, 0], // victim B, attacker K, Q, R, B, N, P, None
+    [20, 21, 22, 23, 24, 25, 0], // victim N, attacker K, Q, R, B, N, P, None
+    [10, 11, 12, 13, 14, 15, 0], // victim P, attacker K, Q, R, B, N, P, None
+    [0, 0, 0, 0, 0, 0, 0],       // victim None, attacker K, Q, R, B, N, P, None
+];
+
+#[derive(Clone)]
 pub struct Search {
-    searching: bool,
+    searching: Arc<AtomicBool>,
     depth: u8,
     nodes: u32,
     best_move: Option<Move>,
@@ -214,7 +262,7 @@ pub struct Search {
 impl Search {
     fn new() -> Search {
         Search {
-            searching: true,
+            searching: Arc::new(AtomicBool::new(false)),
             depth: 0,
             nodes: 0,
             best_move: None,
@@ -223,14 +271,10 @@ impl Search {
 
     fn search_position(&mut self, position: &mut Position, move_gen: &MoveGenerator) {
         log::info!("SEARCHED STARTED");
-        /*
-        for i in 1..=(MAX_DEPTH) {
-            self.negamax_alpha_beta(position, move_gen, search_info, -LARGE_NUM, LARGE_NUM, i);
-        }
-        */
         self.negamax_alpha_beta(position, move_gen, -LARGE_NUM, LARGE_NUM, MAX_DEPTH);
         if let Some(best_move) = self.best_move {
-            println!("BEST_MOVE: {:?} NODES: {}", best_move, self.nodes);
+            log::info!("BEST_MOVE: {:?} NODES: {}", best_move, self.nodes);
+            println!("bestmove {}", best_move);
         }
         log::info!("SEARCH ENDED");
     }
@@ -239,22 +283,27 @@ impl Search {
         &mut self,
         position: &mut Position,
         move_gen: &MoveGenerator,
-        alpha: i32,
+        mut alpha: i32,
         beta: i32,
         depth: i32,
     ) -> i32 {
-        if position.is_draw(move_gen) {
+        if !self.searching.load(Ordering::Relaxed) {
             return 0;
         }
 
-        let turn = position.state.current_turn();
-        let mut moves = move_gen.generate_legal_moves(position, turn);
+        if position.is_draw(move_gen) {
+            return -2000;
+        }
 
-        //self.order_moves(position, &mut moves);
+        let current_turn = position.state.current_turn();
+        let mut moves = move_gen.generate_legal_moves(position, current_turn);
+
+        self.order_moves(position, &mut moves);
+
 
         if depth == 0 || moves.len() == 0 {
             if position.checkmate(move_gen) {
-                return -9999999;
+                return -9_999_999;
             }
 
             return self.evalutate(position);
@@ -264,14 +313,8 @@ impl Search {
 
         let mut max_eval = -LARGE_NUM;
         for mv in moves {
-            if !self.searching {
-                log::info!("SEARCHING STOPPED");
-                log::info!("best move: {}", mv);
-                break;
-            }
-
             position.make_move(mv);
-            let eval = -1 * self.negamax_alpha_beta(position, move_gen, -beta, -alpha, depth - 1);
+            let eval = -self.negamax_alpha_beta(position, move_gen, -beta, -alpha, depth - 1);
             position.unmake();
 
             if eval > max_eval {
@@ -282,9 +325,8 @@ impl Search {
                     self.best_move = Some(mv);
                 }
 
-                let new_alpha = alpha.max(max_eval);
-
-                if new_alpha >= beta {
+                alpha = alpha.max(max_eval);
+                if alpha >= beta {
                     break;
                 }
             }
@@ -303,6 +345,7 @@ impl Search {
         if mv.move_type() == MoveType::Capture {
             let piece_captured = position.pieces[mv.target() as usize].unwrap().1;
             return WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10;
+            //return MVV_LVA[piece_captured as usize][mv.piece() as usize];
         } else {
             0
         }
@@ -312,7 +355,6 @@ impl Search {
         let mut black_score = 0;
 
         let piece_count = position.piece_count;
-
         for (i, count) in piece_count[Side::White as usize].iter().enumerate() {
             white_score += WEIGHTS[i] * (*count as i32);
         }
@@ -321,7 +363,28 @@ impl Search {
             black_score += WEIGHTS[i] * (*count as i32);
         }
 
-        let material_score = white_score + black_score;
+        /*
+        for side in Side::iter() {
+            for piece in Piece::iter() {
+                let mut bitboard = position.piece_bitboard(piece, side);
+
+                while bitboard != EMPTY_BITBOARD {
+                    let square = bitboard.bitscan_forward_reset();
+
+                    match piece {
+                        Piece::Pawn => (),
+                        Piece::Bishop => (),
+                        Piece::Knight => (),
+                        Piece::Rook => (),
+                        Piece::Queen => (),
+                        Piece::King => (),
+                    }
+                }
+            }
+        }
+        */
+
+        let material_score = white_score - black_score;
         let side_to_move = if position.state.current_turn() == Side::White {
             1
         } else {

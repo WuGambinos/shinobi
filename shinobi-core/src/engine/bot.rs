@@ -1,11 +1,13 @@
+use std::i8::MAX;
+
 use crate::{
     mov::{Move, MoveType},
     MoveGenerator, Position, Side,
 };
 
 const WEIGHTS: [i32; 6] = [100, 320, 330, 500, 900, 20000];
-const LARGE_NUM: i32 = 99999999;
-const MAX_DEPTH: i32 = 3;
+const LARGE_NUM: i32 = 99_999_999;
+const MAX_DEPTH: i32 = 4;
 pub static mut nodes: i32 = 0;
 
 // MVV_VLA[victim][attacker]
@@ -29,7 +31,9 @@ impl Bot {
     }
 
     pub fn think(&mut self, position: &mut Position, move_gen: &MoveGenerator) -> Option<Move> {
-        self.search_position(position, move_gen, -LARGE_NUM, LARGE_NUM, MAX_DEPTH);
+        for i in 0..=MAX_DEPTH {
+            self.search_position(position, move_gen, -LARGE_NUM, LARGE_NUM, i);
+        }
         return self.best_move;
     }
 
@@ -43,7 +47,9 @@ impl Bot {
     pub fn score_move(&self, position: &Position, mv: Move) -> i32 {
         if mv.move_type() == MoveType::Capture {
             let piece_captured = position.pieces[mv.target() as usize].unwrap().1;
-            let score = MVV_LVA[piece_captured as usize][mv.piece() as usize] as i32;
+            //let score = MVV_LVA[piece_captured as usize][mv.piece() as usize] as i32;
+            let score = WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10;
+
             return score;
         } else {
             let score = 0;
@@ -65,7 +71,7 @@ impl Bot {
             black_score += WEIGHTS[i] * (*count as i32);
         }
 
-        let material_score = white_score + black_score;
+        let material_score = white_score - black_score;
         let side_to_move = if position.state.current_turn() == Side::White {
             1
         } else {
@@ -89,22 +95,22 @@ impl Bot {
         &mut self,
         position: &mut Position,
         move_gen: &MoveGenerator,
-        alpha: i32,
+        mut alpha: i32,
         beta: i32,
         depth: i32,
     ) -> i32 {
         if position.is_draw(move_gen) {
-            return -20;
+            return -2000;
         }
 
         let turn = position.state.current_turn();
         let mut moves = move_gen.generate_legal_moves(position, turn);
 
-        self.order_moves(position, &mut moves);
+        //self.order_moves(position, &mut moves);
 
         if depth == 0 || moves.len() == 0 {
             if position.checkmate(move_gen) {
-                return -9999999;
+                return -9_999_999;
             }
 
             return self.evalutate(position);
@@ -113,20 +119,19 @@ impl Bot {
         let mut max_eval = -LARGE_NUM;
         for mv in moves {
             position.make_move(mv);
-            let eval = -1 * self.negamax_alpha_beta(position, move_gen, -beta, -alpha, depth - 1);
+            let eval = -self.negamax_alpha_beta(position, move_gen, -beta, -alpha, depth - 1);
             position.unmake();
 
             if eval > max_eval {
                 max_eval = eval;
 
                 if depth == MAX_DEPTH {
-                    log::debug!("MOVE: {:?}", mv);
                     self.best_move = Some(mv);
                 }
 
-                let new_alpha = alpha.max(max_eval);
+                alpha = alpha.max(max_eval);
 
-                if new_alpha >= beta {
+                if alpha >= beta {
                     break;
                 }
             }

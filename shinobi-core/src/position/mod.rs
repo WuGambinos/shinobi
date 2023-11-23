@@ -840,8 +840,8 @@ impl Position {
     fn draw_by_threefold_repetition(&mut self) -> bool {
         let current_pos_hash = self.state.zobrist_hash;
         let prev_states = &self.history.prev_states;
-        let mut count = 0;
 
+        let mut count = 1;
         for state in prev_states {
             if state.zobrist_hash == current_pos_hash {
                 count += 1;
@@ -945,6 +945,8 @@ impl std::fmt::Display for Position {
         writeln!(f,)?;
         writeln!(f, "Castling Rights: {:?}", self.state.castling_rights)?;
         writeln!(f,)?;
-        writeln!(f, "En Passant Square: {:?}", self.state.en_passant)
+        writeln!(f, "En Passant Square: {:?}", self.state.en_passant)?;
+        writeln!(f,)?;
+        writeln!(f, "HASH: {:#X}", self.state.zobrist_hash)
     }
 }
