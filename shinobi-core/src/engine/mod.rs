@@ -2,8 +2,6 @@ pub mod bot;
 pub mod tt;
 pub mod zobrist;
 
-use strum::IntoEnumIterator;
-
 use crate::mov::Move;
 use crate::mov::MoveType;
 use crate::MoveGenerator;
@@ -18,6 +16,7 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
+use strum::IntoEnumIterator;
 
 #[derive(Clone, Copy)]
 pub enum PositionToken {
@@ -117,7 +116,7 @@ impl Engine {
         let mut search = self.search.clone();
         search.best_move = None;
         self.search_thread = Some(thread::spawn(move || {
-            search.search_position(&mut pos, &arc_mg);
+            search.search_position(&mut pos, &arc_mg, MAX_DEPTH);
         }));
 
         self.search.searching.store(true, Ordering::Relaxed);
@@ -175,69 +174,81 @@ impl Engine {
 
 const WEIGHTS: [i32; 6] = [100, 320, 330, 500, 900, 20000];
 const LARGE_NUM: i32 = 99_999_999;
-const MAX_DEPTH: i32 = 4;
+const MAX_DEPTH: i32 = 2;
 pub static mut BEST_MOVE: Option<Move> = None;
 
 // PIECE SQUARE TABLES
 
 #[rustfmt::skip]
-const PAWNS_SQ: [[i32; 8]; 8] = [
-    [ 0,  0,  0,    0,   0,   0,  0,  0],
-    [50, 50,  50,  50,  50,  50, 50, 50],
-    [10, 10,  20,  30,  30,  20, 10, 10],
-    [ 5,  5,  10,  25,  25,  10,  5,  5],
-    [ 0,  0,   0,  20,  20,   0,  0,  0],
-    [ 5, -5, -10,   0,   0, -10, -5,  5],
-    [ 5, 10,  10, -20, -20,  10, 10,  5],
-    [ 0,  0,   0,   0,   0,   0,  0,  0],
+const PAWNS_SQ: [i32; 64] = [
+     0,  0,  0,    0,   0,   0,  0,  0,
+    50, 50,  50,  50,  50,  50, 50, 50,
+    10, 10,  20,  30,  30,  20, 10, 10,
+     5,  5,  10,  25,  25,  10,  5,  5,
+     0,  0,   0,  20,  20,   0,  0,  0,
+     5, -5, -10,   0,   0, -10, -5,  5,
+     5, 10,  10, -20, -20,  10, 10,  5,
+     0,  0,   0,   0,   0,   0,  0,  0,
 ];
 
 #[rustfmt::skip]
-const KNIGHT_SQ: [[i32; 8]; 8] = [
-    [-50, -40, -30, -30, -30, -30, -40, -50],
-    [-40, -20,   0,   0,   0,   0, -20, -40],
-    [-30,   0,  10,  15,  15,  10,   0, -30],
-    [-30,   5,  15,  20,  20,  15,   5, -30],
-    [-30,   0,  15,  20,  20,  15,   0, -30],
-    [-30,   5,  10,  15,  15,  10,   5, -30],
-    [-40, -20,   0,   5,   5,   0, -20, -40],
-    [-50, -40, -30, -30, -30, -30, -40, -50],
+const KNIGHT_SQ: [i32; 64] = [
+    -50, -40, -30, -30, -30, -30, -40, -50,
+    -40, -20,   0,   0,   0,   0, -20, -40,
+    -30,   0,  10,  15,  15,  10,   0, -30,
+    -30,   5,  15,  20,  20,  15,   5, -30,
+    -30,   0,  15,  20,  20,  15,   0, -30,
+    -30,   5,  10,  15,  15,  10,   5, -30,
+    -40, -20,   0,   5,   5,   0, -20, -40,
+    -50, -40, -30, -30, -30, -30, -40, -50,
 ];
 
 #[rustfmt::skip]
-const BISHOP_SQ: [[i32; 8]; 8] = [
-    [-20, -10, -10, -10, -10, -10, -10, -20],
-    [-10,   0,   0,   0,   0,   0,   0, -10],
-    [-10,   0,   5,  10,  10,   5,   0, -10],
-    [-10,   5,   5,  10,  10,   5,   5, -10],
-    [-10,   0,  10,  10,  10,  10,   0, -10],
-    [-10,  10,  10,  10,  10,  10,  10, -10],
-    [-10,   5,   0,   0,   0,   0,   5, -10],
-    [-20, -10, -10, -10, -10, -10, -10, -20],
+const BISHOP_SQ: [i32; 64] = [
+    -20, -10, -10, -10, -10, -10, -10, -20,
+    -10,   0,   0,   0,   0,   0,   0, -10,
+    -10,   0,   5,  10,  10,   5,   0, -10,
+    -10,   5,   5,  10,  10,   5,   5, -10,
+    -10,   0,  10,  10,  10,  10,   0, -10,
+    -10,  10,  10,  10,  10,  10,  10, -10,
+    -10,   5,   0,   0,   0,   0,   5, -10,
+    -20, -10, -10, -10, -10, -10, -10, -20,
 ];
 
 #[rustfmt::skip]
-const ROOK_SQ: [[i32; 8]; 8] = [
-    [ 0,  0,  0,  0,  0,  0,  0,  0],
-    [ 5, 10, 10, 10, 10, 10, 10,  5],
-    [-5,  0,  0,  0,  0,  0,  0, -5],
-    [-5,  0,  0,  0,  0,  0,  0, -5],
-    [-5,  0,  0,  0,  0,  0,  0, -5],
-    [-5,  0,  0,  0,  0,  0,  0, -5],
-    [-5,  0,  0,  0,  0,  0,  0, -5],
-    [ 0,  0,  0,  5,  5,  0,  0,  0],
+const ROOK_SQ: [i32; 64] = [
+     0,  0,  0,  0,  0,  0,  0,  0,
+     5, 10, 10, 10, 10, 10, 10,  5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+    -5,  0,  0,  0,  0,  0,  0, -5,
+     0,  0,  0,  5,  5,  0,  0,  0,
 ];
 
 #[rustfmt::skip]
-const QUEEN_SQ: [[i32; 8]; 8] = [
-    [-20, -10, -10, -5, -5, -10, -10, -20],
-    [-10,   0,   0,  0,  0,   0,   0, -10],
-    [-10,   0,   5,  5,  5,   5,   0, -10],
-    [ -5,   0,   5,  5,  5,   5,   0,  -5],
-    [  0,   0,   5,  5,  5,   5,   0,  -5],
-    [-10,   5,   5,  5,  5,   5,   0, -10],
-    [-10,   0,   5,  0,  0,   0,   0, -10],
-    [-20, -10, -10, -5, -5, -10, -10, -20],
+const QUEEN_SQ: [i32; 64] = [
+    -20, -10, -10, -5, -5, -10, -10, -20,
+    -10,   0,   0,  0,  0,   0,   0, -10,
+    -10,   0,   5,  5,  5,   5,   0, -10,
+     -5,   0,   5,  5,  5,   5,   0,  -5,
+      0,   0,   5,  5,  5,   5,   0,  -5,
+    -10,   5,   5,  5,  5,   5,   0, -10,
+    -10,   0,   5,  0,  0,   0,   0, -10,
+    -20, -10, -10, -5, -5, -10, -10, -20,
+];
+
+#[rustfmt::skip]
+const KING_SQ: [i32; 64] = [
+  -30, -40, -40, -50, -50, -40, -40, -30,
+  -30, -40, -40, -50, -50, -40, -40, -30,
+  -30, -40, -40, -50, -50, -40, -40, -30,
+  -30, -40, -40, -50, -50, -40, -40, -30,
+  -20, -30, -30, -40, -40, -30, -30, -20,
+  -10, -20, -20, -20, -20, -20, -20, -10, 
+   20,  20,   0,   0,   0,   0,  20,  20,
+   20,  30,  10,   0,   0,  10,  30,  20
 ];
 
 // MVV_VLA[victim][attacker]
@@ -253,33 +264,47 @@ const MVV_LVA: [[i32; 7]; 7] = [
 
 #[derive(Clone)]
 pub struct Search {
-    searching: Arc<AtomicBool>,
-    depth: u8,
-    nodes: u32,
-    best_move: Option<Move>,
+    pub searching: Arc<AtomicBool>,
+    pub depth: u8,
+    pub ply: u8,
+    pub nodes: u32,
+    pub best_move: Option<Move>,
 }
 
 impl Search {
-    fn new() -> Search {
+    pub fn new() -> Search {
         Search {
             searching: Arc::new(AtomicBool::new(false)),
             depth: 0,
+            ply: 0,
             nodes: 0,
             best_move: None,
         }
     }
 
-    fn search_position(&mut self, position: &mut Position, move_gen: &MoveGenerator) {
+    pub fn search_position(
+        &mut self,
+        position: &mut Position,
+        move_gen: &MoveGenerator,
+        depth: i32,
+    ) {
         log::info!("SEARCHED STARTED");
-        self.negamax_alpha_beta(position, move_gen, -LARGE_NUM, LARGE_NUM, MAX_DEPTH);
+        let score = self.negamax(position, move_gen, -LARGE_NUM, LARGE_NUM, depth);
+
         if let Some(best_move) = self.best_move {
             log::info!("BEST_MOVE: {:?} NODES: {}", best_move, self.nodes);
+
+            println!(
+                "info score cp {} depth {} nodes {}",
+                score, self.depth, self.nodes
+            );
             println!("bestmove {}", best_move);
         }
         log::info!("SEARCH ENDED");
     }
 
-    fn negamax_alpha_beta(
+    #[inline(always)]
+    pub fn negamax(
         &mut self,
         position: &mut Position,
         move_gen: &MoveGenerator,
@@ -287,51 +312,89 @@ impl Search {
         beta: i32,
         depth: i32,
     ) -> i32 {
-        if !self.searching.load(Ordering::Relaxed) {
-            return 0;
-        }
-
-        if position.is_draw(move_gen) {
-            return -2000;
-        }
-
-        let current_turn = position.state.current_turn();
-        let mut moves = move_gen.generate_legal_moves(position, current_turn);
-
-        self.order_moves(position, &mut moves);
-
-
-        if depth == 0 || moves.len() == 0 {
-            if position.checkmate(move_gen) {
-                return -9_999_999;
-            }
-
+        if depth == 0 {
             return self.evalutate(position);
         }
 
         self.nodes += 1;
+        let mut best_so_far: Option<Move> = None;
+        let old_alpha = alpha;
+        let mut moves = move_gen.generate_legal_moves(position, position.state.current_turn());
 
-        let mut max_eval = -LARGE_NUM;
-        for mv in moves {
-            position.make_move(mv);
-            let eval = -self.negamax_alpha_beta(position, move_gen, -beta, -alpha, depth - 1);
+        for mv in moves.iter() {
+            position.make_move(*mv);
+            self.ply += 1;
+            let score = -self.negamax(position, move_gen, -beta, -alpha, depth - 1);
+            self.ply -= 1;
             position.unmake();
 
-            if eval > max_eval {
-                max_eval = eval;
+            // fail-hard beta cutoff
+            if score >= beta {
+                // node (move) fails high
+                return beta;
+            }
 
-                if depth == MAX_DEPTH {
-                    log::debug!("MOVE: {:#?}", mv);
-                    self.best_move = Some(mv);
-                }
+            // better move found
+            if score > alpha {
+                // PV node
+                alpha = score;
 
-                alpha = alpha.max(max_eval);
-                if alpha >= beta {
-                    break;
+                let root_move = self.ply == 0;
+                if root_move {
+                    best_so_far = Some(*mv);
                 }
             }
         }
-        return max_eval;
+
+        if moves.len() == 0 {
+            if position.checkmate(move_gen) {
+                return -LARGE_NUM + self.ply as i32;
+            } else {
+                return 0;
+            }
+        }
+
+        if old_alpha != alpha {
+            self.best_move = best_so_far;
+        }
+
+        // node (move) fails low
+        return alpha;
+    }
+
+    fn quiescence(
+        &mut self,
+        position: &mut Position,
+        move_gen: &MoveGenerator,
+        mut alpha: i32,
+        beta: i32,
+    ) -> i32 {
+        let stand_pat = self.evalutate(position);
+
+        if stand_pat >= beta {
+            return beta;
+        }
+
+        alpha = alpha.max(stand_pat);
+
+        let captures: Vec<Move> = move_gen
+            .generate_legal_moves(position, position.state.current_turn())
+            .into_iter()
+            .filter(|item| item.move_type() != MoveType::Capture)
+            .collect();
+
+        for capture in captures {
+            position.make_move(capture);
+            let eval = -self.quiescence(position, move_gen, -beta, -alpha);
+            position.unmake();
+
+            if eval >= beta {
+                return beta;
+            }
+
+            alpha = alpha.max(eval);
+        }
+        return alpha;
     }
 
     fn order_moves(&self, position: &Position, moves: &mut Vec<Move>) {
@@ -344,8 +407,8 @@ impl Search {
     fn score_move(&self, position: &Position, mv: Move) -> i32 {
         if mv.move_type() == MoveType::Capture {
             let piece_captured = position.pieces[mv.target() as usize].unwrap().1;
-            return WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10;
-            //return MVV_LVA[piece_captured as usize][mv.piece() as usize];
+            //return WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10;
+            return MVV_LVA[piece_captured as usize][mv.piece() as usize];
         } else {
             0
         }
@@ -354,6 +417,7 @@ impl Search {
         let mut white_score = 0;
         let mut black_score = 0;
 
+        /*
         let piece_count = position.piece_count;
         for (i, count) in piece_count[Side::White as usize].iter().enumerate() {
             white_score += WEIGHTS[i] * (*count as i32);
@@ -362,8 +426,8 @@ impl Search {
         for (i, count) in piece_count[Side::Black as usize].iter().enumerate() {
             black_score += WEIGHTS[i] * (*count as i32);
         }
+        */
 
-        /*
         for side in Side::iter() {
             for piece in Piece::iter() {
                 let mut bitboard = position.piece_bitboard(piece, side);
@@ -371,18 +435,64 @@ impl Search {
                 while bitboard != EMPTY_BITBOARD {
                     let square = bitboard.bitscan_forward_reset();
 
+                    let index = if side == Side::White {
+                        let mut rank = square as usize / 8;
+                        rank = 7 - rank;
+
+                        let file = square as usize % 8;
+
+                        rank * 8 + file
+                    } else {
+                        square as usize
+                    };
+
                     match piece {
-                        Piece::Pawn => (),
-                        Piece::Bishop => (),
-                        Piece::Knight => (),
-                        Piece::Rook => (),
-                        Piece::Queen => (),
-                        Piece::King => (),
+                        Piece::Pawn => {
+                            if side == Side::White {
+                                white_score += PAWNS_SQ[index as usize];
+                            } else {
+                                black_score += PAWNS_SQ[index as usize];
+                            }
+                        }
+                        Piece::Bishop => {
+                            if side == Side::White {
+                                white_score += BISHOP_SQ[index as usize];
+                            } else {
+                                black_score += BISHOP_SQ[index as usize];
+                            }
+                        }
+                        Piece::Knight => {
+                            if side == Side::White {
+                                white_score += KNIGHT_SQ[index as usize];
+                            } else {
+                                black_score += KNIGHT_SQ[index as usize];
+                            }
+                        }
+                        Piece::Rook => {
+                            if side == Side::White {
+                                white_score += ROOK_SQ[index as usize];
+                            } else {
+                                black_score += ROOK_SQ[index as usize];
+                            }
+                        }
+                        Piece::Queen => {
+                            if side == Side::White {
+                                white_score += QUEEN_SQ[index as usize];
+                            } else {
+                                black_score += QUEEN_SQ[index as usize];
+                            }
+                        }
+                        Piece::King => {
+                            if side == Side::White {
+                                white_score += KING_SQ[index as usize];
+                            } else {
+                                black_score += KING_SQ[index as usize];
+                            }
+                        }
                     }
                 }
             }
         }
-        */
 
         let material_score = white_score - black_score;
         let side_to_move = if position.state.current_turn() == Side::White {

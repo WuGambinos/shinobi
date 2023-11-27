@@ -15,7 +15,7 @@ use sdl2::{
     EventPump,
 };
 use shinobi_core::perft::perft;
-use shinobi_core::{Bot, Engine, Piece, Position, Side, Square, START_POS};
+use shinobi_core::{Bot, Engine, Piece, Position, Search, Side, Square, START_POS};
 
 #[derive(Debug)]
 enum Mode {
@@ -125,8 +125,7 @@ pub fn run_loop(shinobi: &mut Engine, sdl_state: &mut Sdl2State) {
     let mut piece: Option<Piece> = None;
     let mut from_square: Option<Square> = None;
     let mut moves = Vec::new();
-    let mut bot = Bot::new();
-    let mut j = 1;
+    let mut bot = Search::new();
     'running: loop {
         if shinobi.position.checkmate(&shinobi.move_gen) {
             println!("CHECKMATE!!!");
@@ -139,9 +138,9 @@ pub fn run_loop(shinobi: &mut Engine, sdl_state: &mut Sdl2State) {
             std::process::exit(0);
         }
 
-        let mv = bot.think(&mut shinobi.position, &shinobi.move_gen);
-        if let Some(m) = mv {
-            shinobi.position.make_move(m);
+        bot.search_position(&mut shinobi.position, &shinobi.move_gen, 2);
+        if let Some(best_move) = bot.best_move {
+            shinobi.position.make_move(best_move);
         }
 
         for event in sdl_state.event_pump.poll_iter() {
