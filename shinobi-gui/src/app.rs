@@ -126,6 +126,7 @@ pub fn run_loop(shinobi: &mut Engine, sdl_state: &mut Sdl2State) {
     let mut from_square: Option<Square> = None;
     let mut moves = Vec::new();
     let mut bot = Search::new();
+
     'running: loop {
         if shinobi.position.checkmate(&shinobi.move_gen) {
             println!("CHECKMATE!!!");

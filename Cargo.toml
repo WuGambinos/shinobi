@@ -7,10 +7,10 @@ members = [
 
 
 [profile.release]
-lto="fat"
+#lto="fat"
 
 [profile.release.package.shinobi-core]
-codegen-units = 1
+#codegen-units = 1
 
 #[dev-dependicies]
 #criterio = {version = "0.4", features = ["html_reports"]}

@@ -16,6 +16,7 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
+use std::time::Instant;
 use strum::IntoEnumIterator;
 
 #[derive(Clone, Copy)]
@@ -174,7 +175,7 @@ impl Engine {
 
 const WEIGHTS: [i32; 6] = [100, 320, 330, 500, 900, 20000];
 const LARGE_NUM: i32 = 99_999_999;
-const MAX_DEPTH: i32 = 2;
+const MAX_DEPTH: i32 = 4;
 pub static mut BEST_MOVE: Option<Move> = None;
 
 // PIECE SQUARE TABLES
@@ -269,6 +270,7 @@ pub struct Search {
     pub ply: u8,
     pub nodes: u32,
     pub best_move: Option<Move>,
+    start_q: Option<Instant>,
 }
 
 impl Search {
@@ -279,6 +281,7 @@ impl Search {
             ply: 0,
             nodes: 0,
             best_move: None,
+            start_q: None,
         }
     }
 
@@ -313,30 +316,32 @@ impl Search {
         depth: i32,
     ) -> i32 {
         if depth == 0 {
-            return self.evalutate(position);
+            self.start_q = Some(Instant::now());
+            return self.quiescence(position, move_gen, alpha, beta);
         }
 
         self.nodes += 1;
         let mut best_so_far: Option<Move> = None;
         let old_alpha = alpha;
-        let mut moves = move_gen.generate_legal_moves(position, position.state.current_turn());
+        let moves = move_gen.generate_legal_moves(position, position.state.current_turn());
 
         for mv in moves.iter() {
-            position.make_move(*mv);
             self.ply += 1;
+            position.make_move(*mv);
             let score = -self.negamax(position, move_gen, -beta, -alpha, depth - 1);
             self.ply -= 1;
             position.unmake();
 
-            // fail-hard beta cutoff
+            // Fail-hard beta cutoff
             if score >= beta {
-                // node (move) fails high
+                // Move is too "good" (fails high)
+                // Opponent will avoid this position
                 return beta;
             }
 
-            // better move found
+            // Better move found
             if score > alpha {
-                // PV node
+                // PV Move
                 alpha = score;
 
                 let root_move = self.ply == 0;
@@ -358,7 +363,7 @@ impl Search {
             self.best_move = best_so_far;
         }
 
-        // node (move) fails low
+        // Position not good enough (Fails low)
         return alpha;
     }
 
@@ -369,29 +374,53 @@ impl Search {
         mut alpha: i32,
         beta: i32,
     ) -> i32 {
-        let stand_pat = self.evalutate(position);
+        /*
+        if let Some(start) = self.start_q {
+            let end = start.elapsed().as_millis();
 
-        if stand_pat >= beta {
+            let time_up = end > 1000;
+
+            if time_up {
+                return 0;
+            }
+        }
+        */
+        let eval = self.evalutate(position);
+
+        // Fail-hard beta cutoff
+        if eval >= beta {
+            // Move is too "good" (fails high)
+            // Opponent will avoid this position
             return beta;
         }
 
-        alpha = alpha.max(stand_pat);
+        // Better Move found is eval > alpha
+        // PV Move
+        alpha = alpha.max(eval);
 
+        // FIX THIS (Find other way to only get captures)
         let captures: Vec<Move> = move_gen
             .generate_legal_moves(position, position.state.current_turn())
             .into_iter()
-            .filter(|item| item.move_type() != MoveType::Capture)
+            .filter(|item| item.move_type() == MoveType::Capture)
             .collect();
 
         for capture in captures {
+            self.ply += 1;
             position.make_move(capture);
             let eval = -self.quiescence(position, move_gen, -beta, -alpha);
+            self.ply -= 1;
             position.unmake();
 
+            // Fail-hard beta cutoff
             if eval >= beta {
+                // Move is too "good" (fails high)
+                // Opponent will avoid this position
                 return beta;
             }
 
+            // Better Move found is eval > alpha
+            // PV Move
             alpha = alpha.max(eval);
         }
         return alpha;
