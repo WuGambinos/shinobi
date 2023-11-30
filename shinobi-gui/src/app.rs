@@ -139,7 +139,7 @@ pub fn run_loop(shinobi: &mut Engine, sdl_state: &mut Sdl2State) {
             std::process::exit(0);
         }
 
-        bot.search_position(&mut shinobi.position, &shinobi.move_gen, 2);
+        bot.search_position(&mut shinobi.position, &shinobi.move_gen, 5);
         if let Some(best_move) = bot.best_move {
             shinobi.position.make_move(best_move);
         }

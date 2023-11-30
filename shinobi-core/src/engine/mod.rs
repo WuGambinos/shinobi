@@ -2,6 +2,7 @@ pub mod bot;
 pub mod tt;
 pub mod zobrist;
 
+use crate::Square;
 use crate::mov::Move;
 use crate::mov::MoveType;
 use crate::MoveGenerator;
@@ -112,13 +113,37 @@ impl Engine {
     }
 
     fn handle_go(&mut self, parts: Vec<&str>) {
-        let arc_mg = Arc::new(self.move_gen);
-        let mut pos = self.position.clone();
-        let mut search = self.search.clone();
-        search.best_move = None;
-        self.search_thread = Some(thread::spawn(move || {
-            search.search_position(&mut pos, &arc_mg, MAX_DEPTH);
-        }));
+        if parts[1] == "depth" {
+            let d = parts[2].parse();
+            match d {
+                Ok(depth) => {
+                    let arc_mg = Arc::new(self.move_gen);
+                    let mut pos = self.position.clone();
+                    let mut search = self.search.clone();
+                    search.best_move = None;
+                    self.search_thread = Some(thread::spawn(move || {
+                        search.search_position(&mut pos, &arc_mg, depth);
+                    }));
+                }
+                Err(_) => {
+                    let arc_mg = Arc::new(self.move_gen);
+                    let mut pos = self.position.clone();
+                    let mut search = self.search.clone();
+                    search.best_move = None;
+                    self.search_thread = Some(thread::spawn(move || {
+                        search.search_position(&mut pos, &arc_mg, MAX_DEPTH);
+                    }));
+                }
+            }
+        } else {
+            let arc_mg = Arc::new(self.move_gen);
+            let mut pos = self.position.clone();
+            let mut search = self.search.clone();
+            search.best_move = None;
+            self.search_thread = Some(thread::spawn(move || {
+                search.search_position(&mut pos, &arc_mg, MAX_DEPTH);
+            }));
+        }
 
         self.search.searching.store(true, Ordering::Relaxed);
     }
@@ -292,15 +317,14 @@ impl Search {
         depth: i32,
     ) {
         log::info!("SEARCHED STARTED");
-        let score = self.negamax(position, move_gen, -LARGE_NUM, LARGE_NUM, depth);
+        for d in 1..=depth {
+            let score = self.negamax(position, move_gen, -LARGE_NUM, LARGE_NUM, d);
+            println!("info score cp {} depth {} nodes {}", score, d, self.nodes);
+        }
 
         if let Some(best_move) = self.best_move {
             log::info!("BEST_MOVE: {:?} NODES: {}", best_move, self.nodes);
 
-            println!(
-                "info score cp {} depth {} nodes {}",
-                score, self.depth, self.nodes
-            );
             println!("bestmove {}", best_move);
         }
         log::info!("SEARCH ENDED");
@@ -323,8 +347,9 @@ impl Search {
         self.nodes += 1;
         let mut best_so_far: Option<Move> = None;
         let old_alpha = alpha;
-        let moves = move_gen.generate_legal_moves(position, position.state.current_turn());
+        let mut moves = move_gen.generate_legal_moves(position, position.state.current_turn());
 
+        self.order_moves(position, &mut moves);
         for mv in moves.iter() {
             self.ply += 1;
             position.make_move(*mv);
@@ -399,12 +424,13 @@ impl Search {
         alpha = alpha.max(eval);
 
         // FIX THIS (Find other way to only get captures)
-        let captures: Vec<Move> = move_gen
+        let mut captures: Vec<Move> = move_gen
             .generate_legal_moves(position, position.state.current_turn())
             .into_iter()
             .filter(|item| item.move_type() == MoveType::Capture)
             .collect();
 
+        self.order_moves(position, &mut captures);
         for capture in captures {
             self.ply += 1;
             position.make_move(capture);
