@@ -2,7 +2,6 @@ pub mod bot;
 pub mod tt;
 pub mod zobrist;
 
-use crate::Square;
 use crate::mov::Move;
 use crate::mov::MoveType;
 use crate::MoveGenerator;
@@ -17,8 +16,9 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
-use std::time::Instant;
 use strum::IntoEnumIterator;
+
+const MAX_TIME_MS: i32 = 200;
 
 #[derive(Clone, Copy)]
 pub enum PositionToken {
@@ -85,6 +85,8 @@ impl Engine {
             self.uci.debug = !self.uci.debug;
         } else if command == "isready" {
             println!("readyok");
+        } else if command == "ucinewgame" {
+            self.search = Search::new();
         } else if command.starts_with("setoption") {
         } else if command.starts_with("position") {
             let command_parts: Vec<&str> = command.split_whitespace().collect();
@@ -114,6 +116,7 @@ impl Engine {
 
     fn handle_go(&mut self, parts: Vec<&str>) {
         if parts[1] == "depth" {
+            log::info!("DEPTH SEEN");
             let d = parts[2].parse();
             match d {
                 Ok(depth) => {
@@ -136,6 +139,7 @@ impl Engine {
                 }
             }
         } else {
+            log::info!("NO DEPTH SEEN");
             let arc_mg = Arc::new(self.move_gen);
             let mut pos = self.position.clone();
             let mut search = self.search.clone();
@@ -200,7 +204,7 @@ impl Engine {
 
 const WEIGHTS: [i32; 6] = [100, 320, 330, 500, 900, 20000];
 const LARGE_NUM: i32 = 99_999_999;
-const MAX_DEPTH: i32 = 4;
+const MAX_DEPTH: i32 = 3;
 pub static mut BEST_MOVE: Option<Move> = None;
 
 // PIECE SQUARE TABLES
@@ -295,7 +299,6 @@ pub struct Search {
     pub ply: u8,
     pub nodes: u32,
     pub best_move: Option<Move>,
-    start_q: Option<Instant>,
 }
 
 impl Search {
@@ -306,7 +309,6 @@ impl Search {
             ply: 0,
             nodes: 0,
             best_move: None,
-            start_q: None,
         }
     }
 
@@ -314,12 +316,23 @@ impl Search {
         &mut self,
         position: &mut Position,
         move_gen: &MoveGenerator,
-        depth: i32,
+        _depth: i32,
     ) {
+        // Reset
+        self.ply = 0;
+        self.nodes = 0;
+        self.best_move = None;
         log::info!("SEARCHED STARTED");
-        for d in 1..=depth {
+        let mut d = 1;
+        loop {
             let score = self.negamax(position, move_gen, -LARGE_NUM, LARGE_NUM, d);
-            println!("info score cp {} depth {} nodes {}", score, d, self.nodes);
+            if self.searching.load(Ordering::Relaxed) {
+                println!("info score cp {} depth {} nodes {}", score, d, self.nodes);
+            }
+            d += 1;
+            if d == 10 {
+                break;
+            }
         }
 
         if let Some(best_move) = self.best_move {
@@ -339,8 +352,11 @@ impl Search {
         beta: i32,
         depth: i32,
     ) -> i32 {
+        if !self.searching.load(Ordering::Relaxed) {
+            return 0;
+        }
+
         if depth == 0 {
-            self.start_q = Some(Instant::now());
             return self.quiescence(position, move_gen, alpha, beta);
         }
 
@@ -380,7 +396,8 @@ impl Search {
             if position.checkmate(move_gen) {
                 return -LARGE_NUM + self.ply as i32;
             } else {
-                return 0;
+                return -100;
+                //return self.evalutate(position);
             }
         }
 
@@ -399,17 +416,6 @@ impl Search {
         mut alpha: i32,
         beta: i32,
     ) -> i32 {
-        /*
-        if let Some(start) = self.start_q {
-            let end = start.elapsed().as_millis();
-
-            let time_up = end > 1000;
-
-            if time_up {
-                return 0;
-            }
-        }
-        */
         let eval = self.evalutate(position);
 
         // Fail-hard beta cutoff
