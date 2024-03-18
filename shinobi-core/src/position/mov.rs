@@ -1,8 +1,10 @@
 use core::fmt;
 
+use serde::{Deserialize, Serialize};
+
 use crate::{square_name, Piece, Side, Square};
 
-#[derive(Eq, PartialEq, Debug, Clone, Copy)]
+#[derive(Eq, PartialEq, Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum MoveType {
     EnPassant,
     Quiet,
@@ -11,7 +13,7 @@ pub enum MoveType {
     Promotion,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Move {
     pub piece: Piece,
     pub from: Square,

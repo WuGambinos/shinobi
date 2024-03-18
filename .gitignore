@@ -3,3 +3,4 @@
 /.vscode
 /flamegraph.svg
 /perf.data
+/shinobi-tauri/src-tauri/target

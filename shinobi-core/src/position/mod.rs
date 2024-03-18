@@ -11,12 +11,13 @@ use crate::{
     WHITE_QUEENSIDE_KING, WHITE_QUEENSIDE_ROOK_FROM, WHITE_QUEENSIDE_ROOK_TO,
 };
 
+use serde::{ser::SerializeStruct, Serialize};
 use std::fmt;
 use strum::IntoEnumIterator;
 
 use self::castling_rights::{Castling, CastlingRights};
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize)]
 pub struct State {
     pub castling_rights: CastlingRights,
     pub en_passant: Option<Square>,
@@ -81,6 +82,25 @@ pub struct History {
     pub prev_black_king: Option<Square>,
 }
 
+impl Serialize for History {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut state = serializer.serialize_struct("History", 10)?;
+        state.serialize_field("moves", &self.moves)?;
+        state.serialize_field("prev_piece_count", &self.prev_piece_count)?;
+        state.serialize_field("prev_main_bitboards", &self.prev_main_bitboards)?;
+        state.serialize_field("prev_empty_bitboards", &self.prev_empty_bitboards)?;
+        state.serialize_field("prev_side_bitboards", &self.prev_side_bitboards)?;
+        state.serialize_field("prev_piece_bitboards", &self.prev_piece_bitboards)?;
+        state.serialize_field("prev_states", &self.prev_states)?;
+        state.serialize_field("prev_white_king", &self.prev_white_king)?;
+        state.serialize_field("prev_black_king", &self.prev_black_king)?;
+        state.end()
+    }
+}
+
 impl History {
     fn new() -> History {
         History {
@@ -126,6 +146,27 @@ pub struct Position {
     pub history: History,
     pub last_move: Option<Move>,
     pub zobrist: Zobrist,
+}
+
+impl Serialize for Position {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut state = serializer.serialize_struct("Position", 11)?;
+        state.serialize_field("main_bitboard", &self.main_bitboard)?;
+        state.serialize_field("empty_bitboard", &self.empty_bitboard)?;
+        state.serialize_field("side_bitboards", &self.side_bitboards)?;
+        state.serialize_field("piece_bitboards", &self.piece_bitboards)?;
+        state.serialize_field("piece_count", &self.piece_count)?;
+        state.serialize_field("state", &self.state)?;
+        state.serialize_field("white_king", &self.white_king)?;
+        state.serialize_field("black_king", &self.black_king)?;
+        state.serialize_field("history", &self.history)?;
+        state.serialize_field("last_move", &self.last_move)?;
+        state.serialize_field("zobrist", &self.zobrist)?;
+        state.end()
+    }
 }
 
 impl Position {

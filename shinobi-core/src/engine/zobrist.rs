@@ -1,6 +1,7 @@
 use crate::{Piece, Position, Side, Square, EMPTY_BITBOARD, NUM_SQUARES};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
+use serde::{ser::SerializeStruct, Serialize, Serializer};
 use strum::IntoEnumIterator;
 
 const SEED: u64 = 12345;
@@ -14,6 +15,17 @@ pub struct Zobrist {
     rand_en_passant_nums: [u64; NUM_SQUARES],
     rand_castling_rights_nums: [u64; 16],
     rand_side_num: u64,
+}
+
+impl Serialize for Zobrist {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut res = String::new();
+        res.push_str("ZOBRIST");
+        serializer.serialize_str(&res)
+    }
 }
 
 impl Zobrist {

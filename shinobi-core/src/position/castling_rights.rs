@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 
 pub struct Castling(u8);
 impl Castling {
@@ -13,7 +15,7 @@ impl Castling {
     pub const ANY_CASTLING: u8 = Self::WHITE_CASTLING | Self::BLACK_CASTLING;
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub struct CastlingRights(pub u8);
 
 impl CastlingRights {

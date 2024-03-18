@@ -1,0 +1,18 @@
+#board {
+    display: grid;
+    grid-template-columns: repeat(8, 50px);
+    grid-template-rows: repeat(8, 50px);
+    width: 400px;
+    height: 400px;
+    background-color: #0000FF;
+}
+
+.move {
+    width: 50px;
+    margin: 20px;
+}
+
+.fen {
+    width: 200px;
+    margin: 20px;
+}

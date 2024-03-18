@@ -11,6 +11,8 @@ use crate::Side;
 use crate::Zobrist;
 use crate::EMPTY_BITBOARD;
 use crate::START_POS;
+use serde::{ser::SerializeStruct, Deserialize, Serialize, Serializer};
+
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -36,6 +38,7 @@ impl Uci {
     }
 }
 
+#[derive(Serialize)]
 pub enum EngineMode {
     Waiting,
     Thinking,
@@ -49,6 +52,18 @@ pub struct Engine {
     pub uci: Uci,
     pub mode: EngineMode,
     pub search: Search,
+}
+
+impl Serialize for Engine {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut state = serializer.serialize_struct("Engine", 1)?;
+        state.serialize_field("position", &self.position)?;
+        state.serialize_field("ENGINE MODE", &self.mode)?;
+        state.end()
+    }
 }
 
 impl Engine {
@@ -299,6 +314,21 @@ pub struct Search {
     pub ply: u8,
     pub nodes: u32,
     pub best_move: Option<Move>,
+}
+
+impl Serialize for Search {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Search", 5)?;
+        state.serialize_field("searching", &self.searching.load(Ordering::Relaxed))?;
+        state.serialize_field("depth", &self.depth)?;
+        state.serialize_field("ply", &self.ply)?;
+        state.serialize_field("nodes", &self.nodes)?;
+        state.serialize_field("best_move", &self.best_move)?;
+        state.end()
+    }
 }
 
 impl Search {

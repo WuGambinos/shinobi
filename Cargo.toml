@@ -2,7 +2,8 @@
 
 members = [
 "shinobi-gui",
-"shinobi-core"
+"shinobi-core",
+"shinobi-tauri/src-tauri"
 ]
 
 

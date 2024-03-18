@@ -1,12 +1,14 @@
+use serde::{Serialize, Deserialize};
+
 use crate::EnumIter;
 
-#[derive(EnumIter, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(EnumIter, Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum Side {
     White,
     Black,
 }
 
-#[derive(EnumIter, Debug, Clone, Copy, PartialEq)]
+#[derive(EnumIter, Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum Piece {
     Pawn,
     Knight,
@@ -83,7 +85,7 @@ impl From<char> for Piece {
 }
 
 #[rustfmt::skip]
-#[derive(EnumIter, Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(EnumIter, Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Square {
   A1, B1, C1, D1, E1, F1, G1, H1,
   A2, B2, C2, D2, E2, F2, G2, H2,

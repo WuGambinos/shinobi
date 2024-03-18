@@ -1,3 +1,5 @@
+use serde::Serialize;
+
 use crate::Square;
 use std::ops::{
     Add, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, Mul, Not, Shl, Shr,
@@ -6,7 +8,7 @@ use std::ops::{
 use std::*;
 
 /// Wrapper around u64
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub struct BitBoard(pub u64);
 
 impl BitBoard {
