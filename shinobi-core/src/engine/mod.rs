@@ -105,7 +105,12 @@ impl Engine {
         } else if command.starts_with("setoption") {
         } else if command.starts_with("position") {
             let command_parts: Vec<&str> = command.split_whitespace().collect();
-            self.handle_position(command_parts);
+            match self.handle_position(command_parts) {
+                Ok(_) => {}
+                Err(e) => {
+                    log::error!("{}", e);
+                }
+            }
         } else if command.starts_with("go") {
             let command_parts: Vec<&str> = command.split_whitespace().collect();
             self.handle_go(command_parts);
@@ -117,7 +122,7 @@ impl Engine {
         } else if command.starts_with("quit") {
             std::process::exit(0);
         } else {
-            println!("Unknown command: '{}'", command);
+            log::error!("Unknown command: '{}'", command);
         }
     }
 
@@ -172,7 +177,7 @@ impl Engine {
         log::info!("STOP TRIGGERED");
     }
 
-    fn handle_position(&mut self, parts: Vec<&str>) {
+    fn handle_position(&mut self, parts: Vec<&str>) -> Result<(), String> {
         let mut fen: String = String::new();
         let mut parse_fen: bool = true;
         let mut moves: Vec<&str> = Vec::new();
@@ -199,10 +204,13 @@ impl Engine {
 
         if fen.is_empty() {
             let position = Position::from_fen(START_POS);
-            self.position = position;
+            self.position = position.unwrap();
         } else {
             let position = Position::from_fen(&fen);
-            self.position = position;
+            match position {
+                Ok(position) => self.position = position,
+                Err(e) => return Err(e),
+            }
         }
 
         for mv in moves {
@@ -214,6 +222,8 @@ impl Engine {
                 }
             }
         }
+
+        Ok(())
     }
 }
 

@@ -190,7 +190,7 @@ impl Position {
         }
     }
 
-    pub fn from_fen(fen: &str) -> Position {
+    pub fn from_fen(fen: &str) -> Result<Position, String> {
         let mut position = Position {
             pieces: [None; 64],
             main_bitboard: EMPTY_BITBOARD,
@@ -209,7 +209,7 @@ impl Position {
             zobrist: Zobrist::new(),
         };
 
-        let grid = load_fen(fen, &mut position.state);
+        let grid = load_fen(fen, &mut position.state)?;
 
         for (i, ch) in grid.iter().enumerate() {
             let mask = BitBoard(1u64 << i);
@@ -230,6 +230,28 @@ impl Position {
                 position.black_king = Square::from(i as u64);
             }
 
+            match ch {
+                'P' | 'B' | 'N' | 'R' | 'Q' | 'K' => {
+                    position.side_bitboards[Side::White as usize] |= mask;
+                    position.piece_bitboards[Side::White as usize][piece] |= mask;
+                    position.main_bitboard |= mask;
+                    position.pieces[i] = Some((Side::White, Piece::from(*ch)));
+                    position.piece_count[Side::White as usize][Piece::from(*ch) as usize] += 1;
+                }
+                'p' | 'b' | 'n' | 'r' | 'q' | 'k' => {
+                    position.side_bitboards[Side::Black as usize] |= mask;
+                    position.piece_bitboards[Side::Black as usize][piece] |= mask;
+                    position.main_bitboard |= mask;
+                    position.pieces[i] = Some((Side::Black, Piece::from(*ch)));
+                    position.piece_count[Side::Black as usize][Piece::from(*ch) as usize] += 1;
+                }
+
+                '.' => position.empty_bitboard |= mask,
+
+                _ => return Err("Invalid FEN".to_string()),
+            }
+
+            /*
             if ch.is_ascii() {
                 if ch.is_uppercase() {
                     position.side_bitboards[Side::White as usize] |= mask;
@@ -247,12 +269,13 @@ impl Position {
                     position.empty_bitboard |= mask;
                 }
             }
+            */
         }
 
         let mut z = position.zobrist;
         position.state.zobrist_hash = z.generate_hash(&position);
 
-        position
+        Ok(position)
     }
 
     pub fn opponent_bitboard(&self) -> BitBoard {

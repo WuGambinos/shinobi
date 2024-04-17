@@ -16,7 +16,6 @@ pub struct ClientEngine {
     search: Search,
 }
 
-
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 fn white_pieces(grid: &mut [[char; 8]; 8], bitboards: [BitBoard; 6]) {
@@ -110,9 +109,10 @@ fn recieve_position(engine: State<Mutex<ClientEngine>>) -> [[char; 8]; 8] {
 }
 
 #[tauri::command]
-fn reset_position(engine: State<Mutex<ClientEngine>>) {
-    let position = Position::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+fn reset_position(engine: State<Mutex<ClientEngine>>) -> Result<(), String> {
+    let position = Position::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")?;
     engine.lock().unwrap().position = position;
+    Ok(())
 }
 
 #[tauri::command]
@@ -179,14 +179,24 @@ fn moves(engine: State<Mutex<ClientEngine>>) -> Vec<Move> {
 }
 
 #[tauri::command]
-fn load_fen(engine: State<Mutex<ClientEngine>>, fen: &str) {
+fn load_fen(engine: State<Mutex<ClientEngine>>, fen: &str) -> Result<(), String> {
     let position = Position::from_fen(fen);
-    engine.lock().unwrap().position = position;
+
+    match position {
+        Ok(position) => {
+            engine.lock().unwrap().position = position;
+            return Ok(());
+        }
+        Err(e) => {
+            println!("{}", e);
+            return Err(e);
+        }
+    }
 }
 
 #[tauri::command]
 fn search(engine: State<Mutex<ClientEngine>>) {
-    println!("SAERCH");
+    println!("SEARCH");
     let mut eng = engine.lock().unwrap();
     let move_gen = eng.move_gen;
     let mut position = &mut eng.position;
@@ -199,8 +209,8 @@ fn search(engine: State<Mutex<ClientEngine>>) {
     }
 }
 
-fn main() {
-    let position = Position::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let position = Position::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")?;
     let engine = Mutex::new(ClientEngine {
         position,
         move_gen: MoveGenerator::new(),
@@ -221,4 +231,5 @@ fn main() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+    Ok(())
 }

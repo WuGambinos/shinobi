@@ -18,44 +18,28 @@ pub fn get_square_from_mouse_position(pos_x: i32, pos_y: i32) -> Square {
     Square::from(square)
 }
 
-/*
-pub fn print_board(position: [char; 64]) {
-    for i in 0..8 {
-        for j in 0..8 {
-            let idx = i * 8 + j;
-            print!("{} ", position[idx]);
-        }
-        println!();
-    }
-}
-*/
-
-pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
+pub fn load_fen(fen: &str, state: &mut State) -> Result<[char; 64], String> {
     let mut file = 0;
     let mut rank = 7;
 
     let fen_board: Vec<&str> = fen.trim().split(' ').collect();
-    let (main_string, turn, castle_rights, en_passant, half_move_counter, full_move_counter): (
-        &str,
-        &str,
-        &str,
-        &str,
-        &str,
-        &str,
-    ) = if fen_board.len() == 4 {
-        (fen_board[0], fen_board[1], fen_board[2], "-", "0", "0")
-    } else {
-        (
-            fen_board[0],
-            fen_board[1],
-            fen_board[2],
-            fen_board[3],
-            fen_board[4],
-            fen_board[5],
-        )
-    };
+    let (main_str, turn, castle_rights, en_passant, half_move_counter, full_move_counter) =
+        if fen_board.len() == 4 {
+            (fen_board[0], fen_board[1], fen_board[2], "-", "0", "0")
+        } else if fen_board.len() == 6 {
+            (
+                fen_board[0],
+                fen_board[1],
+                fen_board[2],
+                fen_board[3],
+                fen_board[4],
+                fen_board[5],
+            )
+        } else {
+            return Err("INVALID FEN STRING".to_string());
+        };
 
-    let split_main: Vec<&str> = main_string.split('/').collect();
+    let split_main: Vec<&str> = main_str.split('/').collect();
 
     let mut grid: [char; 64] = ['.'; 64];
 
@@ -108,7 +92,7 @@ pub fn load_fen(fen: &str, state: &mut State) -> [char; 64] {
 
     state.half_move_counter = half_move_counter.parse::<u8>().unwrap();
     state.full_move_counter = full_move_counter.parse::<u8>().unwrap();
-    grid
+    Ok(grid)
 }
 
 pub fn square_name(square: u8) -> String {
