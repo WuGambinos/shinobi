@@ -131,7 +131,7 @@ impl MoveGenerator {
             self.create_moves(position, Piece::Pawn, turn, pushes, from, &mut moves);
         }
 
-        return moves;
+        moves
     }
 
     fn white_double_push_target(&self, position: &Position, bitboard: BitBoard) -> BitBoard {
@@ -288,7 +288,7 @@ impl MoveGenerator {
     }
 
     /**
-     * Returns a BitBoard that if that shows attacks to king 
+     * Returns a BitBoard that if that shows attacks to king
      *
      * If the BitBoard is empty then there are no attacks on king, otherwise there are attacks on
      * the:king

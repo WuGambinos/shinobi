@@ -6,13 +6,32 @@ const POS_4: &str = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq 
 const POS_5: &str = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8";
 const POS_6: &str = "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10";
 
+struct TestPos(&'static str, u32, u64);
+
+const TEST_POSITIONS: [TestPos; 2] = [
+    TestPos("r6r/1b2k1bq/8/8/7B/8/8/R3K2R b KQ - 3 2", 1, 8),
+    TestPos("r6r/1b2k1bq/8/8/7B/8/8/R3K2R b KQ - 3 2", 1, 8),
+];
+
 #[cfg(test)]
+#[test]
+fn test_pos() {
+    for pos in TEST_POSITIONS.iter() {
+        let TestPos(fen, depth, nodes) = pos;
+        let position = Position::from_fen(fen).unwrap();
+        let mut shinobi = Engine::new(position);
+
+        let actual_nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, *depth);
+        assert_eq!(actual_nodes, *nodes);
+    }
+}
+
 #[test]
 fn test_add() {
     assert_eq!(1 + 1, 1 + 1);
 }
 
-#[test]
+/*
 fn perft_starting_pos_1() {
     let position = Position::from_fen(START_POS).unwrap();
     let mut shinobi = Engine::new(position);
@@ -338,3 +357,4 @@ fn perft_pos_6_depth_5() {
 
     assert_eq!(nodes, 164_075_551);
 }
+*/

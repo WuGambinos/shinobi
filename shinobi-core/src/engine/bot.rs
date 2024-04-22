@@ -34,10 +34,10 @@ impl Bot {
         for i in 0..=MAX_DEPTH {
             self.search_position(position, move_gen, -LARGE_NUM, LARGE_NUM, i);
         }
-        return self.best_move;
+        self.best_move
     }
 
-    pub fn order_moves(&self, position: &Position, moves: &mut Vec<Move>) {
+    pub fn order_moves(&self, position: &Position, moves: &mut [Move]) {
         moves.sort_by(|a, b| {
             self.score_move(position, *b)
                 .cmp(&self.score_move(position, *a))
@@ -48,12 +48,9 @@ impl Bot {
         if mv.move_type() == MoveType::Capture {
             let piece_captured = position.pieces[mv.target() as usize].unwrap().1;
             //let score = MVV_LVA[piece_captured as usize][mv.piece() as usize] as i32;
-            let score = WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10;
-
-            return score;
+            WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10
         } else {
-            let score = 0;
-            return score;
+            0
         }
     }
 
@@ -78,7 +75,7 @@ impl Bot {
             -1
         };
 
-        return material_score * side_to_move;
+        material_score * side_to_move
     }
 
     pub fn search_position(
@@ -108,7 +105,7 @@ impl Bot {
 
         //self.order_moves(position, &mut moves);
 
-        if depth == 0 || moves.len() == 0 {
+        if depth == 0 || moves.is_empty() {
             if position.checkmate(move_gen) {
                 return -9_999_999;
             }
@@ -136,6 +133,7 @@ impl Bot {
                 }
             }
         }
-        return max_eval;
+
+        max_eval
     }
 }

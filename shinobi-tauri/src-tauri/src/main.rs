@@ -210,7 +210,7 @@ fn search(engine: State<Mutex<ClientEngine>>) {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let position = Position::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")?;
+    let position = Position::default();
     let engine = Mutex::new(ClientEngine {
         position,
         move_gen: MoveGenerator::new(),

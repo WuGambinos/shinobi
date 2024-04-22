@@ -9,6 +9,7 @@ use crate::{
     BLACK_QUEENSIDE_ROOK_FROM, BLACK_QUEENSIDE_ROOK_TO, EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK,
     MAX_HALF_MOVES, WHITE_KINGSIDE_KING, WHITE_KINGSIDE_ROOK_FROM, WHITE_KINGSIDE_ROOK_TO,
     WHITE_QUEENSIDE_KING, WHITE_QUEENSIDE_ROOK_FROM, WHITE_QUEENSIDE_ROOK_TO,
+    START_POS
 };
 
 use serde::{ser::SerializeStruct, Serialize};
@@ -169,6 +170,12 @@ impl Serialize for Position {
     }
 }
 
+impl Default for Position {
+    fn default() -> Self {
+        Position::from_fen(START_POS).unwrap()
+    }
+}
+
 impl Position {
     pub fn empty() -> Position {
         Position {
@@ -191,24 +198,7 @@ impl Position {
     }
 
     pub fn from_fen(fen: &str) -> Result<Position, String> {
-        let mut position = Position {
-            pieces: [None; 64],
-            main_bitboard: EMPTY_BITBOARD,
-            empty_bitboard: EMPTY_BITBOARD,
-            side_bitboards: [EMPTY_BITBOARD; 2],
-            piece_bitboards: [[EMPTY_BITBOARD; 6]; 2],
-            piece_count: [[0; 6]; 2],
-
-            state: State::new(),
-
-            white_king: Square::A1,
-            black_king: Square::A1,
-
-            history: History::new(),
-            last_move: None,
-            zobrist: Zobrist::new(),
-        };
-
+        let mut position  = Position::empty();
         let grid = load_fen(fen, &mut position.state)?;
 
         for (i, ch) in grid.iter().enumerate() {
@@ -250,26 +240,6 @@ impl Position {
 
                 _ => return Err("Invalid FEN".to_string()),
             }
-
-            /*
-            if ch.is_ascii() {
-                if ch.is_uppercase() {
-                    position.side_bitboards[Side::White as usize] |= mask;
-                    position.piece_bitboards[Side::White as usize][piece] |= mask;
-                    position.main_bitboard |= mask;
-                    position.pieces[i] = Some((Side::White, Piece::from(*ch)));
-                    position.piece_count[Side::White as usize][Piece::from(*ch) as usize] += 1;
-                } else if ch.is_lowercase() {
-                    position.side_bitboards[Side::Black as usize] |= mask;
-                    position.piece_bitboards[Side::Black as usize][piece] |= mask;
-                    position.main_bitboard |= mask;
-                    position.pieces[i] = Some((Side::Black, Piece::from(*ch)));
-                    position.piece_count[Side::Black as usize][Piece::from(*ch) as usize] += 1;
-                } else {
-                    position.empty_bitboard |= mask;
-                }
-            }
-            */
         }
 
         let mut z = position.zobrist;

@@ -11,7 +11,7 @@ use crate::Side;
 use crate::Zobrist;
 use crate::EMPTY_BITBOARD;
 use crate::START_POS;
-use serde::{ser::SerializeStruct, Deserialize, Serialize, Serializer};
+use serde::{ser::SerializeStruct, Serialize, Serializer};
 
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
@@ -67,7 +67,8 @@ impl Serialize for Engine {
 }
 
 impl Engine {
-    pub fn new(position: Position) -> Engine {
+    pub fn new() -> Engine {
+    let position = Position::default();
         Engine {
             search_thread: None,
             position,
@@ -193,7 +194,7 @@ impl Engine {
                         match t {
                             PositionToken::Fen => {
                                 fen.push_str(part);
-                                fen.push_str(" ");
+                                fen.push(' ');
                             }
                             PositionToken::Moves => moves.push(part),
                         }
@@ -432,7 +433,7 @@ impl Search {
             }
         }
 
-        if moves.len() == 0 {
+        if moves.is_empty() {
             if position.checkmate(move_gen) {
                 return -LARGE_NUM + self.ply as i32;
             } else {
@@ -446,7 +447,7 @@ impl Search {
         }
 
         // Position not good enough (Fails low)
-        return alpha;
+        alpha
     }
 
     fn quiescence(
@@ -495,10 +496,10 @@ impl Search {
             // PV Move
             alpha = alpha.max(eval);
         }
-        return alpha;
+        alpha
     }
 
-    fn order_moves(&self, position: &Position, moves: &mut Vec<Move>) {
+    fn order_moves(&self, position: &Position, moves: &mut [Move]) {
         moves.sort_by(|a, b| {
             self.score_move(position, *b)
                 .cmp(&self.score_move(position, *a))
@@ -509,7 +510,7 @@ impl Search {
         if mv.move_type() == MoveType::Capture {
             let piece_captured = position.pieces[mv.target() as usize].unwrap().1;
             //return WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10;
-            return MVV_LVA[piece_captured as usize][mv.piece() as usize];
+            MVV_LVA[piece_captured as usize][mv.piece() as usize]
         } else {
             0
         }
@@ -550,44 +551,44 @@ impl Search {
                     match piece {
                         Piece::Pawn => {
                             if side == Side::White {
-                                white_score += PAWNS_SQ[index as usize];
+                                white_score += PAWNS_SQ[index];
                             } else {
-                                black_score += PAWNS_SQ[index as usize];
+                                black_score += PAWNS_SQ[index];
                             }
                         }
                         Piece::Bishop => {
                             if side == Side::White {
-                                white_score += BISHOP_SQ[index as usize];
+                                white_score += BISHOP_SQ[index];
                             } else {
-                                black_score += BISHOP_SQ[index as usize];
+                                black_score += BISHOP_SQ[index];
                             }
                         }
                         Piece::Knight => {
                             if side == Side::White {
-                                white_score += KNIGHT_SQ[index as usize];
+                                white_score += KNIGHT_SQ[index];
                             } else {
-                                black_score += KNIGHT_SQ[index as usize];
+                                black_score += KNIGHT_SQ[index];
                             }
                         }
                         Piece::Rook => {
                             if side == Side::White {
-                                white_score += ROOK_SQ[index as usize];
+                                white_score += ROOK_SQ[index];
                             } else {
-                                black_score += ROOK_SQ[index as usize];
+                                black_score += ROOK_SQ[index];
                             }
                         }
                         Piece::Queen => {
                             if side == Side::White {
-                                white_score += QUEEN_SQ[index as usize];
+                                white_score += QUEEN_SQ[index];
                             } else {
-                                black_score += QUEEN_SQ[index as usize];
+                                black_score += QUEEN_SQ[index];
                             }
                         }
                         Piece::King => {
                             if side == Side::White {
-                                white_score += KING_SQ[index as usize];
+                                white_score += KING_SQ[index];
                             } else {
-                                black_score += KING_SQ[index as usize];
+                                black_score += KING_SQ[index];
                             }
                         }
                     }
@@ -602,6 +603,6 @@ impl Search {
             -1
         };
 
-        return material_score * side_to_move;
+        material_score * side_to_move
     }
 }
