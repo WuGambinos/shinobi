@@ -242,12 +242,6 @@ export default function Board() {
 
 
     return (<div>
-        <button onClick={makeMove}>Make Move</button>
-        <button onClick={perft}>Perft</button>
-        <button onClick={displayBoard}>Display Board</button>
-        <button onClick={search}>Search</button>
-        <input id="fen_string" class="fen" type="text" value="" />
-        <button onClick={loadFen}>Load FEN</button>
         <div
             onMouseMove={(e) => movePiece(e)}
             onMouseDown={(e) => grabPiece(e)}
@@ -255,5 +249,12 @@ export default function Board() {
             id="board"
             ref={boardRef}
         >{memoizedVisualBoard()}</div>
+        <div>
+            <input id="fen_string" class="fen" type="text" value="" maxLength={200}/>
+            <button onClick={loadFen}>Load FEN</button>
+        </div>
+            <button onClick={makeMove}>Make Move</button>
+        <button onClick={perft}>Perft</button>
+        <button onClick={search}>Search</button>
     </div>);
 }
