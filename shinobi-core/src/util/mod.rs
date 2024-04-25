@@ -159,3 +159,7 @@ pub fn get_rank(square: Square) -> BitBoard {
         _ => panic!("NOT A FILE"),
     }
 }
+
+pub fn get_time_ms() -> i32 {
+    return chrono::Local::now().timestamp_millis() as i32;
+}
