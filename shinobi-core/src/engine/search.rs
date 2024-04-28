@@ -1,6 +1,7 @@
 use crate::get_time_ms;
 use crate::mov::Move;
 use crate::mov::MoveType;
+use crate::pv::PvInfo;
 use crate::MoveGenerator;
 use crate::Piece;
 use crate::Position;
@@ -111,6 +112,7 @@ pub struct Search {
     pub ply: u8,
     pub nodes: u32,
     pub best_move: Option<Move>,
+    pub pv: PvInfo,
 }
 
 impl Serialize for Search {
@@ -136,6 +138,7 @@ impl Search {
             ply: 0,
             nodes: 0,
             best_move: None,
+            pv: PvInfo::new(),
         }
     }
 
@@ -155,8 +158,15 @@ impl Search {
         loop {
             let score = self.negamax(info, position, move_gen, -LARGE_NUM, LARGE_NUM, d);
             if self.searching.load(Ordering::Relaxed) {
-                println!("info score cp {} depth {} nodes {}", score, d, self.nodes);
+                print!(
+                    "info score cp {} depth {} nodes {} pv",
+                    score, d, self.nodes
+                );
+                for count in 0..self.pv.pv_length[0] {
+                    print!(" {}", self.pv.pv_table[0][count as usize].unwrap());
+                }
             }
+            println!();
 
             if d == depth {
                 break;
@@ -195,6 +205,8 @@ impl Search {
         beta: i32,
         depth: i32,
     ) -> i32 {
+        // init PV length
+        self.pv.pv_length[self.ply as usize] = self.ply as i32;
         if !self.searching.load(Ordering::Relaxed) {
             return 0;
         }
@@ -212,10 +224,12 @@ impl Search {
         let old_alpha = alpha;
         let mut moves = move_gen.generate_legal_moves(position, position.state.current_turn());
 
-        self.order_moves(position, &mut moves);
-        for mv in moves.iter() {
+        Search::score_moves(position, &mut moves);
+        for i in 0..moves.len() {
+            self.pick_move(&mut moves, i as i32);
+            let mv = moves[i];
             self.ply += 1;
-            position.make_move(*mv);
+            position.make_move(mv);
             let score = -self.negamax(info, position, move_gen, -beta, -alpha, depth - 1);
             self.ply -= 1;
             position.unmake();
@@ -236,9 +250,21 @@ impl Search {
                 // PV Move
                 alpha = score;
 
+                // Store PV Move
+                self.pv.pv_table[self.ply as usize][self.ply as usize] = Some(mv);
+
+                // Copy move from deeper ply
+                for next_ply in (self.ply + 1) as i32..self.pv.pv_length[(self.ply + 1) as usize] {
+                    self.pv.pv_table[self.ply as usize][next_ply as usize] =
+                        self.pv.pv_table[(self.ply + 1) as usize][next_ply as usize];
+                }
+
+                // Adjust PV length
+                self.pv.pv_length[self.ply as usize] = self.pv.pv_length[(self.ply + 1) as usize];
+
                 let root_move = self.ply == 0;
                 if root_move {
-                    best_so_far = Some(*mv);
+                    best_so_far = Some(mv);
                 }
             }
         }
@@ -288,8 +314,10 @@ impl Search {
             .filter(|item| item.move_type() == MoveType::Capture)
             .collect();
 
-        self.order_moves(position, &mut captures);
-        for capture in captures {
+        Search::score_moves(position, &mut captures);
+        for i in 0..captures.len() {
+            self.pick_move(&mut captures, i as i32);
+            let capture = captures[i];
             self.ply += 1;
             position.make_move(capture);
             let eval = -self.quiescence(info, position, move_gen, -beta, -alpha);
@@ -314,36 +342,53 @@ impl Search {
         alpha
     }
 
+    /*
     fn order_moves(&self, position: &Position, moves: &mut [Move]) {
         moves.sort_by(|a, b| {
-            self.score_move(position, *b)
-                .cmp(&self.score_move(position, *a))
+            self.score_move(position, b)
+                .cmp(&self.score_move(position, a))
         });
     }
 
-    fn score_move(&self, position: &Position, mv: Move) -> i32 {
-        if mv.move_type() == MoveType::Capture {
+    fn score_move(&self, position: &Position, mv: &mut Move) {
+        let value = if mv.move_type() == MoveType::Capture {
             let piece_captured = position.pieces[mv.target() as usize].unwrap().1;
             //return WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10;
             MVV_LVA[piece_captured as usize][mv.piece() as usize]
         } else {
             0
+        };
+
+        mv.score = value;
+    }
+    */
+
+    fn score_moves(position: &Position, moves: &mut Vec<Move>) {
+        for i in 0..moves.len() {
+            let mv = moves.get_mut(i).unwrap();
+            let value = if mv.move_type() == MoveType::Capture {
+                let piece_captured = position.pieces[mv.target() as usize].unwrap().1;
+                //return WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10;
+                MVV_LVA[piece_captured as usize][mv.piece() as usize]
+            } else {
+                0
+            };
+
+            mv.score = value;
         }
     }
+
+    fn pick_move(&self, moves: &mut Vec<Move>, start_index: i32) {
+        for i in (start_index + 1) as usize..moves.len() {
+            if moves[i].score > moves[start_index as usize].score {
+                moves.swap(start_index as usize, i);
+            }
+        }
+    }
+
     fn evalutate(&self, position: &Position) -> i32 {
         let mut white_score = 0;
         let mut black_score = 0;
-
-        /*
-        let piece_count = position.piece_count;
-        for (i, count) in piece_count[Side::White as usize].iter().enumerate() {
-            white_score += WEIGHTS[i] * (*count as i32);
-        }
-
-        for (i, count) in piece_count[Side::Black as usize].iter().enumerate() {
-            black_score += WEIGHTS[i] * (*count as i32);
-        }
-        */
 
         for side in Side::iter() {
             for piece in Piece::iter() {

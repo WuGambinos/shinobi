@@ -2,6 +2,7 @@ pub mod bot;
 pub mod search;
 pub mod tt;
 pub mod zobrist;
+pub mod pv;
 
 use crate::get_time_ms;
 use crate::mov::Move;

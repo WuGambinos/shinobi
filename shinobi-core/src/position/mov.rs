@@ -20,6 +20,7 @@ pub struct Move {
     pub target: Square,
     pub move_type: MoveType,
     pub promotion_piece: Option<Piece>,
+    pub score: i32,
 }
 
 impl Move {
@@ -30,6 +31,7 @@ impl Move {
             target,
             move_type,
             promotion_piece: None,
+            score: 0,
         }
     }
 
@@ -46,6 +48,7 @@ impl Move {
             target,
             move_type,
             promotion_piece,
+            score: 0,
         }
     }
 
