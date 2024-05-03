@@ -69,6 +69,18 @@ impl BitBoard {
     }
 }
 
+impl Iterator for BitBoard {
+    type Item = Square;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.0 == 0 {
+            None
+        } else {
+            Some(self.bitscan_forward_reset())
+        }
+    }
+}
+
 impl Shr<usize> for BitBoard {
     type Output = BitBoard;
 

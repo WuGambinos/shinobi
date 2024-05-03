@@ -5,8 +5,8 @@ use std::sync::Mutex;
 use std::time::Instant;
 
 use shinobi_core::{
-    mov::Move, mov::MoveType, BitBoard, Bot, Engine, IntoEnumIterator, MoveGenerator, Piece,
-    Position, Search, Side, Square,
+    mov::Move, mov::MoveType, search::Search, BitBoard, Bot, Engine, IntoEnumIterator,
+    MoveGenerator, Piece, Position, Side, Square,
 };
 use tauri::State;
 
@@ -123,7 +123,7 @@ fn make_move(engine: State<Mutex<ClientEngine>>, mv: Move) -> Move {
 
 #[tauri::command]
 fn piece(engine: State<Mutex<ClientEngine>>, p: Piece, from: Square, to: Square) {
-    let mv = Move::new(p, from, to, MoveType::Quiet);
+    let mv = Move::init(p, from, to, MoveType::Quiet);
     engine.lock().unwrap().position.make_move(mv);
     println!("MOVE: {:?}", mv);
 }
@@ -136,7 +136,8 @@ fn perft(position: &mut Position, move_gen: &mut MoveGenerator, depth: u32) -> u
         return moves.len() as u64;
     }
 
-    for mv in moves {
+    for i in 0..moves.len() {
+        let mv = moves.get(i);
         position.make_move(mv);
         num_positions += perft(position, move_gen, depth - 1);
         position.unmake();
@@ -164,6 +165,7 @@ fn get_perft(engine: State<Mutex<ClientEngine>>, depth: u32) -> u64 {
     return res;
 }
 
+/*
 fn wrapper_moves(position: &mut Position, move_gen: &MoveGenerator) -> Vec<Move> {
     let moves = move_gen.generate_legal_moves(position, position.state.current_turn());
     return moves;
@@ -177,6 +179,7 @@ fn moves(engine: State<Mutex<ClientEngine>>) -> Vec<Move> {
     let moves = wrapper_moves(&mut position, &move_gen);
     return moves;
 }
+*/
 
 #[tauri::command]
 fn load_fen(engine: State<Mutex<ClientEngine>>, fen: &str) -> Result<(), String> {
@@ -225,7 +228,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             reset_position,
             //piece,
             get_perft,
-            moves,
+            //moves,
             load_fen,
             search,
         ])

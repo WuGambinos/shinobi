@@ -9,7 +9,8 @@ pub fn perft(position: &mut Position, move_generator: &MoveGenerator, depth: u32
         return moves.len() as u64;
     }
 
-    for mv in moves {
+    for i in 0..moves.len() {
+        let mv = moves.get(i);
         position.make_move(mv);
         num_positions += perft(position, move_generator, depth - 1);
         position.unmake();
@@ -25,7 +26,8 @@ pub fn perft_test(position: &mut Position, move_generator: &MoveGenerator, depth
 
     let moves = move_generator.generate_legal_moves(position, position.state.current_turn());
 
-    for mv in moves {
+    for i in 0..moves.len() {
+        let mv = moves.get(i);
         position.make_move(mv);
 
         unsafe {
@@ -59,7 +61,8 @@ fn perft_driver(position: &mut Position, move_generator: &MoveGenerator, depth: 
         return;
     }
 
-    for mv in moves {
+    for i in 0..moves.len() {
+        let mv = moves.get(i);
         position.make_move(mv);
 
         perft_driver(position, move_generator, depth - 1);

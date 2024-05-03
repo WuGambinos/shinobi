@@ -114,7 +114,8 @@ impl Bot {
         }
 
         let mut max_eval = -LARGE_NUM;
-        for mv in moves {
+        for i in 0..moves.len() { 
+            let mv = moves.get(i);
             position.make_move(mv);
             let eval = -self.negamax_alpha_beta(position, move_gen, -beta, -alpha, depth - 1);
             position.unmake();

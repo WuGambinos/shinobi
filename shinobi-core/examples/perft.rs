@@ -29,7 +29,8 @@ fn main() {
 
     // Setup Position
     let position = Position::from_fen(fen);
-    let mut shinobi = Engine::new(position.clone().unwrap());
+    let mut shinobi = Engine::new();
+    shinobi.position = position.unwrap();
 
     let start = Instant::now();
     let res = perft(&mut shinobi.position, &mut shinobi.move_gen, d);

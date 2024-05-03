@@ -1,14 +1,15 @@
 [workspace]
 
 members = [
-"shinobi-gui",
 "shinobi-core",
 "shinobi-tauri/src-tauri"
 ]
 
 
 [profile.release]
-#lto="fat"
+lto="fat"
+codegen-units = 1
+debug = false
 
 [profile.release.package.shinobi-core]
 #codegen-units = 1

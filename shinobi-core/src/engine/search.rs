@@ -224,10 +224,10 @@ impl Search {
         let old_alpha = alpha;
         let mut moves = move_gen.generate_legal_moves(position, position.state.current_turn());
 
-        Search::score_moves(position, &mut moves);
+        // Search::score_moves(position, &mut moves);
         for i in 0..moves.len() {
-            self.pick_move(&mut moves, i as i32);
-            let mv = moves[i];
+            //self.pick_move(&mut moves, i as i32);
+            let mv = moves.get(i);
             self.ply += 1;
             position.make_move(mv);
             let score = -self.negamax(info, position, move_gen, -beta, -alpha, depth - 1);
@@ -308,13 +308,16 @@ impl Search {
         alpha = alpha.max(eval);
 
         // FIX THIS (Find other way to only get captures)
+        /*
         let mut captures: Vec<Move> = move_gen
             .generate_legal_moves(position, position.state.current_turn())
             .into_iter()
             .filter(|item| item.move_type() == MoveType::Capture)
             .collect();
+            */
 
-        Search::score_moves(position, &mut captures);
+        // Search::score_moves(position, &mut captures);
+        /*
         for i in 0..captures.len() {
             self.pick_move(&mut captures, i as i32);
             let capture = captures[i];
@@ -339,6 +342,7 @@ impl Search {
             // PV Move
             alpha = alpha.max(eval);
         }
+        */
         alpha
     }
 
@@ -363,7 +367,8 @@ impl Search {
     }
     */
 
-    fn score_moves(position: &Position, moves: &mut Vec<Move>) {
+    /*
+    fn score_moves(position: &Position, moves: &mut MoveList) {
         for i in 0..moves.len() {
             let mv = moves.get_mut(i).unwrap();
             let value = if mv.move_type() == MoveType::Capture {
@@ -374,10 +379,12 @@ impl Search {
                 0
             };
 
-            mv.score = value;
+            //mv.score = value;
         }
     }
+    */
 
+    /*
     fn pick_move(&self, moves: &mut Vec<Move>, start_index: i32) {
         for i in (start_index + 1) as usize..moves.len() {
             if moves[i].score > moves[start_index as usize].score {
@@ -385,6 +392,7 @@ impl Search {
             }
         }
     }
+    */
 
     fn evalutate(&self, position: &Position) -> i32 {
         let mut white_score = 0;
