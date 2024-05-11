@@ -1,10 +1,10 @@
 use shinobi_core::mov::Move;
-use shinobi_core::perft::custom_perft;
+use shinobi_core::mov::MoveList;
+use shinobi_core::perft::perft;
 use shinobi_core::Engine;
 use shinobi_core::Position;
 use shinobi_core::START_POS;
 use shinobi_core::*;
-use shinobi_core::mov::MoveList;
 use std::env;
 use std::time::Instant;
 fn main() {
@@ -12,10 +12,15 @@ fn main() {
     let mut shinobi = Engine::new();
 
     let start = Instant::now();
-    let list = MoveList::new();
+    let res = perft(&mut shinobi.position, &mut shinobi.move_gen, 4);
     let end = start.elapsed();
 
-    println!("MOVE LIST CREATION: {:?}", end);
+    println!("PERFT 3: {} TIME: {:?}", res, end);
+    /*
+    unsafe {
+        println!("UNMAKE TIME: {} ns", UNMAKE_TIME);
+    }
+    */
 
     /*
     let mut move_gen_time = 0;

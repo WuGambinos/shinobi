@@ -1,10 +1,26 @@
 use crate::{square_name, Piece, Side, Square};
 use core::fmt;
-use modular_bitfield::prelude::*;
 use serde::{Deserialize, Serialize};
 
-const MAX_MOVES: usize = 218;
-const NULL_MOVE: Move = Move::new();
+pub const MAX_MOVES: usize = 218;
+pub const NULL_MOVE: Move = Move(0);
+/*
+const PIECE_MASK: u32           =   0b00000000000000000000000000000111;
+const FROM_MASK: u32            =   0b00000000000000000000000111111000;
+const TARGET_MASK: u32          =   0b00000000000000000111111000000000;
+const MOVE_TYPE_MASK: u32       =   0b00000000000000111000000000000000;
+const PROMOTION_PIECE_MASK: u32 =   0b00000000000011000000000000000000;
+*/
+const PIECE_MASK: u32 = 0x7;
+const FROM_MASK: u32 = 0x1F8;
+const TARGET_MASK: u32 = 0x7E00;
+const MOVE_TYPE_MASK: u32 = 0x3800;
+const PROMO_PIECE_MASK: u32 = 0xC0000;
+
+const FROM_SHIFT: u32 = 3;
+const TARGET_SHIFT: u32 = 9;
+const MOVE_TYPE_SHIFT: u32 = 15;
+const PROMO_SHIFT: u32 = 18;
 
 #[rustfmt::skip]
 #[derive(Eq, PartialEq, Debug, Clone, Copy, Serialize, Deserialize)]
@@ -16,8 +32,8 @@ pub enum MoveType {
     Promotion   =   0b0100,
 }
 
-impl From<u8> for MoveType {
-    fn from(move_type: u8) -> MoveType {
+impl From<u32> for MoveType {
+    fn from(move_type: u32) -> MoveType {
         match move_type {
             0b0000 => MoveType::Quiet,
             0b0001 => MoveType::Capture,
@@ -29,25 +45,17 @@ impl From<u8> for MoveType {
     }
 }
 
-#[modular_bitfield::bitfield]
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct Move {
-    piece_bf: B3,
-    from_bf: B6,
-    target_bf: B6,
-    move_type_bf: B3,
-    promotion_piece_bf: B3,
-    nothing: B3,
-}
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Move(pub u32);
 
 impl Move {
+    #[inline(always)]
     pub fn init(piece: Piece, from: Square, target: Square, move_type: MoveType) -> Move {
-        Move::new()
-            .with_piece_bf(piece as u8)
-            .with_from_bf(from as u8)
-            .with_target_bf(target as u8)
-            .with_move_type_bf(move_type as u8)
-            .with_promotion_piece_bf(0)
+        let res = ((move_type as u32) << MOVE_TYPE_SHIFT)
+            | ((target as u32) << TARGET_SHIFT)
+            | ((from as u32) << FROM_SHIFT)
+            | (piece as u32);
+        Move(res)
     }
 
     pub fn init_with_promotion_piece(
@@ -57,12 +65,12 @@ impl Move {
         move_type: MoveType,
         promotion_piece: Piece,
     ) -> Move {
-        Move::new()
-            .with_piece_bf(piece as u8)
-            .with_from_bf(from as u8)
-            .with_target_bf(target as u8)
-            .with_move_type_bf(move_type as u8)
-            .with_promotion_piece_bf((promotion_piece as u8) + 1)
+        let res = ((promotion_piece as u32 + 1) << PROMO_SHIFT)
+            | ((move_type as u32) << MOVE_TYPE_SHIFT)
+            | ((target as u32) << TARGET_SHIFT)
+            | ((from as u32) << FROM_SHIFT)
+            | (piece as u32);
+        Move(res)
     }
 
     pub fn is_double_pawn_push(&self) -> bool {
@@ -71,26 +79,29 @@ impl Move {
     }
 
     pub fn piece(&self) -> Piece {
-        Piece::from(self.piece_bf())
+        Piece::from(self.0 & PIECE_MASK)
     }
 
     pub fn from(&self) -> Square {
-        Square::from(self.from_bf())
+        let res = (self.0 & FROM_MASK) >> FROM_SHIFT;
+        Square::from(res)
     }
 
     pub fn target(&self) -> Square {
-        Square::from(self.target_bf())
+        let res = (self.0 & TARGET_MASK) >> TARGET_SHIFT;
+        Square::from(res)
     }
 
     pub fn move_type(&self) -> MoveType {
-        MoveType::from(self.move_type_bf())
+        MoveType::from((self.0 & MOVE_TYPE_MASK) >> MOVE_TYPE_SHIFT)
     }
 
     pub fn promotion_piece(&self) -> Option<Piece> {
-        if self.promotion_piece_bf() == 0 {
+        let promotion_piece = ((self.0 & PROMO_PIECE_MASK) >> PROMO_SHIFT) - 1;
+        if promotion_piece == 0 {
             None
         } else {
-            Some(Piece::from(self.promotion_piece_bf() - 1))
+            Some(Piece::from(promotion_piece))
         }
     }
 }

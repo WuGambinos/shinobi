@@ -4,12 +4,12 @@ pub mod generator;
 pub mod mov;
 
 use crate::{
-    load_fen, mov::Move, mov::MoveType, BitBoard, MoveGenerator, Piece, Side, Square, Zobrist,
-    BLACK_KINGSIDE_KING, BLACK_KINGSIDE_ROOK_FROM, BLACK_KINGSIDE_ROOK_TO, BLACK_QUEENSIDE_KING,
-    BLACK_QUEENSIDE_ROOK_FROM, BLACK_QUEENSIDE_ROOK_TO, EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK,
-    MAX_HALF_MOVES, WHITE_KINGSIDE_KING, WHITE_KINGSIDE_ROOK_FROM, WHITE_KINGSIDE_ROOK_TO,
-    WHITE_QUEENSIDE_KING, WHITE_QUEENSIDE_ROOK_FROM, WHITE_QUEENSIDE_ROOK_TO,
-    START_POS
+    load_fen, mov::Move, mov::MoveType, mov::NULL_MOVE, BitBoard, MoveGenerator, Piece, Side,
+    Square, Zobrist, BLACK_KINGSIDE_KING, BLACK_KINGSIDE_ROOK_FROM, BLACK_KINGSIDE_ROOK_TO,
+    BLACK_QUEENSIDE_KING, BLACK_QUEENSIDE_ROOK_FROM, BLACK_QUEENSIDE_ROOK_TO, EIGTH_RANK,
+    EMPTY_BITBOARD, FIRST_RANK, MAX_HALF_MOVES, START_POS, WHITE_KINGSIDE_KING,
+    WHITE_KINGSIDE_ROOK_FROM, WHITE_KINGSIDE_ROOK_TO, WHITE_QUEENSIDE_KING,
+    WHITE_QUEENSIDE_ROOK_FROM, WHITE_QUEENSIDE_ROOK_TO,
 };
 
 use serde::{ser::SerializeStruct, Serialize};
@@ -17,6 +17,8 @@ use std::fmt;
 use strum::IntoEnumIterator;
 
 use self::castling_rights::{Castling, CastlingRights};
+
+pub const MAX_BOARDS: usize = 50;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize)]
 pub struct State {
@@ -65,22 +67,21 @@ impl State {
 
 #[derive(Debug, Clone)]
 pub struct History {
-    pub moves: Vec<Move>,
+    pub moves: [Move; MAX_HALF_MOVES as usize],
 
     /// previous Piece slice board
-    pub prev_pieces: Vec<[Option<(Side, Piece)>; 64]>,
-    pub prev_piece_count: Vec<[[u8; 6]; 2]>,
-
-    pub prev_main_bitboards: Vec<BitBoard>,
+    pub prev_pieces: [[Option<(Side, Piece)>; 64]; MAX_BOARDS],
+    pub prev_piece_count: [[[u8; 6]; 2]; MAX_BOARDS],
+    pub prev_main_bitboards: [BitBoard; MAX_BOARDS],
 
     /// bitboards respresenting previous empty squares
-    pub prev_empty_bitboards: Vec<BitBoard>,
-    pub prev_side_bitboards: Vec<[BitBoard; 2]>,
-    pub prev_piece_bitboards: Vec<[[BitBoard; 6]; 2]>,
-    pub prev_states: Vec<State>,
+    pub prev_side_bitboards: [[BitBoard; 2]; MAX_BOARDS],
+    pub prev_piece_bitboards: [[[BitBoard; 6]; 2]; MAX_BOARDS],
+    pub prev_states: [State; MAX_BOARDS],
 
     pub prev_white_king: Option<Square>,
     pub prev_black_king: Option<Square>,
+    pub count: usize,
 }
 
 impl Serialize for History {
@@ -89,6 +90,7 @@ impl Serialize for History {
         S: serde::Serializer,
     {
         let mut state = serializer.serialize_struct("History", 10)?;
+        /*
         state.serialize_field("moves", &self.moves)?;
         state.serialize_field("prev_piece_count", &self.prev_piece_count)?;
         state.serialize_field("prev_main_bitboards", &self.prev_main_bitboards)?;
@@ -98,6 +100,7 @@ impl Serialize for History {
         state.serialize_field("prev_states", &self.prev_states)?;
         state.serialize_field("prev_white_king", &self.prev_white_king)?;
         state.serialize_field("prev_black_king", &self.prev_black_king)?;
+        */
         state.end()
     }
 }
@@ -105,16 +108,16 @@ impl Serialize for History {
 impl History {
     fn new() -> History {
         History {
-            moves: Vec::with_capacity(50),
-            prev_pieces: Vec::with_capacity(50),
-            prev_piece_count: Vec::with_capacity(50),
-            prev_main_bitboards: Vec::with_capacity(50),
-            prev_empty_bitboards: Vec::with_capacity(50),
-            prev_side_bitboards: Vec::with_capacity(50),
-            prev_piece_bitboards: Vec::with_capacity(50),
-            prev_states: Vec::with_capacity(50),
+            moves: [Move(0); MAX_HALF_MOVES as usize],
+            prev_pieces: [[None; 64]; MAX_BOARDS],
+            prev_piece_count: [[[0; 6]; 2]; MAX_BOARDS],
+            prev_main_bitboards: [EMPTY_BITBOARD; MAX_BOARDS],
+            prev_side_bitboards: [[EMPTY_BITBOARD; 2]; MAX_BOARDS],
+            prev_piece_bitboards: [[[EMPTY_BITBOARD; 6]; 2]; MAX_BOARDS],
+            prev_states: [State::new(); MAX_BOARDS],
             prev_white_king: None,
             prev_black_king: None,
+            count: 0,
         }
     }
 }
@@ -128,12 +131,7 @@ impl History {
 pub struct Position {
     /// Piece array board
     pub pieces: [Option<(Side, Piece)>; 64],
-
     pub main_bitboard: BitBoard,
-
-    /// BitBoard showing which squares are empty
-    pub empty_bitboard: BitBoard,
-
     pub side_bitboards: [BitBoard; 2],
 
     /// BitBoards for all pieces and each side
@@ -156,7 +154,6 @@ impl Serialize for Position {
     {
         let mut state = serializer.serialize_struct("Position", 11)?;
         state.serialize_field("main_bitboard", &self.main_bitboard)?;
-        state.serialize_field("empty_bitboard", &self.empty_bitboard)?;
         state.serialize_field("side_bitboards", &self.side_bitboards)?;
         state.serialize_field("piece_bitboards", &self.piece_bitboards)?;
         state.serialize_field("piece_count", &self.piece_count)?;
@@ -181,7 +178,6 @@ impl Position {
         Position {
             pieces: [None; 64],
             main_bitboard: EMPTY_BITBOARD,
-            empty_bitboard: EMPTY_BITBOARD,
             side_bitboards: [EMPTY_BITBOARD; 2],
             piece_bitboards: [[EMPTY_BITBOARD; 6]; 2],
             piece_count: [[0; 6]; 2],
@@ -198,7 +194,7 @@ impl Position {
     }
 
     pub fn from_fen(fen: &str) -> Result<Position, String> {
-        let mut position  = Position::empty();
+        let mut position = Position::empty();
         let grid = load_fen(fen, &mut position.state)?;
 
         for (i, ch) in grid.iter().enumerate() {
@@ -235,8 +231,7 @@ impl Position {
                     position.pieces[i] = Some((Side::Black, Piece::from(*ch)));
                     position.piece_count[Side::Black as usize][Piece::from(*ch) as usize] += 1;
                 }
-
-                '.' => position.empty_bitboard |= mask,
+                '.' => (),
 
                 _ => return Err("Invalid FEN".to_string()),
             }
@@ -244,6 +239,9 @@ impl Position {
 
         let mut z = position.zobrist;
         position.state.zobrist_hash = z.generate_hash(&position);
+
+        position.history.prev_white_king = Some(position.white_king);
+        position.history.prev_black_king = Some(position.black_king);
 
         Ok(position)
     }
@@ -332,9 +330,6 @@ impl Position {
             // Update main_bitboard
             self.main_bitboard ^= from_to_bitboard ^ rook_to;
 
-            // Update empty bitboard
-            self.empty_bitboard = !self.main_bitboard;
-
             // Update piece array board
             self.pieces[mv.target() as usize] = Some((self.state.current_turn(), mv.piece()));
             self.pieces[mv.from() as usize] = None;
@@ -399,9 +394,6 @@ impl Position {
 
             // Update main_bitboard
             self.main_bitboard ^= from_to_bitboard ^ rook_to;
-
-            // Update empty bitboard
-            self.empty_bitboard = !self.main_bitboard;
 
             // Update piece array board
             self.pieces[mv.target() as usize] = Some((self.state.current_turn(), mv.piece()));
@@ -494,7 +486,7 @@ impl Position {
                 == 0;
 
         if can_move {
-            self.history.prev_states.push(self.state);
+            self.history.prev_states[self.history.count] = self.state;
             let mut pawn_move_or_capture: bool = false;
 
             // Remove piece from hash (from_square)
@@ -520,12 +512,11 @@ impl Position {
             self.update_castling_rights(mv);
 
             // Update history
-            self.history.prev_pieces.push(self.pieces);
-            self.history.prev_piece_count.push(self.piece_count);
-            self.history.prev_main_bitboards.push(self.main_bitboard);
-            self.history.prev_empty_bitboards.push(self.empty_bitboard);
-            self.history.prev_piece_bitboards.push(self.piece_bitboards);
-            self.history.prev_side_bitboards.push(self.side_bitboards);
+            self.history.prev_pieces[self.history.count] = self.pieces;
+            self.history.prev_piece_count[self.history.count] = self.piece_count;
+            self.history.prev_main_bitboards[self.history.count] = self.main_bitboard;
+            self.history.prev_piece_bitboards[self.history.count] = self.piece_bitboards;
+            self.history.prev_side_bitboards[self.history.count] = self.side_bitboards;
 
             match mv.move_type() {
                 MoveType::Castle => self.castle(mv, from_bitboard, to_bitboard),
@@ -591,12 +582,13 @@ impl Position {
             }
 
             // Update history
-            self.history.moves.push(mv);
+            self.history.moves[self.history.count] = mv;
             self.last_move = Some(mv);
 
             self.state.update_hash(self.zobrist.rand_side_num());
 
             self.state.change_turn();
+            self.history.count += 1;
         }
     }
 
@@ -604,29 +596,28 @@ impl Position {
      * Restores position back to state it was in before previous move was made
      */
     pub fn unmake(&mut self) {
+        let index = self.history.count - 1;
         // Revert BitBoards
-        self.main_bitboard = self.history.prev_main_bitboards.pop().unwrap();
-        self.empty_bitboard = self.history.prev_empty_bitboards.pop().unwrap();
-        self.side_bitboards = self.history.prev_side_bitboards.pop().unwrap();
-        self.piece_bitboards = self.history.prev_piece_bitboards.pop().unwrap();
-        self.pieces = self.history.prev_pieces.pop().unwrap();
-        self.piece_count = self.history.prev_piece_count.pop().unwrap();
+        self.main_bitboard = self.history.prev_main_bitboards[index];
+        self.side_bitboards = self.history.prev_side_bitboards[index];
+        self.piece_bitboards = self.history.prev_piece_bitboards[index];
+        self.pieces = self.history.prev_pieces[index];
+        self.piece_count = self.history.prev_piece_count[index];
 
         // Restore last move
-        if let Some(_) = self.history.moves.pop() {
-            if let Some(last) = self.history.moves.last() {
-                self.last_move = Some(*last);
-            }
+        self.last_move = if self.history.moves[index] != NULL_MOVE {
+            Some(self.history.moves[index])
         } else {
-            self.last_move = None;
-        }
+            None
+        };
 
         // Restore king square
-        self.white_king = self.king(Side::White);
-        self.black_king = self.king(Side::Black);
+        self.white_king = self.history.prev_white_king.unwrap();
+        self.black_king = self.history.prev_black_king.unwrap();
 
         // Revert state
-        self.state = self.history.prev_states.pop().unwrap();
+        self.state = self.history.prev_states[index];
+        self.history.count -= 1;
     }
 
     fn promote(&mut self, mv: Move, from_bitboard: BitBoard, to_bitboard: BitBoard) {
@@ -659,9 +650,6 @@ impl Position {
 
                 // Update main_bitboard
                 self.main_bitboard ^= from_to_bitboard;
-
-                // Update empty bitboard
-                self.empty_bitboard = !self.main_bitboard;
 
                 capture = true;
 
@@ -706,9 +694,6 @@ impl Position {
             // Update main_bitboard
             self.main_bitboard ^= from_bitboard;
 
-            // Update empty bitboard
-            self.empty_bitboard = !self.main_bitboard;
-
             // Remove pawn from hash  (target_square)
             self.state.update_hash(self.zobrist.rand_piece_num(
                 self.state.current_turn(),
@@ -745,9 +730,6 @@ impl Position {
         // Update main_bitboard
         self.main_bitboard ^= from_to_bitboard;
 
-        // Update empty bitboard
-        self.empty_bitboard = !self.main_bitboard;
-
         // Update pieces
         self.pieces[mv.target() as usize] = Some((self.state.current_turn(), mv.piece()));
         self.pieces[mv.from() as usize] = None;
@@ -778,9 +760,6 @@ impl Position {
 
         // Update side bitboard
         self.side_bitboards[self.state.opponent() as usize] ^= ep_bitboard;
-
-        // Update empty bitboard
-        self.empty_bitboard = !self.main_bitboard;
 
         // Remove pawn taken from hash
         self.state.update_hash(self.zobrist.rand_piece_num(
@@ -818,9 +797,6 @@ impl Position {
         // Update main_bitboard
         self.main_bitboard ^= from_bitboard;
 
-        // Update empty bitboard
-        self.empty_bitboard = !self.main_bitboard;
-
         // Update piece array board
         self.pieces[mv.target() as usize] = Some((self.state.current_turn(), mv.piece()));
         self.pieces[mv.from() as usize] = None;
@@ -839,9 +815,6 @@ impl Position {
 
         // Update main_bitboard
         self.main_bitboard ^= from_to_bitboard;
-
-        // Update empty bitboard
-        self.empty_bitboard = !self.main_bitboard;
 
         // Update piece array board
         self.pieces[mv.target() as usize] = Some((self.state.current_turn(), mv.piece()));

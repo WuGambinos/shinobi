@@ -114,7 +114,7 @@ impl MoveGenerator {
             Side::Black => SECOND_RANK,
         };
 
-        let empty = position.empty_bitboard;
+        let empty = !position.main_bitboard;
         let non_promotions = pawns & !seventh_rank;
 
         let (single_pushes, third_rank) = match turn {
@@ -194,22 +194,26 @@ impl MoveGenerator {
 
     fn white_double_push_target(&self, position: &Position, bitboard: BitBoard) -> BitBoard {
         let single_pushes = self.white_single_push_target(position, bitboard);
+        let empty = !position.main_bitboard;
 
-        self.north_one(single_pushes) & position.empty_bitboard & FOURTH_RANK
+        self.north_one(single_pushes) & empty & FOURTH_RANK
     }
 
     fn white_single_push_target(&self, position: &Position, bitboard: BitBoard) -> BitBoard {
-        self.north_one(bitboard) & position.empty_bitboard
+        let empty = !position.main_bitboard;
+        self.north_one(bitboard) & empty
     }
 
     fn black_double_push_target(&self, position: &Position, bitboard: BitBoard) -> BitBoard {
         let single_pushes = self.black_single_push_target(position, bitboard);
 
-        self.south_one(single_pushes) & position.empty_bitboard & FIFTH_RANK
+        let empty = !position.main_bitboard;
+        self.south_one(single_pushes) & empty & FIFTH_RANK
     }
 
     fn black_single_push_target(&self, position: &Position, bitboard: BitBoard) -> BitBoard {
-        self.south_one(bitboard) & position.empty_bitboard
+        let empty = !position.main_bitboard;
+        self.south_one(bitboard) & empty
     }
 
     fn fill_pawn_attacks(&mut self, side: Side) {

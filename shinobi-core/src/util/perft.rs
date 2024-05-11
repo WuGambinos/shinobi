@@ -1,18 +1,30 @@
+use crate::EMPTY_BITBOARD;
 use crate::{MoveGenerator, Position};
 use std::time::Instant;
 
 pub fn perft(position: &mut Position, move_generator: &MoveGenerator, depth: u32) -> u64 {
-    let mut num_positions: u64 = 0;
-    let moves = move_generator.generate_legal_moves(position, position.state.current_turn());
+    if depth == 0 {
+        return 1;
+    }
 
+    let mut num_positions: u64 = 0;
+    //let moves = move_generator.generate_legal_moves(position, position.state.current_turn());
+    let moves = move_generator.generate_moves(position, position.state.current_turn());
+    let side = position.state.current_turn();
+
+    /*
     if depth == 1 {
         return moves.len() as u64;
     }
+    */
 
     for i in 0..moves.len() {
         let mv = moves.get(i);
         position.make_move(mv);
-        num_positions += perft(position, move_generator, depth - 1);
+        let in_check = move_generator.attacks_to_king(position, side) != EMPTY_BITBOARD;
+        if !in_check {
+            num_positions += perft(position, move_generator, depth - 1);
+        }
         position.unmake();
     }
 

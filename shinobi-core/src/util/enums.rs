@@ -18,8 +18,8 @@ pub enum Piece {
     King,
 }
 
-impl From<u8> for Piece {
-    fn from(p: u8) -> Piece {
+impl From<u32> for Piece {
+    fn from(p: u32) -> Piece {
         match p {
             0 => Piece::Pawn,
             1 => Piece::Knight,
@@ -197,8 +197,8 @@ impl From<u64> for Square {
     }
 }
 
-impl From<u8> for Square {
-    fn from(value: u8) -> Square {
+impl From<u32> for Square {
+    fn from(value: u32) -> Square {
         match value {
             0 => Square::A1,
             1 => Square::B1,
