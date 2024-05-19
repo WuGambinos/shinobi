@@ -14,7 +14,7 @@ const PROMOTION_PIECE_MASK: u32 =   0b00000000000011000000000000000000;
 const PIECE_MASK: u32 = 0x7;
 const FROM_MASK: u32 = 0x1F8;
 const TARGET_MASK: u32 = 0x7E00;
-const MOVE_TYPE_MASK: u32 = 0x3800;
+const MOVE_TYPE_MASK: u32 = 0x38000;
 const PROMO_PIECE_MASK: u32 = 0xC0000;
 
 const FROM_SHIFT: u32 = 3;
@@ -65,7 +65,8 @@ impl Move {
         move_type: MoveType,
         promotion_piece: Piece,
     ) -> Move {
-        let res = ((promotion_piece as u32 + 1) << PROMO_SHIFT)
+        let promo_piece: u32 = (promotion_piece as i32 - 1) as u32;
+        let res = (promo_piece << PROMO_SHIFT)
             | ((move_type as u32) << MOVE_TYPE_SHIFT)
             | ((target as u32) << TARGET_SHIFT)
             | ((from as u32) << FROM_SHIFT)
@@ -97,11 +98,11 @@ impl Move {
     }
 
     pub fn promotion_piece(&self) -> Option<Piece> {
-        let promotion_piece = ((self.0 & PROMO_PIECE_MASK) >> PROMO_SHIFT) - 1;
-        if promotion_piece == 0 {
+        let promotion_piece = (self.0 & PROMO_PIECE_MASK) >> PROMO_SHIFT;
+        if (promotion_piece as i32) < 0 {
             None
         } else {
-            Some(Piece::from(promotion_piece))
+            Some(Piece::from(promotion_piece + 1))
         }
     }
 }

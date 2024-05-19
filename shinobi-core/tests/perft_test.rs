@@ -19,7 +19,8 @@ fn test_pos() {
     for pos in TEST_POSITIONS.iter() {
         let TestPos(fen, depth, nodes) = pos;
         let position = Position::from_fen(fen).unwrap();
-        let mut shinobi = Engine::new(position);
+        let mut shinobi = Engine::new();
+        shinobi.position = position;
 
         let actual_nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, *depth);
         assert_eq!(actual_nodes, *nodes);
@@ -31,10 +32,11 @@ fn test_add() {
     assert_eq!(1 + 1, 1 + 1);
 }
 
-/*
+#[test]
 fn perft_starting_pos_1() {
     let position = Position::from_fen(START_POS).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
 
     let depth = 1;
 
@@ -43,10 +45,10 @@ fn perft_starting_pos_1() {
     assert_eq!(nodes, 20);
 }
 
-#[test]
 fn perft_starting_pos_2() {
     let position = Position::from_fen(START_POS).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
 
     let depth = 2;
 
@@ -57,7 +59,8 @@ fn perft_starting_pos_2() {
 #[test]
 fn perft_starting_pos_3() {
     let position = Position::from_fen(START_POS).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
 
     let depth = 3;
 
@@ -68,7 +71,8 @@ fn perft_starting_pos_3() {
 #[test]
 fn perft_starting_pos_4() {
     let position = Position::from_fen(START_POS).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
 
     let depth = 4;
 
@@ -79,7 +83,8 @@ fn perft_starting_pos_4() {
 #[test]
 fn perft_starting_pos_5() {
     let position = Position::from_fen(START_POS).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
 
     let depth = 5;
 
@@ -90,7 +95,8 @@ fn perft_starting_pos_5() {
 #[test]
 fn perft_starting_pos_6() {
     let position = Position::from_fen(START_POS).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
 
     let depth = 6;
 
@@ -101,7 +107,8 @@ fn perft_starting_pos_6() {
 #[test]
 fn perft_pos_2_depth_1() {
     let position = Position::from_fen(POS_2).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 1;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -111,7 +118,8 @@ fn perft_pos_2_depth_1() {
 #[test]
 fn perft_pos_2_depth_2() {
     let position = Position::from_fen(POS_2).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 2;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -121,7 +129,8 @@ fn perft_pos_2_depth_2() {
 #[test]
 fn perft_pos_2_depth_3() {
     let position = Position::from_fen(POS_2).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 3;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -131,7 +140,8 @@ fn perft_pos_2_depth_3() {
 #[test]
 fn perft_pos_2_depth_4() {
     let position = Position::from_fen(POS_2).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 4;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -141,7 +151,8 @@ fn perft_pos_2_depth_4() {
 #[test]
 fn perft_pos_2_depth_5() {
     let position = Position::from_fen(POS_2).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 5;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -151,7 +162,8 @@ fn perft_pos_2_depth_5() {
 #[test]
 fn perft_pos_3_depth_1() {
     let position = Position::from_fen(POS_3).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 1;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -161,7 +173,8 @@ fn perft_pos_3_depth_1() {
 #[test]
 fn perft_pos_3_depth_2() {
     let position = Position::from_fen(POS_3).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 2;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -171,7 +184,8 @@ fn perft_pos_3_depth_2() {
 #[test]
 fn perft_pos_3_depth_3() {
     let position = Position::from_fen(POS_3).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 3;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -181,7 +195,8 @@ fn perft_pos_3_depth_3() {
 #[test]
 fn perft_pos_3_depth_4() {
     let position = Position::from_fen(POS_3).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 4;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -191,7 +206,8 @@ fn perft_pos_3_depth_4() {
 #[test]
 fn perft_pos_3_depth_5() {
     let position = Position::from_fen(POS_3).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 5;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -201,7 +217,8 @@ fn perft_pos_3_depth_5() {
 #[test]
 fn perft_pos_3_depth_6() {
     let position = Position::from_fen(POS_3).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 6;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -211,7 +228,8 @@ fn perft_pos_3_depth_6() {
 #[test]
 fn perft_pos_4_depth_1() {
     let position = Position::from_fen(POS_4).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 1;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -221,7 +239,8 @@ fn perft_pos_4_depth_1() {
 #[test]
 fn perft_pos_4_depth_2() {
     let position = Position::from_fen(POS_4).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 2;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -231,7 +250,8 @@ fn perft_pos_4_depth_2() {
 #[test]
 fn perft_pos_4_depth_3() {
     let position = Position::from_fen(POS_4).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 3;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -241,7 +261,8 @@ fn perft_pos_4_depth_3() {
 #[test]
 fn perft_pos_4_depth_4() {
     let position = Position::from_fen(POS_4).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 4;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -251,7 +272,8 @@ fn perft_pos_4_depth_4() {
 #[test]
 fn perft_pos_4_depth_5() {
     let position = Position::from_fen(POS_4).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 5;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -261,7 +283,8 @@ fn perft_pos_4_depth_5() {
 #[test]
 fn perft_pos_5_depth_1() {
     let position = Position::from_fen(POS_5).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 1;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -271,7 +294,8 @@ fn perft_pos_5_depth_1() {
 #[test]
 fn perft_pos_5_depth_2() {
     let position = Position::from_fen(POS_5).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 2;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -281,7 +305,8 @@ fn perft_pos_5_depth_2() {
 #[test]
 fn perft_pos_5_depth_3() {
     let position = Position::from_fen(POS_5).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 3;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -291,7 +316,8 @@ fn perft_pos_5_depth_3() {
 #[test]
 fn perft_pos_5_depth_4() {
     let position = Position::from_fen(POS_5).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 4;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -301,7 +327,8 @@ fn perft_pos_5_depth_4() {
 #[test]
 fn perft_pos_5_depth_5() {
     let position = Position::from_fen(POS_5).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 5;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -311,7 +338,8 @@ fn perft_pos_5_depth_5() {
 #[test]
 fn perft_pos_6_depth_1() {
     let position = Position::from_fen(POS_6).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 1;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -321,7 +349,8 @@ fn perft_pos_6_depth_1() {
 #[test]
 fn perft_pos_6_depth_2() {
     let position = Position::from_fen(POS_6).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 2;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -331,7 +360,8 @@ fn perft_pos_6_depth_2() {
 #[test]
 fn perft_pos_6_depth_3() {
     let position = Position::from_fen(POS_6).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 3;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -341,7 +371,8 @@ fn perft_pos_6_depth_3() {
 #[test]
 fn perft_pos_6_depth_4() {
     let position = Position::from_fen(POS_6).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 4;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
@@ -351,10 +382,10 @@ fn perft_pos_6_depth_4() {
 #[test]
 fn perft_pos_6_depth_5() {
     let position = Position::from_fen(POS_6).unwrap();
-    let mut shinobi = Engine::new(position);
+    let mut shinobi = Engine::new();
+    shinobi.position = position;
     let depth = 5;
     let nodes = perft(&mut shinobi.position, &mut shinobi.move_gen, depth);
 
     assert_eq!(nodes, 164_075_551);
 }
-*/

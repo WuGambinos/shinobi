@@ -154,9 +154,9 @@ impl MoveGenerator {
             ));
         }
 
-        let pawns = pawns & !seventh_rank;
+        let captures = pawns & !seventh_rank;
 
-        for from in pawns {
+        for from in captures {
             let attacks =
                 self.pawn_attacks[turn as usize][from as usize] & position.opponent_bitboard();
             for target in attacks {
@@ -168,28 +168,85 @@ impl MoveGenerator {
                 ));
             }
         }
-        /*
-        while pawns != EMPTY_BITBOARD {
-            let mut pushes = EMPTY_BITBOARD;
-            let mut bb_pawns: BitBoard = EMPTY_BITBOARD;
-            let from = pawns.bitscan_forward_reset();
-            bb_pawns.set_bit(from);
 
-            if turn == Side::White {
-                let single_push = self.white_single_push_target(position, bb_pawns);
-                let double_push = self.white_double_push_target(position, bb_pawns);
-                pushes |= single_push;
-                if single_push != EMPTY_BITBOARD {
-                    pushes |= double_push;
-                }
-            } else {
-                pushes |= self.black_single_push_target(position, bb_pawns);
-                pushes |= self.black_double_push_target(position, bb_pawns);
-            }
+        let promotions = match position.state.current_turn() {
+            Side::White => self.north_one(pawns & seventh_rank),
+            Side::Black => self.south_one(pawns & seventh_rank),
+        } & empty;
 
-            self.create_moves(position, Piece::Pawn, turn, pushes, from, moves, move_type);
+        for target in promotions {
+            let from = match position.state.current_turn() {
+                Side::White => target as u64 - 8,
+                Side::Black => target as u64 + 8,
+            };
+
+            moves.push(Move::init_with_promotion_piece(
+                Piece::Pawn,
+                Square::from(from),
+                target,
+                MoveType::Promotion,
+                Piece::Bishop,
+            ));
+            moves.push(Move::init_with_promotion_piece(
+                Piece::Pawn,
+                Square::from(from),
+                target,
+                MoveType::Promotion,
+                Piece::Knight,
+            ));
+            moves.push(Move::init_with_promotion_piece(
+                Piece::Pawn,
+                Square::from(from),
+                target,
+                MoveType::Promotion,
+                Piece::Rook,
+            ));
+            moves.push(Move::init_with_promotion_piece(
+                Piece::Pawn,
+                Square::from(from),
+                target,
+                MoveType::Promotion,
+                Piece::Queen,
+            ));
         }
-        */
+
+        // Pawn Promotion Captures
+        let promotions = pawns & seventh_rank;
+
+        for from in promotions {
+            let captures =
+                position.opponent_bitboard() & self.pawn_attacks[turn as usize][from as usize];
+            for target in captures {
+                moves.push(Move::init_with_promotion_piece(
+                    Piece::Pawn,
+                    Square::from(from),
+                    target,
+                    MoveType::Promotion,
+                    Piece::Bishop,
+                ));
+                moves.push(Move::init_with_promotion_piece(
+                    Piece::Pawn,
+                    Square::from(from),
+                    target,
+                    MoveType::Promotion,
+                    Piece::Knight,
+                ));
+                moves.push(Move::init_with_promotion_piece(
+                    Piece::Pawn,
+                    Square::from(from),
+                    target,
+                    MoveType::Promotion,
+                    Piece::Rook,
+                ));
+                moves.push(Move::init_with_promotion_piece(
+                    Piece::Pawn,
+                    Square::from(from),
+                    target,
+                    MoveType::Promotion,
+                    Piece::Queen,
+                ));
+            }
+        }
     }
 
     fn white_double_push_target(&self, position: &Position, bitboard: BitBoard) -> BitBoard {

@@ -27,7 +27,7 @@ impl From<u32> for Piece {
             3 => Piece::Rook,
             4 => Piece::Queen,
             5 => Piece::King,
-            _ => panic!("NOT A PIECE"),
+            _ => panic!("NOT A PIECE: {}", p),
         }
     }
 }

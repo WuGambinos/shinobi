@@ -1,3 +1,4 @@
+use shinobi_core::perft::perft_test;
 use shinobi_core::perft::perft;
 use shinobi_core::Engine;
 use shinobi_core::Position;
@@ -32,11 +33,13 @@ fn main() {
     let mut shinobi = Engine::new();
     shinobi.position = position.unwrap();
 
+    /*
     let start = Instant::now();
     let res = perft(&mut shinobi.position, &mut shinobi.move_gen, d);
     let elapsed = start.elapsed();
     println!("PERFT: {} TIME: {} US", res, elapsed.as_micros());
     println!("NPS: {:.0} ", res as f64 / elapsed.as_secs_f64());
+    */
 
-    //perft_test(&mut position, &mut move_gen, d);
+    perft_test(&mut shinobi.position, &mut shinobi.move_gen, d);
 }

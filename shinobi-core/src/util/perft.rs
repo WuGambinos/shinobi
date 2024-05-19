@@ -50,7 +50,7 @@ pub fn perft_test(position: &mut Position, move_generator: &MoveGenerator, depth
 
             position.unmake();
 
-            println!("{}: {}", mv, old_nodes);
+            println!("{} {}", mv, old_nodes);
             // used for perftree
             //println!("{}: {}", mv, old_nodes);
         }

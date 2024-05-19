@@ -240,9 +240,6 @@ impl Position {
         let mut z = position.zobrist;
         position.state.zobrist_hash = z.generate_hash(&position);
 
-        position.history.prev_white_king = Some(position.white_king);
-        position.history.prev_black_king = Some(position.black_king);
-
         Ok(position)
     }
 
@@ -604,6 +601,12 @@ impl Position {
         self.pieces = self.history.prev_pieces[index];
         self.piece_count = self.history.prev_piece_count[index];
 
+        self.history.prev_main_bitboards[index] = EMPTY_BITBOARD;
+        self.history.prev_piece_bitboards[index] = [[EMPTY_BITBOARD; 6]; 2];
+        self.history.prev_side_bitboards[index] = [EMPTY_BITBOARD; 2];
+        self.history.prev_pieces[index] = [None; 64];
+        self.history.prev_piece_count[index] = [[0; 6]; 2];
+
         // Restore last move
         self.last_move = if self.history.moves[index] != NULL_MOVE {
             Some(self.history.moves[index])
@@ -611,9 +614,11 @@ impl Position {
             None
         };
 
+        self.history.moves[index] = NULL_MOVE;
+
         // Restore king square
-        self.white_king = self.history.prev_white_king.unwrap();
-        self.black_king = self.history.prev_black_king.unwrap();
+        self.white_king = self.king(Side::White);
+        self.black_king = self.king(Side::Black);
 
         // Revert state
         self.state = self.history.prev_states[index];
