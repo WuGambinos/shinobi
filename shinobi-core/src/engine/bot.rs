@@ -101,7 +101,7 @@ impl Bot {
         }
 
         let turn = position.state.current_turn();
-        let mut moves = move_gen.generate_legal_moves(position, turn);
+        let mut moves = move_gen.generate_legal_moves(position, turn, MoveType::All);
 
         //self.order_moves(position, &mut moves);
 

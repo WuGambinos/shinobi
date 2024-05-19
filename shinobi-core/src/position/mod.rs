@@ -828,7 +828,7 @@ impl Position {
 
     pub fn checkmate(&mut self, move_gen: &MoveGenerator) -> bool {
         let side = self.state.current_turn();
-        move_gen.generate_legal_moves(self, side).is_empty()
+        move_gen.generate_legal_moves(self, side, MoveType::All).is_empty()
             && move_gen.attacks_to_king(self, side) != EMPTY_BITBOARD
     }
 
@@ -841,7 +841,7 @@ impl Position {
 
     fn stalemate(&mut self, move_gen: &MoveGenerator) -> bool {
         let side = self.state.current_turn();
-        move_gen.generate_legal_moves(self, side).is_empty()
+        move_gen.generate_legal_moves(self, side, MoveType::All).is_empty()
             && move_gen.attacks_to_king(self, side) != EMPTY_BITBOARD
     }
 

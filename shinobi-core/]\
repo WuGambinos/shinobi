@@ -1,6 +1,5 @@
 use crate::get_time_ms;
 use crate::mov::Move;
-use crate::mov::MoveList;
 use crate::mov::MoveType;
 use crate::pv::PvInfo;
 use crate::MoveGenerator;
@@ -9,12 +8,12 @@ use crate::Position;
 use crate::SearchInfo;
 use crate::Side;
 use crate::EMPTY_BITBOARD;
-
 use serde::{ser::SerializeStruct, Serialize, Serializer};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
-use std::sync::Arc;
 use strum::IntoEnumIterator;
+
+use std::sync::Arc;
 
 const WEIGHTS: [i32; 6] = [100, 320, 330, 500, 900, 20000];
 const LARGE_NUM: i32 = 99_999_999;
@@ -223,12 +222,11 @@ impl Search {
         self.nodes += 1;
         let mut best_so_far: Option<Move> = None;
         let old_alpha = alpha;
-        let moves =
-            move_gen.generate_legal_moves(position, position.state.current_turn(), MoveType::All);
+        let mut moves = move_gen.generate_legal_moves(position, position.state.current_turn(), MoveType::All);
 
-        let mut moves_with_scores: Vec<(Move, i32)> = Search::score_moves(position, &moves);
+        Search::score_moves(position, &mut moves);
         for i in 0..moves.len() {
-            self.pick_move(&mut moves_with_scores, i as i32);
+            self.pick_move(&mut moves, i as i32);
             let mv = moves.get(i);
             self.ply += 1;
             position.make_move(mv);
@@ -310,16 +308,19 @@ impl Search {
         alpha = alpha.max(eval);
 
         // FIX THIS (Find other way to only get captures)
-        let mut captures: MoveList = move_gen.generate_legal_moves(
-            position,
-            position.state.current_turn(),
-            MoveType::Capture,
-        );
+        /*
+        let mut captures: Vec<Move> = move_gen
+            .generate_legal_moves(position, position.state.current_turn())
+            .into_iter()
+            .filter(|item| item.move_type() == MoveType::Capture)
+            .collect();
+            */
 
-        let mut captures_with_scores = Search::score_moves(position, &mut captures);
+        // Search::score_moves(position, &mut captures);
+        /*
         for i in 0..captures.len() {
-            self.pick_move(&mut captures_with_scores, i as i32);
-            let capture = captures.get(i);
+            self.pick_move(&mut captures, i as i32);
+            let capture = captures[i];
             self.ply += 1;
             position.make_move(capture);
             let eval = -self.quiescence(info, position, move_gen, -beta, -alpha);
@@ -341,6 +342,7 @@ impl Search {
             // PV Move
             alpha = alpha.max(eval);
         }
+        */
         alpha
     }
 
@@ -392,30 +394,19 @@ impl Search {
     }
     */
 
-    fn score_moves(position: &Position, moves: &MoveList) -> Vec<(Move, i32)> {
-        let mut moves_with_scores = Vec::with_capacity(30);
-        for i in 0..moves.len() {
-            let mv = moves.get(i);
-            let value = if mv.move_type() == MoveType::Capture {
-                let piece_captured = position.pieces[mv.target() as usize].unwrap().1;
-                //return WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10;
-                MVV_LVA[piece_captured as usize][mv.piece() as usize]
-            } else {
-                0
-            };
-            moves_with_scores.push((mv, value));
-        }
+    fn score_move(&self, position: &Position, mv: &mut Move) {
+        let scores = Vec::new();
+        let value = if mv.move_type() == MoveType::Capture {
+            let piece_captured = position.pieces[mv.target() as usize].unwrap().1;
+            //return WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10;
+            MVV_LVA[piece_captured as usize][mv.piece() as usize]
+        } else {
+            0
+        };
 
-        return moves_with_scores;
+        mv.score = value;
     }
-
-    fn pick_move(&self, moves_with_scores: &mut Vec<(Move, i32)>, start_index: i32) {
-        for i in (start_index + 1) as usize..moves_with_scores.len() {
-            if moves_with_scores[i].1 > moves_with_scores[start_index as usize].1 {
-                moves_with_scores.swap(start_index as usize, i);
-            }
-        }
-    }
+    */
 
     fn evalutate(&self, position: &Position) -> i32 {
         let mut white_score = 0;

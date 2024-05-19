@@ -595,7 +595,7 @@ impl MoveGenerator {
         move_type: MoveType,
         moves: &mut MoveList,
     ) {
-        let knights = position.piece_bitboard(Piece::Knight, side);
+        letknights = position.piece_bitboard(Piece::Knight, side);
 
         for from in knights {
             let piece_moves =

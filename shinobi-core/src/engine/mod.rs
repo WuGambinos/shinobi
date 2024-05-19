@@ -4,6 +4,7 @@ pub mod search;
 pub mod tt;
 pub mod zobrist;
 
+use crate::mov::MoveType;
 use crate::get_time_ms;
 use crate::mov::Move;
 use crate::MoveGenerator;
@@ -389,7 +390,9 @@ impl Engine {
 
         for mv in moves {
             let side = self.position.state.current_turn();
-            let moves = self.move_gen.generate_legal_moves(&mut self.position, side);
+            let moves = self
+                .move_gen
+                .generate_legal_moves(&mut self.position, side, MoveType::All);
             for j in 0..moves.len() {
                 let gen_move = moves.get(j);
                 if mv == gen_move.to_string() {

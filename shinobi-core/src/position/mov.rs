@@ -30,6 +30,7 @@ pub enum MoveType {
     EnPassant   =   0b0010,
     Castle      =   0b0011,
     Promotion   =   0b0100,
+    All         =   0b0101,
 }
 
 impl From<u32> for MoveType {
@@ -98,12 +99,27 @@ impl Move {
     }
 
     pub fn promotion_piece(&self) -> Option<Piece> {
+        if self.move_type() != MoveType::Promotion {
+            return None;
+        }
+
         let promotion_piece = (self.0 & PROMO_PIECE_MASK) >> PROMO_SHIFT;
         if (promotion_piece as i32) < 0 {
             None
         } else {
             Some(Piece::from(promotion_piece + 1))
         }
+    }
+
+    pub fn print_info(&self) {
+        println!(
+            "PIECE: {:?}\tFROM: {:?}  TARGET: {:?}    MOVE_TYPE: {:?} PROMOTION_PIECE: {:?}",
+            self.piece(),
+            self.from(),
+            self.target(),
+            self.move_type(),
+            self.promotion_piece()
+        );
     }
 }
 
@@ -168,67 +184,6 @@ impl MoveList {
     }
 }
 
-/*
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct Move {
-    pub piece: Piece,
-    pub from: Square,
-    pub target: Square,
-    pub move_type: MoveType,
-    pub promotion_piece: Option<Piece>,
-    pub score: i32,
-}
-
-impl Move {
-    pub fn init(piece: Piece, from: Square, target: Square, move_type: MoveType) -> Move {
-        Move {
-            piece,
-            from,
-            target,
-            move_type,
-            promotion_piece: None,
-            score: 0,
-        }
-    }
-
-    pub fn init_with_promotion_piece(
-        piece: Piece,
-        from: Square,
-        target: Square,
-        move_type: MoveType,
-        promotion_piece: Option<Piece>,
-    ) -> Move {
-        Move {
-            piece,
-            from,
-            target,
-            move_type,
-            promotion_piece,
-            score: 0,
-        }
-    }
-
-    pub fn is_double_pawn_push(&self) -> bool {
-        self.piece.is_pawn() && (self.target() as i8 - self.from() as i8).abs() == 16
-    }
-
-    pub fn piece(&self) -> Piece {
-        self.piece
-    }
-
-    pub fn from(&self) -> Square {
-        self.from
-    }
-
-    pub fn target(&self) -> Square {
-        self.target
-    }
-
-    pub fn move_type(&self) -> MoveType {
-        self.move_type
-    }
-}
-*/
 
 /**
  * Prints Move in format like "a1b2"
