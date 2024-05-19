@@ -309,7 +309,6 @@ impl Search {
         // PV Move
         alpha = alpha.max(eval);
 
-        // FIX THIS (Find other way to only get captures)
         let mut captures: MoveList = move_gen.generate_legal_moves(
             position,
             position.state.current_turn(),
@@ -343,54 +342,6 @@ impl Search {
         }
         alpha
     }
-
-    /*
-    fn order_moves(&self, position: &Position, moves: &mut [Move]) {
-        moves.sort_by(|a, b| {
-            self.score_move(position, b)
-                .cmp(&self.score_move(position, a))
-        });
-    }
-
-    fn score_move(&self, position: &Position, mv: &mut Move) {
-        let value = if mv.move_type() == MoveType::Capture {
-            let piece_captured = position.pieces[mv.target() as usize].unwrap().1;
-            //return WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10;
-            MVV_LVA[piece_captured as usize][mv.piece() as usize]
-        } else {
-            0
-        };
-
-        mv.score = value;
-    }
-    */
-
-    /*
-    fn score_moves(position: &Position, moves: &mut MoveList) {
-        for i in 0..moves.len() {
-            let mv = moves.get_mut(i).unwrap();
-            let value = if mv.move_type() == MoveType::Capture {
-                let piece_captured = position.pieces[mv.target() as usize].unwrap().1;
-                //return WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10;
-                MVV_LVA[piece_captured as usize][mv.piece() as usize]
-            } else {
-                0
-            };
-
-            //mv.score = value;
-        }
-    }
-
-    fn pick_move(&self, moves: &mut Vec<Move>, start_index: i32) {
-        /*
-        for i in (start_index + 1) as usize..moves.len() {
-            if moves[i].score > moves[start_index as usize].score {
-                moves.swap(start_index as usize, i);
-            }
-        }
-        */
-    }
-    */
 
     fn score_moves(position: &Position, moves: &MoveList) -> Vec<(Move, i32)> {
         let mut moves_with_scores = Vec::with_capacity(30);
