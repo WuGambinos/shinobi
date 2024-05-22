@@ -113,7 +113,7 @@ impl Move {
 
     pub fn print_info(&self) {
         println!(
-            "PIECE: {:?}\tFROM: {:?}  TARGET: {:?}    MOVE_TYPE: {:?} PROMOTION_PIECE: {:?}",
+            "PIECE: {:?}\tFROM: {:?}\tTARGET: {:?}\tMOVE_TYPE: {:?}\tPROMOTION_PIECE: {:?}",
             self.piece(),
             self.from(),
             self.target(),
@@ -183,7 +183,6 @@ impl MoveList {
         res
     }
 }
-
 
 /**
  * Prints Move in format like "a1b2"

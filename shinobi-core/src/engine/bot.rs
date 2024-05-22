@@ -11,6 +11,7 @@ const MAX_DEPTH: i32 = 4;
 pub static mut nodes: i32 = 0;
 
 // MVV_VLA[victim][attacker]
+/*
 pub const MVV_LVA: [[u8; 7]; 7] = [
     [0, 0, 0, 0, 0, 0, 0],       // victim K, attacker K, Q, R, B, N, P, None
     [50, 51, 52, 53, 54, 55, 0], // victim Q, attacker K, Q, R, B, N, P, None
@@ -20,6 +21,7 @@ pub const MVV_LVA: [[u8; 7]; 7] = [
     [10, 11, 12, 13, 14, 15, 0], // victim P, attacker K, Q, R, B, N, P, None
     [0, 0, 0, 0, 0, 0, 0],       // victim None, attacker K, Q, R, B, N, P, None
 ];
+*/
 
 pub struct Bot {
     best_move: Option<Move>,
@@ -114,7 +116,7 @@ impl Bot {
         }
 
         let mut max_eval = -LARGE_NUM;
-        for i in 0..moves.len() { 
+        for i in 0..moves.len() {
             let mv = moves.get(i);
             position.make_move(mv);
             let eval = -self.negamax_alpha_beta(position, move_gen, -beta, -alpha, depth - 1);

@@ -18,7 +18,7 @@ use strum::IntoEnumIterator;
 
 use self::castling_rights::{Castling, CastlingRights};
 
-pub const MAX_BOARDS: usize = 50;
+pub const MAX_BOARDS: usize = 100;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize)]
 pub struct State {
@@ -67,7 +67,7 @@ impl State {
 
 #[derive(Debug, Clone)]
 pub struct History {
-    pub moves: [Move; MAX_HALF_MOVES as usize],
+    pub moves: [Move; MAX_BOARDS],
 
     /// previous Piece slice board
     pub prev_pieces: [[Option<(Side, Piece)>; 64]; MAX_BOARDS],
@@ -108,7 +108,7 @@ impl Serialize for History {
 impl History {
     fn new() -> History {
         History {
-            moves: [Move(0); MAX_HALF_MOVES as usize],
+            moves: [Move(0); MAX_BOARDS],
             prev_pieces: [[None; 64]; MAX_BOARDS],
             prev_piece_count: [[[0; 6]; 2]; MAX_BOARDS],
             prev_main_bitboards: [EMPTY_BITBOARD; MAX_BOARDS],
@@ -828,7 +828,9 @@ impl Position {
 
     pub fn checkmate(&mut self, move_gen: &MoveGenerator) -> bool {
         let side = self.state.current_turn();
-        move_gen.generate_legal_moves(self, side, MoveType::All).is_empty()
+        move_gen
+            .generate_legal_moves(self, side, MoveType::All)
+            .is_empty()
             && move_gen.attacks_to_king(self, side) != EMPTY_BITBOARD
     }
 
@@ -841,7 +843,9 @@ impl Position {
 
     fn stalemate(&mut self, move_gen: &MoveGenerator) -> bool {
         let side = self.state.current_turn();
-        move_gen.generate_legal_moves(self, side, MoveType::All).is_empty()
+        move_gen
+            .generate_legal_moves(self, side, MoveType::All)
+            .is_empty()
             && move_gen.attacks_to_king(self, side) != EMPTY_BITBOARD
     }
 
