@@ -4,3 +4,4 @@
 /flamegraph.svg
 /perf.data
 /shinobi-tauri/src-tauri/target
+/shinobi-web/pkg/node_modules/

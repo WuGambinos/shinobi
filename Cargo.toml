@@ -2,8 +2,7 @@
 
 members = [
 "shinobi-core",
-"shinobi-tauri/src-tauri"
-]
+"shinobi-web"]
 
 
 [profile.release]

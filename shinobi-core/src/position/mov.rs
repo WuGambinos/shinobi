@@ -1,6 +1,7 @@
 use crate::{square_name, Piece, Side, Square};
 use core::fmt;
 use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::*;
 
 pub const MAX_MOVES: usize = 218;
 pub const NULL_MOVE: Move = Move(0);
@@ -123,8 +124,18 @@ impl Move {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+
+#[cfg_attr(
+    target_os = "wasm32",
+    derive(Debug, Clone, Copy, Serialize, Deserialize)
+)]
+#[cfg_attr(not(target_os = "wasm32"), derive(Debug, Clone, Copy))]
 pub struct MoveList {
+    #[cfg(target_os = "wasm32")]
+    #[serde(with = "serde_arrays")]
+    pub list: [Move; MAX_MOVES],
+
+    #[cfg(not(target_os = "wasm32"))]
     pub list: [Move; MAX_MOVES],
     pub count: usize,
 }
