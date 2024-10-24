@@ -1,0 +1,34 @@
+{
+  "name": "shinobi-web",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "shinobi_web_bg.wasm",
+    "shinobi_web.js",
+    "shinobi_web.d.ts"
+  ],
+  "main": "shinobi_web.js",
+  "types": "shinobi_web.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ],
+
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview",
+    "tauri": "tauri"
+  },
+
+    "dependencies": {
+    "solid-js": "^1.7.8",
+    "@tauri-apps/api": "^1.5.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.2",
+    "vite": "^5.0.0",
+    "vite-plugin-solid": "^2.8.0",
+    "@tauri-apps/cli": "^1.5.8"
+  }
+}
