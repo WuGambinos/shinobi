@@ -111,6 +111,23 @@ function getDataViewMemory0() {
     }
     return cachedDataViewMemory0;
 }
+
+function getArrayJsValueFromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    const mem = getDataViewMemory0();
+    const result = [];
+    for (let i = ptr; i < ptr + 4 * len; i += 4) {
+        result.push(takeObject(mem.getUint32(i, true)));
+    }
+    return result;
+}
+
+function _assertClass(instance, klass) {
+    if (!(instance instanceof klass)) {
+        throw new Error(`expected instance of ${klass.name}`);
+    }
+    return instance.ptr;
+}
 /**
  * @param {number} left
  * @param {number} right
@@ -173,12 +190,46 @@ export class ClientEngine {
         }
     }
     /**
+     * @returns {Array<any>}
+     */
+    recieve_position() {
+        const ret = wasm.clientengine_recieve_position(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
+     * @returns {(Move)[]}
+     */
+    moves() {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.clientengine_moves(retptr, this.__wbg_ptr);
+            var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+            var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+            var v1 = getArrayJsValueFromWasm0(r0, r1).slice();
+            wasm.__wbindgen_free(r0, r1 * 4, 4);
+            return v1;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+    /**
+     * @param {Move} mv
+     */
+    make_move(mv) {
+        _assertClass(mv, Move);
+        var ptr0 = mv.__destroy_into_raw();
+        wasm.clientengine_make_move(this.__wbg_ptr, ptr0);
+    }
+    /**
      * @param {number} depth
      * @returns {bigint}
      */
     start_perft(depth) {
         const ret = wasm.clientengine_start_perft(this.__wbg_ptr, depth);
         return BigInt.asUintN(64, ret);
+    }
+    search() {
+        wasm.clientengine_search(this.__wbg_ptr);
     }
 }
 
@@ -187,6 +238,14 @@ const MoveFinalization = (typeof FinalizationRegistry === 'undefined')
     : new FinalizationRegistry(ptr => wasm.__wbg_move_free(ptr >>> 0, 1));
 
 export class Move {
+
+    static __wrap(ptr) {
+        ptr = ptr >>> 0;
+        const obj = Object.create(Move.prototype);
+        obj.__wbg_ptr = ptr;
+        MoveFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
 
     __destroy_into_raw() {
         const ptr = this.__wbg_ptr;
@@ -252,25 +311,37 @@ function __wbg_get_imports() {
         const ret = getStringFromWasm0(arg0, arg1);
         return addHeapObject(ret);
     };
+    imports.wbg.__wbg_new_034f913e7636e987 = function() {
+        const ret = new Array();
+        return addHeapObject(ret);
+    };
+    imports.wbg.__wbg_push_36cf4d81d7da33d1 = function(arg0, arg1) {
+        const ret = getObject(arg0).push(getObject(arg1));
+        return ret;
+    };
     imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
         takeObject(arg0);
+    };
+    imports.wbg.__wbg_move_new = function(arg0) {
+        const ret = Move.__wrap(arg0);
+        return addHeapObject(ret);
     };
     imports.wbg.__wbindgen_throw = function(arg0, arg1) {
         throw new Error(getStringFromWasm0(arg0, arg1));
     };
-    imports.wbg.__wbg_debug_f6571682e9ffea86 = function(arg0, arg1, arg2, arg3) {
+    imports.wbg.__wbg_debug_a0b6c2c5ac9a4bfd = function(arg0, arg1, arg2, arg3) {
         console.debug(getObject(arg0), getObject(arg1), getObject(arg2), getObject(arg3));
     };
-    imports.wbg.__wbg_error_9cf6f6014760d682 = function(arg0, arg1, arg2, arg3) {
+    imports.wbg.__wbg_error_4d17c5bb1ca90c94 = function(arg0, arg1, arg2, arg3) {
         console.error(getObject(arg0), getObject(arg1), getObject(arg2), getObject(arg3));
     };
-    imports.wbg.__wbg_info_217b96562be39dbc = function(arg0, arg1, arg2, arg3) {
+    imports.wbg.__wbg_info_1c7fba7da21072d1 = function(arg0, arg1, arg2, arg3) {
         console.info(getObject(arg0), getObject(arg1), getObject(arg2), getObject(arg3));
     };
-    imports.wbg.__wbg_log_425230a32d7c9410 = function(arg0, arg1, arg2, arg3) {
+    imports.wbg.__wbg_log_4de37a0274d94769 = function(arg0, arg1, arg2, arg3) {
         console.log(getObject(arg0), getObject(arg1), getObject(arg2), getObject(arg3));
     };
-    imports.wbg.__wbg_warn_33b8e4ee17f7e7b9 = function(arg0, arg1, arg2, arg3) {
+    imports.wbg.__wbg_warn_2e2787d40aad9a81 = function(arg0, arg1, arg2, arg3) {
         console.warn(getObject(arg0), getObject(arg1), getObject(arg2), getObject(arg3));
     };
 

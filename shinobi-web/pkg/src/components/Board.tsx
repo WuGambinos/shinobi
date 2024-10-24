@@ -1,16 +1,10 @@
 import './Board.css';
 import Tile from './Tile';
 import { createEffect, createMemo, createSignal } from 'solid-js';
-import init, { multiply, new_engine, ClientEngine} from './../../shinobi_web.js';
-
-
-
-
+import init, { ClientEngine } from './../../shinobi_web.js';
 
 const files = ["window 1", "2", "3", "4", "5", "6", "7", "8"];
 const ranks = ["a", "b", "c", "d", "e", "f", "g", "h"];
-
-
 
 function pieceToStr(piece: string) {
     switch (piece) {
@@ -82,13 +76,10 @@ const empty_board = [
 
 ]
 
-
-
 interface Props {
     engine: ClientEngine
 }
 
-//export default function Tile({ dark, image: image }: Props) {
 export default function Board({ engine }: Props) {
 
     const [fen, setFen] = createSignal(START_FEN);
@@ -198,10 +189,15 @@ export default function Board({ engine }: Props) {
         /*
         setBoard(await invoke('recieve_position', {}));
         */
+        setBoard(engine.recieve_position());
         setVBoard(displayBoard());
     }
 
     async function makeMove() {
+        let moves = engine.moves();
+        let mv = moves[0];
+        engine.make_move(mv);
+        setBoard(engine.recieve_position());
         /*
         let moves = await invoke('moves', {});
         let mv = await invoke('make_move', { mv: moves[0] });
@@ -233,26 +229,21 @@ export default function Board({ engine }: Props) {
         resetPosition();
     }
 
-    /*
-    async function loadFen() {
-        let input = document.getElementById("fen_string") as HTMLInputElement;
-        setFen(input.value);
-        await invoke('load_fen', { 'fen': fen() });
-        setBoard(await invoke('recieve_position', {}));
-        setVBoard(displayBoard());
-        console.log(fen());
-    }
-    */
     function loadFen() {
         let input = document.getElementById("fen_string") as HTMLInputElement;
         setFen(input.value);
         engine.load_fen(fen());
+        let pos = engine.recieve_position();
+        console.log("RECEIVE", pos);
+        setBoard(pos);
+        setVBoard(displayBoard());
     }
 
     async function search() {
 
         for (let i = 0; i < 10; i++) {
             //await invoke('search', {});
+            engine.search();
             updateBoard();
 
             // Make it so i can see moves being made

@@ -20,10 +20,23 @@ export class ClientEngine {
    */
   load_fen(fen: string): void;
   /**
+   * @returns {Array<any>}
+   */
+  recieve_position(): Array<any>;
+  /**
+   * @returns {(Move)[]}
+   */
+  moves(): (Move)[];
+  /**
+   * @param {Move} mv
+   */
+  make_move(mv: Move): void;
+  /**
    * @param {number} depth
    * @returns {bigint}
    */
   start_perft(depth: number): bigint;
+  search(): void;
 }
 export class Move {
   free(): void;
@@ -37,7 +50,11 @@ export interface InitOutput {
   readonly __wbg_clientengine_free: (a: number, b: number) => void;
   readonly clientengine_new: () => number;
   readonly clientengine_load_fen: (a: number, b: number, c: number, d: number) => void;
+  readonly clientengine_recieve_position: (a: number) => number;
+  readonly clientengine_moves: (a: number, b: number) => void;
+  readonly clientengine_make_move: (a: number, b: number) => void;
   readonly clientengine_start_perft: (a: number, b: number) => number;
+  readonly clientengine_search: (a: number) => void;
   readonly add: (a: number, b: number) => number;
   readonly multiply: (a: number, b: number) => number;
   readonly __wbg_move_free: (a: number, b: number) => void;
@@ -46,6 +63,7 @@ export interface InitOutput {
   readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+  readonly __wbindgen_free: (a: number, b: number, c: number) => void;
 }
 
 export type SyncInitInput = BufferSource | WebAssembly.Module;

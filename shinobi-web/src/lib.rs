@@ -1,4 +1,5 @@
 use crate::mov::*;
+use js_sys::Array;
 use log::error;
 use log::info;
 use log::Level;
@@ -11,6 +12,7 @@ pub struct ClientEngine {
     move_gen: MoveGenerator,
     search: search::Search,
 }
+
 #[wasm_bindgen]
 impl ClientEngine {
     #[wasm_bindgen(constructor)]
@@ -37,11 +39,151 @@ impl ClientEngine {
         }
     }
 
+    pub fn recieve_position(&self) -> Array {
+        let mut grid: Vec<Vec<char>> = vec![vec!['.'; 8]; 8];
+
+        white_pieces(
+            &mut grid,
+            self.position.piece_bitboards[Side::White as usize],
+        );
+
+        black_pieces(
+            &mut grid,
+            self.position.piece_bitboards[Side::Black as usize],
+        );
+
+        let res = Array::new();
+        for r in 0..8 {
+            let inner = Array::new();
+            for c in 0..8 {
+                inner.push(&JsValue::from(grid[r][c].to_string()));
+            }
+
+            res.push(&inner);
+        }
+
+        return res;
+    }
+
+    pub fn moves(&mut self) -> Vec<Move> {
+       let res =  moves_helper(&mut self.position, &mut self.move_gen);
+       return res.list.to_vec();
+    }
+
+    pub fn make_move(&mut self, mv: Move) {
+        let _ = console_log::init_with_level(Level::Debug);
+        self.position.make_move(mv);
+        info!("MOVE: {}", mv);
+    }
+
     pub fn start_perft(&mut self, depth: u32) -> u64 {
         let _ = console_log::init_with_level(Level::Debug);
         info!("STARTING PERFT");
         return perft(&mut self.position, &mut self.move_gen, depth);
     }
+
+    pub fn search(&mut self) {
+        let _ = console_log::init_with_level(Level::Debug);
+        info!("STARTING SEARCH");
+
+        let mut bot = Bot::new();
+        let mv = bot.think(&mut self.position, &mut self.move_gen);
+
+        if let Some(best_mv) = mv {
+            info!("BEST MOVE: {:?}", best_mv);
+            self.position.make_move(best_mv);
+        }
+    }
+}
+
+/*
+#[wasm_bindgen]
+pub fn print_moves(moves: Vec<Move>) {
+        let _ = console_log::init_with_level(Level::Debug);
+    for mv in moves {
+        info!("{}", mv);
+    }
+}
+*/
+
+fn white_pieces(grid: &mut Vec<Vec<char>>, bitboards: [BitBoard; 6]) {
+    for piece in Piece::iter() {
+        for rank in 0..8 {
+            for file in 0..8 {
+                let i = (rank * 8) + file;
+                let curr_square = ((bitboards[piece as usize]) >> i) & BitBoard(1);
+
+                let c = file;
+                let r = 7 - rank;
+
+                if curr_square.0 == 1 {
+                    match piece {
+                        Piece::Pawn => {
+                            grid[r][c] = 'P';
+                        }
+                        Piece::Bishop => {
+                            grid[r][c] = 'B';
+                        }
+                        Piece::Knight => {
+                            grid[r][c] = 'N';
+                        }
+                        Piece::Rook => {
+                            grid[r][c] = 'R';
+                        }
+                        Piece::Queen => {
+                            grid[r][c] = 'Q';
+                        }
+                        Piece::King => {
+                            grid[r][c] = 'K';
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn black_pieces(grid: &mut Vec<Vec<char>>, bitboards: [BitBoard; 6]) {
+    for piece in Piece::iter() {
+        for rank in 0..8 {
+            for file in 0..8 {
+                let i = (rank * 8) + file;
+                let curr_square = ((bitboards[piece as usize]) >> i) & BitBoard(1);
+
+                let c = file;
+                let r = 7 - rank;
+
+                if curr_square.0 == 1 {
+                    match piece {
+                        Piece::Pawn => {
+                            grid[r][c] = 'p';
+                        }
+                        Piece::Bishop => {
+                            grid[r][c] = 'b';
+                        }
+                        Piece::Knight => {
+                            grid[r][c] = 'n';
+                        }
+                        Piece::Rook => {
+                            grid[r][c] = 'r';
+                        }
+                        Piece::Queen => {
+                            grid[r][c] = 'q';
+                        }
+                        Piece::King => {
+                            grid[r][c] = 'k';
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+pub fn moves_helper(position: &mut Position, move_gen: &mut MoveGenerator) -> MoveList {
+    let moves =
+        move_gen.generate_legal_moves(position, position.state.current_turn(), MoveType::All);
+    return moves;
 }
 
 pub fn perft(position: &mut Position, move_gen: &mut MoveGenerator, depth: u32) -> u64 {
