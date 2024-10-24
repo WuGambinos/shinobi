@@ -48,6 +48,7 @@ impl From<u32> for MoveType {
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[wasm_bindgen]
 pub struct Move(pub u32);
 
 impl Move {
@@ -124,22 +125,46 @@ impl Move {
     }
 }
 
-
+/*
 #[cfg_attr(
     target_os = "wasm32",
     derive(Debug, Clone, Copy, Serialize, Deserialize)
 )]
-#[cfg_attr(not(target_os = "wasm32"), derive(Debug, Clone, Copy))]
+#[cfg_attr(
+    target_os = "wasm32",
+    wasm_bindgen)]
+#[cfg_attr(not(target_os = "wasm32"), derive(Debug, Clone))]
+//#[cfg_attr(not(target_os = "wasm32"), derive(Debug, Clone, Copy))]
 pub struct MoveList {
+    /*
     #[cfg(target_os = "wasm32")]
+    list: Vec<Move>,
+    */
+    /*
     #[serde(with = "serde_arrays")]
     pub list: [Move; MAX_MOVES],
-
+    */
+    /*
     #[cfg(not(target_os = "wasm32"))]
+    pub list: [Move; MAX_MOVES],
+    */
+    pub list: [Move; MAX_MOVES],
+    pub count: usize,
+}
+*/
+
+//#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy)]
+pub struct MoveList {
     pub list: [Move; MAX_MOVES],
     pub count: usize,
 }
 
+/*
+#[cfg_attr(
+    target_os = "wasm32",
+    wasm_bindgen)]
+*/
 impl MoveList {
     pub fn new() -> MoveList {
         MoveList {

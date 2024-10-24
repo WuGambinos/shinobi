@@ -1,7 +1,8 @@
 use crate::mov::*;
+use log::error;
+use log::info;
+use log::Level;
 use shinobi_core::*;
-use std::sync::Mutex;
-use std::time::Instant;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -10,7 +11,6 @@ pub struct ClientEngine {
     move_gen: MoveGenerator,
     search: search::Search,
 }
-
 #[wasm_bindgen]
 impl ClientEngine {
     #[wasm_bindgen(constructor)]
@@ -22,23 +22,25 @@ impl ClientEngine {
         }
     }
 
-    /*
-    pub fn moves(&mut self) -> MoveList {
-        let move_gen = self.move_gen;
-        let position = &mut self.position;
-        let res =
-            move_gen.generate_legal_moves(position, position.state.current_turn(), MoveType::All);
-        return res;
+    pub fn load_fen(&mut self, fen: &str) -> Result<(), String> {
+        let _ = console_log::init_with_level(Level::Debug);
+        let position = Position::from_fen(fen);
+        match position {
+            Ok(position) => {
+                self.position = position;
+                return Ok(());
+            }
+            Err(e) => {
+                error!("INVALID FEN: {}", e);
+                return Err(e);
+            }
+        }
     }
-    */
-}
 
-#[wasm_bindgen]
-pub fn new_engine() -> ClientEngine {
-    ClientEngine {
-        position: Position::default(),
-        move_gen: MoveGenerator::new(),
-        search: search::Search::new(),
+    pub fn start_perft(&mut self, depth: u32) -> u64 {
+        let _ = console_log::init_with_level(Level::Debug);
+        info!("STARTING PERFT");
+        return perft(&mut self.position, &mut self.move_gen, depth);
     }
 }
 
@@ -59,15 +61,6 @@ pub fn perft(position: &mut Position, move_gen: &mut MoveGenerator, depth: u32) 
     }
 
     return num_positions;
-}
-
-#[wasm_bindgen]
-pub fn get_perft(e: ClientEngine, depth: u32) -> u64 {
-    let mut move_gen = e.move_gen;
-    let mut position = e.position;
-
-    let res = perft(&mut position, &mut move_gen, depth);
-    return res;
 }
 
 #[wasm_bindgen]

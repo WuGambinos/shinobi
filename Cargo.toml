@@ -1,6 +1,6 @@
 [workspace]
 
-members = [
+members = [ "shinobi-bin",
 "shinobi-core",
 "shinobi-web"]
 
