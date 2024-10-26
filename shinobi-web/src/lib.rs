@@ -65,9 +65,14 @@ impl ClientEngine {
         return res;
     }
 
+    pub fn reset_position(&mut self) {
+        self.position =
+            Position::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
+    }
+
     pub fn moves(&mut self) -> Vec<Move> {
-       let res =  moves_helper(&mut self.position, &mut self.move_gen);
-       return res.list.to_vec();
+        let res = moves_helper(&mut self.position, &mut self.move_gen);
+        return res.list.to_vec();
     }
 
     pub fn make_move(&mut self, mv: Move) {
@@ -79,10 +84,14 @@ impl ClientEngine {
     pub fn start_perft(&mut self, depth: u32) -> u64 {
         let _ = console_log::init_with_level(Level::Debug);
         info!("STARTING PERFT");
-        return perft(&mut self.position, &mut self.move_gen, depth);
+        let final_now = instant::Instant::now();
+        let res = perft(&mut self.position, &mut self.move_gen, depth);
+        let time = final_now.elapsed().as_micros();
+        info!("PERFT COMPLETE IN {} USEC", time);
+        return res;
     }
 
-    pub fn search(&mut self) {
+    pub fn search(&mut self) -> Option<Move> {
         let _ = console_log::init_with_level(Level::Debug);
         info!("STARTING SEARCH");
 
@@ -90,9 +99,14 @@ impl ClientEngine {
         let mv = bot.think(&mut self.position, &mut self.move_gen);
 
         if let Some(best_mv) = mv {
+            /*
             info!("BEST MOVE: {:?}", best_mv);
             self.position.make_move(best_mv);
+            */
+            return Some(best_mv);
         }
+
+        return None;
     }
 }
 

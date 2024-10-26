@@ -1,10 +1,34 @@
 import './Board.css';
 import Tile from './Tile';
-import { createEffect, createMemo, createSignal } from 'solid-js';
+import { createEffect, createMemo, createSignal, onMount } from 'solid-js';
 import init, { ClientEngine } from './../../shinobi_web.js';
 
 const files = ["window 1", "2", "3", "4", "5", "6", "7", "8"];
 const ranks = ["a", "b", "c", "d", "e", "f", "g", "h"];
+
+const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+const startPos = [
+    ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+    ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+    ['.', '.', '.', '.', '.', '.', '.', '.'],
+    ['.', '.', '.', '.', '.', '.', '.', '.'],
+    ['.', '.', '.', '.', '.', '.', '.', '.'],
+    ['.', '.', '.', '.', '.', '.', '.', '.'],
+    ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+    ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+];
+
+const empty_board = [
+    ['.', '.', '.', '.', '.', '.', '.', '.'],
+    ['.', '.', '.', '.', '.', '.', '.', '.'],
+    ['.', '.', '.', '.', '.', '.', '.', '.'],
+    ['.', '.', '.', '.', '.', '.', '.', '.'],
+    ['.', '.', '.', '.', '.', '.', '.', '.'],
+    ['.', '.', '.', '.', '.', '.', '.', '.'],
+    ['.', '.', '.', '.', '.', '.', '.', '.'],
+    ['.', '.', '.', '.', '.', '.', '.', '.']
+
+]
 
 function pieceToStr(piece: string) {
     switch (piece) {
@@ -51,31 +75,6 @@ function pieceToStr(piece: string) {
 }
 
 
-
-const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-const startPos = [
-    ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
-    ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
-    ['.', '.', '.', '.', '.', '.', '.', '.'],
-    ['.', '.', '.', '.', '.', '.', '.', '.'],
-    ['.', '.', '.', '.', '.', '.', '.', '.'],
-    ['.', '.', '.', '.', '.', '.', '.', '.'],
-    ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
-    ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
-];
-
-const empty_board = [
-    ['.', '.', '.', '.', '.', '.', '.', '.'],
-    ['.', '.', '.', '.', '.', '.', '.', '.'],
-    ['.', '.', '.', '.', '.', '.', '.', '.'],
-    ['.', '.', '.', '.', '.', '.', '.', '.'],
-    ['.', '.', '.', '.', '.', '.', '.', '.'],
-    ['.', '.', '.', '.', '.', '.', '.', '.'],
-    ['.', '.', '.', '.', '.', '.', '.', '.'],
-    ['.', '.', '.', '.', '.', '.', '.', '.']
-
-]
-
 interface Props {
     engine: ClientEngine
 }
@@ -84,8 +83,18 @@ export default function Board({ engine }: Props) {
 
     const [fen, setFen] = createSignal(START_FEN);
     const [board, setBoard] = createSignal(startPos);
-    const [vBoard, setVBoard] = createSignal(displayBoard());
-    const memoizedVisualBoard = createMemo(() => vBoard());
+
+    // Create a memoized visual board that reacts to changes in the board state
+    const memoizedVisualBoard = createMemo(() => {
+        return ranks.map((_, rank) => (
+            files.map((_, file) => {
+                const color = (rank + file) % 2 === 0;
+                let piece: string = board()[rank][file];
+                let img_src: string = pieceToStr(piece) as string;
+                return <Tile dark={color} image={img_src} />;
+            })
+        ));
+    });
 
     let activePiece: HTMLElement | null = null;
     let old_piece_x: number;
@@ -165,69 +174,33 @@ export default function Board({ engine }: Props) {
             b[old_piece_y][old_piece_x] = '.';
             b[y][x] = temp;
             setBoard(b);
-            setVBoard(displayBoard());
             activePiece = null;
         }
     }
 
-    function displayBoard() {
-        let visualBoard = [];
-        for (let rank = 0; rank < ranks.length; rank++) {
-            for (let file = 0; file < files.length; file++) {
-                if (board().length == 8) {
-                    const color = (rank + file) % 2 == 0;
-                    let piece: string = board()[rank][file];
-                    let img_src: string = pieceToStr(piece) as string;
-                    visualBoard.push(<Tile dark={color} image={img_src} />);
-                }
-            }
-        }
-        return visualBoard;
-    }
-
-    async function updateBoard() {
-        /*
-        setBoard(await invoke('recieve_position', {}));
-        */
+    function updateBoard() {
         setBoard(engine.recieve_position());
-        setVBoard(displayBoard());
     }
 
-    async function makeMove() {
+    function makeMove() {
         let moves = engine.moves();
         let mv = moves[0];
         engine.make_move(mv);
         setBoard(engine.recieve_position());
-        /*
-        let moves = await invoke('moves', {});
-        let mv = await invoke('make_move', { mv: moves[0] });
-        setBoard(await invoke('recieve_position', {}));
         console.log("MOVE MADE", mv);
-        */
-        setVBoard(displayBoard());
     }
 
-    async function resetPosition() {
+    function resetPosition() {
         console.log("RESET POSITION");
-        /*
-        await invoke('reset_position', {});
-        let position = await invoke('recieve_position', {});
-        console.log("POSITON:", position);
-
-        setBoard(await invoke('recieve_position', {}));
-        */
-        setVBoard(displayBoard());
+        engine.reset_position();
+        setBoard(engine.recieve_position());
     }
-
 
     createEffect(() => {
         console.log("BOARD HAS CHANGED", board());
     });
 
-
-    window.onload = () => {
-        resetPosition();
-    }
+    onMount(() => resetPosition());
 
     function loadFen() {
         let input = document.getElementById("fen_string") as HTMLInputElement;
@@ -236,20 +209,19 @@ export default function Board({ engine }: Props) {
         let pos = engine.recieve_position();
         console.log("RECEIVE", pos);
         setBoard(pos);
-        setVBoard(displayBoard());
     }
 
     async function search() {
-
         for (let i = 0; i < 10; i++) {
-            //await invoke('search', {});
-            engine.search();
-            updateBoard();
+            let best_mv = engine.search();
+            if (best_mv != null) {
+                engine.make_move(best_mv);
+                updateBoard();
+            }
 
             // Make it so i can see moves being made
             await sleep(500);
         }
-
     }
 
     function perft(depth: number) {
@@ -276,7 +248,8 @@ export default function Board({ engine }: Props) {
             <button onClick={loadFen}>Load FEN</button>
         </div>
         <button onClick={makeMove}>Make Move</button>
-        <button onClick={(_e) => perft(3)}>Perft</button>
+        <button onClick={(_e) => perft(4)}>Perft</button>
         <button onClick={search}>Search</button>
+        <button onClick={resetPosition}>Reset Position</button>
     </div>);
 }
