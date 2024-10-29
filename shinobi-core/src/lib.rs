@@ -6,7 +6,6 @@ pub mod engine;
 pub use ::rand::prelude::*;
 pub use bitboard::*;
 pub use constants::*;
-pub use enums::*;
 pub use generator::*;
 pub use magic::*;
 pub use magic_constants::*;

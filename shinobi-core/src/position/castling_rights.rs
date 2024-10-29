@@ -1,5 +1,22 @@
+use crate::square::Square;
 use serde::Serialize;
 
+// Castling Squares
+pub const WHITE_KINGSIDE_KING: Square = Square::G1;
+pub const WHITE_KINGSIDE_ROOK_TO: Square = Square::F1;
+pub const WHITE_KINGSIDE_ROOK_FROM: Square = Square::H1;
+
+pub const WHITE_QUEENSIDE_KING: Square = Square::C1;
+pub const WHITE_QUEENSIDE_ROOK_TO: Square = Square::D1;
+pub const WHITE_QUEENSIDE_ROOK_FROM: Square = Square::A1;
+
+pub const BLACK_KINGSIDE_KING: Square = Square::G8;
+pub const BLACK_KINGSIDE_ROOK_TO: Square = Square::F8;
+pub const BLACK_KINGSIDE_ROOK_FROM: Square = Square::H8;
+
+pub const BLACK_QUEENSIDE_KING: Square = Square::C8;
+pub const BLACK_QUEENSIDE_ROOK_TO: Square = Square::D8;
+pub const BLACK_QUEENSIDE_ROOK_FROM: Square = Square::A8;
 
 pub struct Castling(u8);
 impl Castling {

@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use modular_bitfield::prelude::*;
+//use modular_bitfield::prelude::*;
 use shinobi_core::mov::Move;
 use shinobi_core::mov::MoveList;
 use shinobi_core::MoveGenerator;
@@ -77,6 +77,7 @@ fn knight_gen_bench(c: &mut Criterion) {
                 black_box(engine.move_gen.gen_knight_moves(
                     &mut engine.position,
                     Side::White,
+                    shinobi_core::mov::MoveType::All,
                     &mut moves,
                 ));
                 moves.clear();
@@ -92,26 +93,34 @@ fn pawn_gen_bench(c: &mut Criterion) {
     for _ in 0..5 {
         c.bench_function("Generating Pawn Moves", |b| {
             b.iter(|| {
-                black_box(
-                    engine
-                        .move_gen
-                        .gen_pawn_moves(&mut engine.position, &mut moves),
-                );
+                black_box(engine.move_gen.gen_pawn_moves(
+                    &mut engine.position,
+                    shinobi_core::mov::MoveType::All,
+                    &mut moves,
+                ));
                 moves.clear();
             });
         });
     }
 }
 
+/*
 fn move_gen_bench(c: &mut Criterion) {
     let mut engine = Engine::new();
 
     for _ in 0..5 {
         c.bench_function("Generating Moves", |b| {
-            b.iter(|| black_box(engine.move_gen.generate_moves(&mut engine.position, Side::White)))
+            b.iter(|| {
+                black_box(
+                    engine
+                        .move_gen
+                        .generate_moves(&mut engine.position, Side::White),
+                )
+            })
         });
     }
 }
+*/
 
 fn move_list_creation_bench(c: &mut Criterion) {
     for _ in 0..5 {
@@ -125,12 +134,15 @@ fn move_list_creation_bench(c: &mut Criterion) {
 
 criterion_group!(
     benches,
-    move_gen_bench,
+    perft_starting_pos_depth_1,
+    perft_starting_pos_depth_2,
+    perft_starting_pos_depth_3,
+    perft_starting_pos_depth_4,
+    //move_gen_bench,
     /*
     move_list_creation_bench,
     pawn_gen_bench,
     knight_gen_bench
-    perft_starting_pos_depth_1,
                      perft_starting_pos_depth_2,
                      move_list_creation_bench,
                      perft_starting_pos_depth_3,

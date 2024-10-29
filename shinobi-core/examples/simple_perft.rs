@@ -7,11 +7,10 @@ use shinobi_core::START_POS;
 use shinobi_core::*;
 use std::env;
 use std::time::Instant;
-const POS_2: &str = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
 fn main() {
     // Setup Position
     let mut shinobi = Engine::new();
-    let pos = Position::from_fen(POS_2).unwrap();
+    let pos = Position::from_fen(START_POS).unwrap();
     shinobi.position = pos;
 
     let start = Instant::now();

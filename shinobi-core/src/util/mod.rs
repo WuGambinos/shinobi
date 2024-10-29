@@ -1,22 +1,11 @@
 pub mod constants;
-pub mod enums;
 pub mod perft;
 use crate::{
-    bitboard::BitBoard, castling_rights::Castling, Side, Square, State, A_FILE, B_FILE, C_FILE,
-    D_FILE, EIGTH_RANK, E_FILE, FIFTH_RANK, FIRST_RANK, FOURTH_RANK, F_FILE, G_FILE, H_FILE,
-    SECOND_RANK, SEVENTH_RANK, SIXTH_RANK, SQUARE_SIZE, THIRD_RANK,
+    bitboard::BitBoard, bitboard::A_FILE, bitboard::B_FILE, bitboard::C_FILE, bitboard::D_FILE,
+    bitboard::E_FILE, bitboard::F_FILE, bitboard::G_FILE, bitboard::H_FILE,
+    castling_rights::Castling, square::Square, Side, State, EIGTH_RANK, FIFTH_RANK, FIRST_RANK,
+    FOURTH_RANK, SECOND_RANK, SEVENTH_RANK, SIXTH_RANK, THIRD_RANK,
 };
-
-/**
- * Returns the square that mouse cursor is hovering over when called
- * */
-pub fn get_square_from_mouse_position(pos_x: i32, pos_y: i32) -> Square {
-    let x = pos_x / SQUARE_SIZE;
-    let y = (pos_y / SQUARE_SIZE - 7).abs();
-
-    let square = ((8 * y) + x) as u64;
-    Square::from(square)
-}
 
 pub fn load_fen(fen: &str, state: &mut State) -> Result<[char; 64], String> {
     let mut file = 0;

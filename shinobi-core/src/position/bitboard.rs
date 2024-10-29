@@ -1,13 +1,50 @@
 use serde::Serialize;
 
-use crate::Square;
+use crate::square::Square;
 use std::ops::{
     Add, BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign, Div, Mul, Not, Shl, Shr,
     Sub,
 };
 use std::*;
 
-/// Wrapper around u64
+// BitBoard Constants
+pub const EMPTY_BITBOARD: BitBoard = BitBoard(0);
+
+pub const A_FILE: BitBoard = BitBoard(0x0101_0101_0101_0101);
+pub const B_FILE: BitBoard = BitBoard(0x0202_0202_0202_0202);
+pub const C_FILE: BitBoard = BitBoard(0x0404_0404_0404_0404);
+pub const D_FILE: BitBoard = BitBoard(0x0808_0808_0808_0808);
+pub const E_FILE: BitBoard = BitBoard(0x1010_1010_1010_1010);
+pub const F_FILE: BitBoard = BitBoard(0x2020_2020_2020_2020);
+pub const G_FILE: BitBoard = BitBoard(0x4040_4040_4040_4040);
+pub const H_FILE: BitBoard = BitBoard(0x8080_8080_8080_8080);
+
+#[rustfmt::skip]
+pub const FIRST_RANK    : BitBoard = BitBoard(0x0000_0000_0000_00FF);
+#[rustfmt::skip]
+pub const SECOND_RANK   : BitBoard = BitBoard(0x0000_0000_0000_FF00);
+#[rustfmt::skip]
+pub const THIRD_RANK    : BitBoard = BitBoard(0x0000_0000_00FF_0000);
+#[rustfmt::skip]
+pub const FOURTH_RANK   : BitBoard = BitBoard(0x0000_0000_FF00_0000);
+#[rustfmt::skip]
+pub const FIFTH_RANK    : BitBoard = BitBoard(0x0000_00FF_0000_0000);
+#[rustfmt::skip]
+pub const SIXTH_RANK    : BitBoard = BitBoard(0x0000_FF00_0000_0000);
+#[rustfmt::skip]
+pub const SEVENTH_RANK  : BitBoard = BitBoard(0x00FF_0000_0000_0000);
+#[rustfmt::skip]
+pub const EIGTH_RANK    : BitBoard = BitBoard(0xFF00_0000_0000_0000);
+
+#[rustfmt::skip]
+pub const A1_TO_H8_DIAGONAL : BitBoard = BitBoard(0x8040_2010_0804_0201);
+#[rustfmt::skip]
+pub const H1_TO_A8_DIAGONAL : BitBoard = BitBoard(0x0102_0408_1020_4080);
+#[rustfmt::skip]
+pub const LIGHT_SQUARES     : BitBoard = BitBoard(0x55AA_55AA_55AA_55AA);
+#[rustfmt::skip]
+pub const DARK_SQUARES      : BitBoard = BitBoard(0xAA55_AA55_AA55_AA55);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub struct BitBoard(pub u64);
 
@@ -29,12 +66,18 @@ impl BitBoard {
         self.0 &= !(1u64 << (square as u64));
     }
 
+    /* *
+     * Returns Index (Square) of least significant 1 bit
+     */
     pub fn bitscan_forward(&self) -> Square {
         assert!(self.0 != 0);
         let square = self.0.trailing_zeros() as u64;
         Square::from(square)
     }
 
+    /* *
+     * Returns Index (Square) of least significant 1 bit and then clear bit at that index
+     */
     pub fn bitscan_forward_reset(&mut self) -> Square {
         assert!(self.0 != 0);
         let square = self.bitscan_forward();
@@ -42,6 +85,9 @@ impl BitBoard {
         square
     }
 
+    /* *
+     * Returns number of set bits
+     */
     pub fn pop_count(&mut self) -> u64 {
         let mut count = 0;
         let mut n = self.0;

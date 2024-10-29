@@ -1,9 +1,10 @@
-use crate::mov::*;
 use js_sys::Array;
 use log::error;
 use log::info;
 use log::Level;
 use shinobi_core::*;
+use shinobi_core::mov::*;
+use shinobi_core::piece::Piece;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]

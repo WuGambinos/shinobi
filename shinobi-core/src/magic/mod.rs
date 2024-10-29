@@ -15,6 +15,7 @@ pub struct MagicEntry {
     pub shift: u32,
     pub size: usize,
 }
+
 impl MagicEntry {
     pub fn new(mask: u64, magic: u64, shift: u32, size: usize) -> MagicEntry {
         MagicEntry {
@@ -362,7 +363,7 @@ fn try_magic_number(
  * Returns MagicEntry for square, depending on bishop or rool
  *
  * panics if magic number not found
- * */
+ */
 fn find_magic(square: u64, is_bishop: bool) -> MagicEntry {
     let mask = if is_bishop {
         bishop_mask(square)

@@ -5,7 +5,7 @@ use crate::mov::MoveType;
 use crate::mov::NULL_MOVE;
 use crate::pv::PvInfo;
 use crate::MoveGenerator;
-use crate::Piece;
+use crate::piece::Piece;
 use crate::Position;
 use crate::SearchInfo;
 use crate::Side;

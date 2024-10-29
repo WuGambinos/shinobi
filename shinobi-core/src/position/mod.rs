@@ -2,23 +2,34 @@ pub mod bitboard;
 pub mod castling_rights;
 pub mod generator;
 pub mod mov;
+pub mod piece;
+pub mod square;
 
+use self::castling_rights::{Castling, CastlingRights};
 use crate::{
-    load_fen, mov::Move, mov::MoveType, mov::NULL_MOVE, BitBoard, MoveGenerator, Piece, Side,
-    Square, Zobrist, BLACK_KINGSIDE_KING, BLACK_KINGSIDE_ROOK_FROM, BLACK_KINGSIDE_ROOK_TO,
-    BLACK_QUEENSIDE_KING, BLACK_QUEENSIDE_ROOK_FROM, BLACK_QUEENSIDE_ROOK_TO, EIGTH_RANK,
-    EMPTY_BITBOARD, FIRST_RANK, MAX_HALF_MOVES, START_POS, WHITE_KINGSIDE_KING,
-    WHITE_KINGSIDE_ROOK_FROM, WHITE_KINGSIDE_ROOK_TO, WHITE_QUEENSIDE_KING,
-    WHITE_QUEENSIDE_ROOK_FROM, WHITE_QUEENSIDE_ROOK_TO,
+    castling_rights::BLACK_KINGSIDE_KING, castling_rights::BLACK_KINGSIDE_ROOK_FROM,
+    castling_rights::BLACK_KINGSIDE_ROOK_TO, castling_rights::BLACK_QUEENSIDE_KING,
+    castling_rights::BLACK_QUEENSIDE_ROOK_FROM, castling_rights::BLACK_QUEENSIDE_ROOK_TO,
+    castling_rights::WHITE_KINGSIDE_KING, castling_rights::WHITE_KINGSIDE_ROOK_FROM,
+    castling_rights::WHITE_KINGSIDE_ROOK_TO, castling_rights::WHITE_QUEENSIDE_KING,
+    castling_rights::WHITE_QUEENSIDE_ROOK_FROM, castling_rights::WHITE_QUEENSIDE_ROOK_TO, load_fen,
+    mov::Move, mov::MoveType, mov::NULL_MOVE, piece::Piece, square::Square, BitBoard,
+    MoveGenerator, Zobrist, EIGTH_RANK, EMPTY_BITBOARD, FIRST_RANK, START_POS,
 };
 
 use serde::{ser::SerializeStruct, Serialize};
 use std::fmt;
 use strum::IntoEnumIterator;
-
-use self::castling_rights::{Castling, CastlingRights};
+use strum_macros::EnumIter;
 
 pub const MAX_BOARDS: usize = 100;
+pub const MAX_HALF_MOVES: u8 = 100;
+
+#[derive(EnumIter, Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum Side {
+    White,
+    Black,
+}
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize)]
 pub struct State {

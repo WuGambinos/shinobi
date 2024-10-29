@@ -1,4 +1,4 @@
-use crate::{Piece, Position, Side, Square, EMPTY_BITBOARD, NUM_SQUARES};
+use crate::{piece::Piece, Position, Side, square::Square, EMPTY_BITBOARD, NUM_SQUARES};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaChaRng;
 use serde::{ser::SerializeStruct, Serialize, Serializer};

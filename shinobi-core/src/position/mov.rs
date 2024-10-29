@@ -1,16 +1,18 @@
-use crate::{square_name, Piece, Side, Square};
+use crate::{piece::Piece, square::Square, square_name, Side};
 use core::fmt;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 
-pub const MAX_MOVES: usize = 218;
+pub const MAX_MOVES: usize = 150;
 pub const NULL_MOVE: Move = Move(0);
+
+// Bitmasks for Move struct
 /*
-const PIECE_MASK: u32           =   0b00000000000000000000000000000111;
-const FROM_MASK: u32            =   0b00000000000000000000000111111000;
-const TARGET_MASK: u32          =   0b00000000000000000111111000000000;
-const MOVE_TYPE_MASK: u32       =   0b00000000000000111000000000000000;
-const PROMOTION_PIECE_MASK: u32 =   0b00000000000011000000000000000000;
+PIECE_MASK           :   0b00000000000000000000000000000111
+FROM_MASK            :   0b00000000000000000000000111111000
+TARGET_MASK          :   0b00000000000000000111111000000000
+MOVE_TYPE_MASK       :   0b00000000000000111000000000000000
+PROMOTION_PIECE_MASK :   0b00000000000011000000000000000000
 */
 const PIECE_MASK: u32 = 0x7;
 const FROM_MASK: u32 = 0x1F8;
@@ -125,46 +127,12 @@ impl Move {
     }
 }
 
-/*
-#[cfg_attr(
-    target_os = "wasm32",
-    derive(Debug, Clone, Copy, Serialize, Deserialize)
-)]
-#[cfg_attr(
-    target_os = "wasm32",
-    wasm_bindgen)]
-#[cfg_attr(not(target_os = "wasm32"), derive(Debug, Clone))]
-//#[cfg_attr(not(target_os = "wasm32"), derive(Debug, Clone, Copy))]
-pub struct MoveList {
-    /*
-    #[cfg(target_os = "wasm32")]
-    list: Vec<Move>,
-    */
-    /*
-    #[serde(with = "serde_arrays")]
-    pub list: [Move; MAX_MOVES],
-    */
-    /*
-    #[cfg(not(target_os = "wasm32"))]
-    pub list: [Move; MAX_MOVES],
-    */
-    pub list: [Move; MAX_MOVES],
-    pub count: usize,
-}
-*/
-
-//#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[derive(Debug, Clone, Copy)]
 pub struct MoveList {
     pub list: [Move; MAX_MOVES],
     pub count: usize,
 }
 
-/*
-#[cfg_attr(
-    target_os = "wasm32",
-    wasm_bindgen)]
-*/
 impl MoveList {
     pub fn new() -> MoveList {
         MoveList {
