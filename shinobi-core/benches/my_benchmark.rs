@@ -2,9 +2,12 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 //use modular_bitfield::prelude::*;
 use shinobi_core::mov::Move;
 use shinobi_core::mov::MoveList;
-use shinobi_core::MoveGenerator;
+use shinobi_core::search::SearcherEnum;
+use shinobi_core::search::Search;
+use shinobi_core::*;
 use shinobi_core::{perft::*, Engine, Position, Side, START_POS};
 
+/*
 fn perft_starting_pos_depth_1(c: &mut Criterion) {
     let depth = 1;
     let mut engine = Engine::new();
@@ -103,6 +106,7 @@ fn pawn_gen_bench(c: &mut Criterion) {
         });
     }
 }
+*/
 
 /*
 fn move_gen_bench(c: &mut Criterion) {
@@ -132,14 +136,43 @@ fn move_list_creation_bench(c: &mut Criterion) {
     }
 }
 
+fn engine_search(c: &mut Criterion) {
+    let engine = Engine::new(SearcherEnum::Search(Search::new()));
+    match engine.search {
+        SearcherEnum::Bot(mut bot) => {
+            let mut search_info = SearchInfo::new();
+            let mut position = engine.position;
+            for _ in 0..5 {
+                c.bench_function("ENGINE SEARCH DEPTH 3", |b| {
+                    b.iter(|| {
+                        bot.search_position(&mut search_info, &mut position, &engine.move_gen, 5)
+                    })
+                });
+            }
+        }
+        SearcherEnum::Search(mut s) => {
+            let mut search_info = SearchInfo::new();
+            let mut position = engine.position;
+            for _ in 0..5 {
+                c.bench_function("ENGINE SEARCH DEPTH 3", |b| {
+                    b.iter(|| {
+                        s.search_position(&mut search_info, &mut position, &engine.move_gen, 5)
+                    })
+                });
+            }
+        } //SearcherEnum::Search(s) => (),
+    }
+}
+
 criterion_group!(
     benches,
+    engine_search,
+    /*
     perft_starting_pos_depth_1,
     perft_starting_pos_depth_2,
     perft_starting_pos_depth_3,
     perft_starting_pos_depth_4,
-    //move_gen_bench,
-    /*
+    move_gen_bench,
     move_list_creation_bench,
     pawn_gen_bench,
     knight_gen_bench

@@ -1,8 +1,8 @@
 use crate::{
     engine::SearchInfo,
     mov::{Move, MoveList, MoveType, NULL_MOVE},
+    piece::Piece,
     pv::PvInfo,
-    search::Searcher,
     MoveGenerator, Position, Side,
 };
 
@@ -13,10 +13,10 @@ use std::sync::Arc;
 const WEIGHTS: [i32; 6] = [100, 320, 330, 500, 900, 20000];
 const LARGE_NUM: i32 = 99_999_999;
 const MAX_DEPTH: i32 = 4;
+const MATE: i32 = 29000;
 pub static mut nodes: i32 = 0;
 
 // MVV_VLA[victim][attacker]
-/*
 pub const MVV_LVA: [[u8; 7]; 7] = [
     [0, 0, 0, 0, 0, 0, 0],       // victim K, attacker K, Q, R, B, N, P, None
     [50, 51, 52, 53, 54, 55, 0], // victim Q, attacker K, Q, R, B, N, P, None
@@ -26,8 +26,8 @@ pub const MVV_LVA: [[u8; 7]; 7] = [
     [10, 11, 12, 13, 14, 15, 0], // victim P, attacker K, Q, R, B, N, P, None
     [0, 0, 0, 0, 0, 0, 0],       // victim None, attacker K, Q, R, B, N, P, None
 ];
-*/
 
+#[derive(Clone)]
 pub struct Bot {
     pub searching: Arc<AtomicBool>,
     pub depth: u8,
@@ -39,8 +39,26 @@ pub struct Bot {
     pub history_moves: [[[i32; 6]; 2]; 64],
 }
 
-impl Searcher for Bot {
-    fn search_position(
+impl Bot {
+
+    pub fn new() -> Bot {
+        Bot {
+            searching: Arc::new(AtomicBool::new(false)),
+            depth: 0,
+            ply: 0,
+            nodes: 0,
+            best_move: None,
+            pv: PvInfo::new(),
+            killer_moves: [[NULL_MOVE; 64]; 2],
+            history_moves: [[[0; 6]; 2]; 64],
+        }
+    }
+
+    /* Search for best move in current position 
+     * Uses Iterative Deepening and PV
+     * Outputs bestmove to stdout in algebraic notation
+     * */
+    pub fn search_position(
         &mut self,
         info: &mut SearchInfo,
         position: &mut Position,
@@ -51,8 +69,10 @@ impl Searcher for Bot {
         self.ply = 0;
         self.nodes = 0;
         self.best_move = None;
-        log::info!("SEARCHED STARTED");
         let mut d = 1;
+        log::info!("SEARCHED STARTED");
+
+        // Iterative Deepening
         loop {
             let score = self.negamax(info, position, move_gen, -LARGE_NUM, LARGE_NUM, d);
             if self.searching.load(Ordering::Relaxed) {
@@ -84,7 +104,6 @@ impl Searcher for Bot {
         log::info!("SEARCH ENDED");
     }
 
-    #[inline(always)]
     fn negamax(
         &mut self,
         info: &mut SearchInfo,
@@ -94,7 +113,8 @@ impl Searcher for Bot {
         beta: i32,
         depth: i32,
     ) -> i32 {
-        // init PV length
+
+        // Init PV length
         self.pv.pv_length[self.ply as usize] = self.ply as i32;
         if !self.searching.load(Ordering::Relaxed) {
             return 0;
@@ -116,12 +136,12 @@ impl Searcher for Bot {
         let mut moves =
             move_gen.generate_legal_moves(position, position.state.current_turn(), MoveType::All);
 
-        // let mut moves_with_scores: Vec<(Move, i32)> = self.score_moves(position, &moves);
         // FIX THIS
-        // self.order_moves(&position, &mut moves);
+        let mut moves_with_scores: Vec<(Move, i32)> = self.score_moves(position, &moves);
+        self.order_moves(&position, &mut moves);
 
         for i in 0..moves.len() {
-            //self.pick_move(&mut moves_with_scores, i as i32);
+            self.pick_move(&mut moves_with_scores, i as i32);
             let mv = moves.get(i);
 
             self.ply += 1;
@@ -216,11 +236,11 @@ impl Searcher for Bot {
             MoveType::Capture,
         );
 
-        // let mut captures_with_scores = self.score_moves(position, &mut captures);
+        let mut captures_with_scores = self.score_moves(position, &mut captures);
         self.order_moves(position, &mut captures);
 
         for i in 0..captures.len() {
-            //self.pick_move(&mut captures_with_scores, i as i32);
+            self.pick_move(&mut captures_with_scores, i as i32);
             let capture = captures.get(i);
             if capture == NULL_MOVE {
                 continue;
@@ -229,7 +249,7 @@ impl Searcher for Bot {
             self.ply += 1;
             position.make_move(capture);
             let eval = -self.quiescence(info, position, move_gen, -beta, -alpha);
-            log::info!("EVAL: {}", eval);
+            log::info!("BOT EVAL: {}", eval);
             self.ply -= 1;
             position.unmake();
 
@@ -250,127 +270,84 @@ impl Searcher for Bot {
         }
         alpha
     }
-}
 
-impl Bot {
-    pub fn new() -> Bot {
-        Bot {
-            searching: Arc::new(AtomicBool::new(false)),
-            depth: 0,
-            ply: 0,
-            nodes: 0,
-            best_move: None,
-            pv: PvInfo::new(),
-            killer_moves: [[NULL_MOVE; 64]; 2],
-            history_moves: [[[0; 6]; 2]; 64],
-        }
-    }
-
-    pub fn think(&mut self, position: &mut Position, move_gen: &MoveGenerator) -> Option<Move> {
-        for i in 0..=MAX_DEPTH {
-            self.search_position(position, move_gen, -LARGE_NUM, LARGE_NUM, i);
-        }
-        self.best_move
-    }
-
-    pub fn order_moves(&self, position: &Position, moves: &mut [Move]) {
-        moves.sort_by(|a, b| {
-            self.score_move(position, *b)
-                .cmp(&self.score_move(position, *a))
+    fn order_moves(&self, position: &Position, moves: &mut MoveList) {
+        let len = moves.len();
+        moves.list[0..len].sort_by(|a, b| {
+            self.score_move(position, b)
+                .cmp(&self.score_move(position, a))
         });
     }
 
-    pub fn score_move(&self, position: &Position, mv: Move) -> i32 {
+    fn score_move(&self, position: &Position, mv: &Move) -> i32 {
         if mv.move_type() == MoveType::Capture {
             let piece_captured = position.pieces[mv.target() as usize].unwrap().1;
-            //let score = MVV_LVA[piece_captured as usize][mv.piece() as usize] as i32;
-            WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10
+            let score = MVV_LVA[piece_captured as usize][mv.piece() as usize] as i32;
+            //WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10
+            score
         } else {
             0
         }
     }
 
-    pub fn evalutate(&self, position: &Position) -> i32 {
-        let mut white_score = 0;
-        let mut black_score = 0;
+    fn score_moves(&self, position: &Position, moves: &MoveList) -> Vec<(Move, i32)> {
+        let mut moves_with_scores = Vec::with_capacity(30);
+        for i in 0..moves.len() {
+            let mv = moves.get(i);
+            let value = if mv.move_type() == MoveType::Capture {
+                let piece_captured = position.pieces[mv.target() as usize].unwrap().1;
+                MVV_LVA[piece_captured as usize][mv.piece() as usize] as i32 + 10_000
+            }
+            // Score quiet move
+            else {
 
+                // score 1st killer move
+                if self.killer_moves[0][self.ply as usize] == mv {
+                    9000
+                }
+
+                // score 2nd killer move
+                else if self.killer_moves[1][self.ply as usize] == mv {
+                    8000
+                }
+
+                // score history move
+                else {
+                    self.history_moves[mv.target() as usize][position.state.current_turn() as usize]
+                        [mv.piece() as usize]
+                }
+            };
+            moves_with_scores.push((mv, value));
+        }
+
+        return moves_with_scores;
+    }
+
+    fn pick_move(&self, moves_with_scores: &mut Vec<(Move, i32)>, start_index: i32) {
+        for i in (start_index + 1) as usize..moves_with_scores.len() {
+            if moves_with_scores[i].1 > moves_with_scores[start_index as usize].1 {
+                moves_with_scores.swap(start_index as usize, i);
+            }
+        }
+    }
+
+    fn evaluate(&self, position: &Position) -> i32 {
         let piece_count = position.piece_count;
+        #[rustfmt::skip]
+        let material_score =  
+            WEIGHTS[Piece::King as usize] * (piece_count[Side::White as usize][Piece::King as usize] as i32 - piece_count[Side::Black as usize][Piece::King as usize] as i32)
+            + WEIGHTS[Piece::Queen as usize] * (piece_count[Side::White as usize][Piece::Queen as usize] as i32 - piece_count[Side::Black as usize][Piece::Queen as usize] as i32)
+            + WEIGHTS[Piece::Rook as usize] * (piece_count[Side::White as usize][Piece::Rook as usize] as i32 - piece_count[Side::Black as usize][Piece::Rook as usize] as i32)
+            + WEIGHTS[Piece::Bishop as usize] * (piece_count[Side::White as usize][Piece::Bishop as usize] as i32 - piece_count[Side::Black as usize][Piece::Bishop as usize] as i32)
+            + WEIGHTS[Piece::Knight as usize] * (piece_count[Side::White as usize][Piece::Knight as usize] as i32 - piece_count[Side::Black as usize][Piece::Knight as usize] as i32)
+            + WEIGHTS[Piece::Pawn as usize] * (piece_count[Side::White as usize][Piece::Pawn as usize] as i32 - piece_count[Side::Black as usize][Piece::Pawn as usize] as i32);
 
-        for (i, count) in piece_count[Side::White as usize].iter().enumerate() {
-            white_score += WEIGHTS[i] * (*count as i32);
-        }
-
-        for (i, count) in piece_count[Side::Black as usize].iter().enumerate() {
-            black_score += WEIGHTS[i] * (*count as i32);
-        }
-
-        let material_score = white_score - black_score;
         let side_to_move = if position.state.current_turn() == Side::White {
             1
         } else {
             -1
         };
 
-        material_score * side_to_move
-    }
-
-    pub fn search_position(
-        &mut self,
-        position: &mut Position,
-        move_gen: &MoveGenerator,
-        alpha: i32,
-        beta: i32,
-        depth: i32,
-    ) {
-        self.negamax_alpha_beta(position, move_gen, alpha, beta, depth);
-    }
-    pub fn negamax_alpha_beta(
-        &mut self,
-        position: &mut Position,
-        move_gen: &MoveGenerator,
-        mut alpha: i32,
-        beta: i32,
-        depth: i32,
-    ) -> i32 {
-        if position.is_draw(move_gen) {
-            return -2000;
-        }
-
-        let turn = position.state.current_turn();
-        let mut moves = move_gen.generate_legal_moves(position, turn, MoveType::All);
-
-        //self.order_moves(position, &mut moves);
-
-        if depth == 0 || moves.is_empty() {
-            if position.checkmate(move_gen) {
-                return -9_999_999;
-            }
-
-            return self.evalutate(position);
-        }
-
-        let mut max_eval = -LARGE_NUM;
-        for i in 0..moves.len() {
-            let mv = moves.get(i);
-            position.make_move(mv);
-            let eval = -self.negamax_alpha_beta(position, move_gen, -beta, -alpha, depth - 1);
-            position.unmake();
-
-            if eval > max_eval {
-                max_eval = eval;
-
-                if depth == MAX_DEPTH {
-                    self.best_move = Some(mv);
-                }
-
-                alpha = alpha.max(max_eval);
-
-                if alpha >= beta {
-                    break;
-                }
-            }
-        }
-
-        max_eval
+        return material_score * side_to_move;
     }
 }

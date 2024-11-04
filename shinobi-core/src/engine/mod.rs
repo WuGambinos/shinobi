@@ -4,14 +4,15 @@ pub mod search;
 pub mod tt;
 pub mod zobrist;
 
-use crate::mov::MoveType;
 use crate::get_time_ms;
 use crate::mov::Move;
+use crate::mov::MoveType;
 use crate::MoveGenerator;
 use crate::Position;
 use crate::Zobrist;
 use crate::START_POS;
-use search::{Search, MAX_DEPTH};
+use search::SearcherEnum;
+use search::MAX_DEPTH;
 use serde::{ser::SerializeStruct, Serialize};
 
 use std::iter::Peekable;
@@ -49,7 +50,7 @@ pub struct SearchInfo {
 }
 
 impl SearchInfo {
-    fn new() -> SearchInfo {
+    pub fn new() -> SearchInfo {
         SearchInfo {
             search_moves: Vec::new(),
             ponder: false,
@@ -81,7 +82,7 @@ pub struct Engine {
     pub debug: bool,
     pub mode: EngineMode,
     pub info: SearchInfo,
-    pub search: Search,
+    pub search: SearcherEnum,
     search_thread: Option<JoinHandle<()>>,
 }
 
@@ -98,8 +99,9 @@ impl Serialize for Engine {
 }
 
 impl Engine {
-    pub fn new() -> Engine {
+    pub fn new(searcher: SearcherEnum) -> Engine {
         let position = Position::default();
+
         Engine {
             position,
             move_gen: MoveGenerator::new(),
@@ -107,7 +109,7 @@ impl Engine {
             debug: false,
             mode: EngineMode::Waiting,
             info: SearchInfo::new(),
-            search: Search::new(),
+            search: searcher,
             search_thread: None,
         }
     }
@@ -133,7 +135,12 @@ impl Engine {
             "uci" => self.handle_uci(),
             "debug" => self.debug = !self.debug,
             "isready" => println!("readyok"),
-            "ucinewgame" => self.search = Search::new(),
+            "ucinewgame" => match self.search {
+                SearcherEnum::Bot(_) => self.search = SearcherEnum::Bot(bot::Bot::new()),
+                SearcherEnum::Search(_) => {
+                    self.search = SearcherEnum::Search(search::Search::new())
+                }
+            },
             "setoption" => (),
             "position" => match self.handle_position(arguments) {
                 Ok(_) => {}
@@ -279,25 +286,50 @@ impl Engine {
             log::info!("DEPTH SEEN");
             let arc_mg = std::sync::Arc::new(self.move_gen);
             let mut pos = self.position.clone();
-            let mut search = self.search.clone();
-            search.best_move = None;
             let mut info = self.info.clone();
-            self.search_thread = Some(std::thread::spawn(move || {
-                search.search_position(&mut info, &mut pos, &arc_mg, depth);
-            }));
+            match &self.search {
+                SearcherEnum::Bot(b) => {
+                    let mut search = b.clone();
+                    search.best_move = None;
+                    self.search_thread = Some(std::thread::spawn(move || {
+                        search.search_position(&mut info, &mut pos, &arc_mg, depth);
+                    }));
+                }
+                SearcherEnum::Search(s) => {
+                    let mut search = s.clone();
+                    search.best_move = None;
+                    self.search_thread = Some(std::thread::spawn(move || {
+                        search.search_position(&mut info, &mut pos, &arc_mg, depth);
+                    }));
+                }
+            };
         } else {
             log::info!("MAX DEPTH");
             let arc_mg = std::sync::Arc::new(self.move_gen);
             let mut pos = self.position.clone();
-            let mut search = self.search.clone();
-            search.best_move = None;
             let mut info = self.info.clone();
-            self.search_thread = Some(std::thread::spawn(move || {
-                search.search_position(&mut info, &mut pos, &arc_mg, MAX_DEPTH);
-            }));
+            match &self.search {
+                SearcherEnum::Bot(b) => {
+                    let mut search = b.clone();
+                    search.best_move = None;
+                    self.search_thread = Some(std::thread::spawn(move || {
+                        search.search_position(&mut info, &mut pos, &arc_mg, MAX_DEPTH);
+                    }));
+                }
+                SearcherEnum::Search(s) => {
+                    let mut search = s.clone();
+                    search.best_move = None;
+                    self.search_thread = Some(std::thread::spawn(move || {
+                        search.search_position(&mut info, &mut pos, &arc_mg, MAX_DEPTH);
+                    }));
+                }
+            };
         }
 
-        self.search.searching.store(true, Ordering::Relaxed);
+        match &self.search {
+            SearcherEnum::Bot(b) => b.searching.store(true, Ordering::Relaxed),
+            SearcherEnum::Search(s) => s.searching.store(true, Ordering::Relaxed),
+        }
 
         /*
         if args[1] == "depth" {
@@ -337,7 +369,10 @@ impl Engine {
     }
 
     fn handle_stop(&mut self) {
-        self.search.searching.store(false, Ordering::Relaxed);
+        match &self.search {
+            SearcherEnum::Bot(b) => b.searching.store(false, Ordering::Relaxed),
+            SearcherEnum::Search(s) => s.searching.store(false, Ordering::Relaxed),
+        }
         log::info!("STOP TRIGGERED");
     }
 

@@ -5,6 +5,7 @@ use crate::mov::MoveType;
 use crate::mov::NULL_MOVE;
 use crate::piece::Piece;
 use crate::pv::PvInfo;
+use crate::Bot;
 use crate::MoveGenerator;
 use crate::Position;
 use crate::SearchInfo;
@@ -131,37 +132,9 @@ const MVV_LVA: [[i32; 6]; 6] = [
     [100, 200, 300, 400, 500, 600],
 ];
 
-pub trait Searcher {
-    fn search_position(
-        &mut self,
-        info: &mut SearchInfo,
-        position: &mut Position,
-        move_gen: &MoveGenerator,
-        depth: i32,
-    );
-
-    fn negamax(
-        &mut self,
-        info: &mut SearchInfo,
-        position: &mut Position,
-        move_gen: &MoveGenerator,
-        alpha: i32,
-        beta: i32,
-        depth: i32,
-    ) -> i32;
-
-    fn quiescence(
-        &mut self,
-        info: &mut SearchInfo,
-        position: &mut Position,
-        move_gen: &MoveGenerator,
-        alpha: i32,
-        beta: i32,
-    ) -> i32;
-
-    fn order_moves(&self, position: &Position, moves: &mut MoveList);
-    fn evaluate(&self, position: &Position) -> i32;
-    fn score_move(&self, position: &Position, mv: &Move) -> i32;
+pub enum SearcherEnum {
+    Bot(Bot),
+    Search(Search),
 }
 
 #[derive(Clone)]
@@ -191,8 +164,30 @@ impl Serialize for Search {
     }
 }
 
-impl Searcher for Search {
-    fn search_position(
+impl Search {
+    pub fn new() -> Search {
+        Search {
+            searching: Arc::new(AtomicBool::new(false)),
+            depth: 0,
+            ply: 0,
+            nodes: 0,
+            best_move: None,
+            pv: PvInfo::new(),
+            killer_moves: [[NULL_MOVE; 64]; 2],
+            history_moves: [[[0; 6]; 2]; 64],
+        }
+    }
+
+    pub fn check(&self, info: &mut SearchInfo) {
+        //log::debug!("CHECKING TIME");
+        if let Some(stop_time) = info.stop_time {
+            if !info.infinite && get_time_ms() > stop_time {
+                info.stopped = true;
+            }
+        }
+    }
+
+    pub fn search_position(
         &mut self,
         info: &mut SearchInfo,
         position: &mut Position,
@@ -265,14 +260,13 @@ impl Searcher for Search {
         self.nodes += 1;
         let mut best_so_far: Option<Move> = None;
         let old_alpha = alpha;
-        let mut moves =
+        let moves =
             move_gen.generate_legal_moves(position, position.state.current_turn(), MoveType::All);
 
-        // let mut moves_with_scores: Vec<(Move, i32)> = self.score_moves(position, &moves);
-        self.order_moves(&position, &mut moves);
+        let mut moves_with_scores: Vec<(Move, i32)> = self.score_moves(position, &moves);
 
         for i in 0..moves.len() {
-            //self.pick_move(&mut moves_with_scores, i as i32);
+            self.pick_move(&mut moves_with_scores, i as i32);
             let mv = moves.get(i);
 
             self.ply += 1;
@@ -367,11 +361,10 @@ impl Searcher for Search {
             MoveType::Capture,
         );
 
-        // let mut captures_with_scores = self.score_moves(position, &mut captures);
-        self.order_moves(position, &mut captures);
+        let mut captures_with_scores = self.score_moves(position, &mut captures);
 
         for i in 0..captures.len() {
-            //self.pick_move(&mut captures_with_scores, i as i32);
+            self.pick_move(&mut captures_with_scores, i as i32);
             let capture = captures.get(i);
             if capture == NULL_MOVE {
                 continue;
@@ -402,44 +395,6 @@ impl Searcher for Search {
         alpha
     }
 
-    fn order_moves(&self, position: &Position, moves: &mut MoveList) {
-        let len = moves.len();
-        moves.list[0..len].sort_by(|a, b| {
-            self.score_move(position, b)
-                .cmp(&self.score_move(position, a))
-        });
-    }
-
-    fn score_move(&self, position: &Position, mv: &Move) -> i32 {
-        if mv.move_type() == MoveType::Capture {
-            let piece_captured = position.pieces[mv.target() as usize].unwrap().1;
-            // MVV_LVA[piece_captured as usize][mv.piece() as usize] + 200
-            //let res = (WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10).abs();
-            //res
-            //MVV_LVA[piece_captured as usize][mv.piece() as usize] as i32
-            MVV_LVA[mv.piece() as usize][piece_captured as usize] as i32
-        } else {
-            /*
-            // score 1st killer move
-            if self.killer_moves[0][self.ply as usize] == *mv {
-                log::info!("FIRST KILLER");
-                9000
-            }
-            // score 2nd killer move
-            else if self.killer_moves[1][self.ply as usize] == *mv {
-                log::info!("SECOND KILLER");
-                8000
-            }
-            // score history move
-            else {
-                log::info!("HISTORY");
-                self.history_moves[mv.target() as usize][position.state.current_turn() as usize]
-                    [mv.piece() as usize]
-            }
-            */
-            0
-        }
-    }
     fn evaluate(&self, position: &Position) -> i32 {
         let mut white_score = 0;
         let mut black_score = 0;
@@ -513,39 +468,13 @@ impl Searcher for Search {
             -material_score
         }
     }
-}
 
-impl Search {
-    pub fn new() -> Search {
-        Search {
-            searching: Arc::new(AtomicBool::new(false)),
-            depth: 0,
-            ply: 0,
-            nodes: 0,
-            best_move: None,
-            pv: PvInfo::new(),
-            killer_moves: [[NULL_MOVE; 64]; 2],
-            history_moves: [[[0; 6]; 2]; 64],
-        }
-    }
-
-    pub fn check(&self, info: &mut SearchInfo) {
-        //log::debug!("CHECKING TIME");
-        if let Some(stop_time) = info.stop_time {
-            if !info.infinite && get_time_ms() > stop_time {
-                info.stopped = true;
-            }
-        }
-    }
-
-    /*
     fn score_moves(&self, position: &Position, moves: &MoveList) -> Vec<(Move, i32)> {
         let mut moves_with_scores = Vec::with_capacity(30);
         for i in 0..moves.len() {
             let mv = moves.get(i);
             let value = if mv.move_type() == MoveType::Capture {
                 let piece_captured = position.pieces[mv.target() as usize].unwrap().1;
-                //return WEIGHTS[piece_captured as usize] - WEIGHTS[mv.piece() as usize] / 10;
                 MVV_LVA[piece_captured as usize][mv.piece() as usize] + 10_000
             }
             // Score quiet move
@@ -577,5 +506,4 @@ impl Search {
             }
         }
     }
-    */
 }
