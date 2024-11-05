@@ -1,0 +1,197 @@
+{"dhatFileVersion":2
+,"mode":"heap","verb":"Allocated"
+,"bklt":true,"bkacc":true
+,"tu":"instrs","Mtu":"Minstr"
+,"tuth":500
+,"cmd":"./target/release/shinobi-bin"
+,"pid":2829
+,"te":31101823
+,"tg":290398
+,"pps":
+ [{"tb":472,"tbk":1
+  ,"tl":150983
+  ,"mb":472,"mbk":1
+  ,"gb":472,"gbk":1
+  ,"eb":0,"ebk":0
+  ,"rb":2797,"wb":1342
+  ,"acc":[186,147,-2,136,-4,0,-8,185,-8,85,-8,12,-8,17,-16,12,-8,22,-8,8,-8,10,-16,1,-8,8,-8,3,-4,14,13,-3,5,-8,0,-2,1,-6,0,-8,4,-8,7,-8,0,-16,1,-8,0,-8,2,-4,9,-20,0,-8,15,-4,4,-4,3,-8,5,-88,1,-136,0,-8,1]
+  ,"fs":[1,2,3,4]
+  }
+ ,{"tb":360,"tbk":2
+  ,"tl":150065
+  ,"mb":240,"mbk":1
+  ,"gb":240,"gbk":1
+  ,"eb":0,"ebk":0
+  ,"rb":5869,"wb":4633
+  ,"fs":[5,6,3,4]
+  }
+ ,{"tb":1024,"tbk":1
+  ,"tl":150120
+  ,"mb":1024,"mbk":1
+  ,"gb":1024,"gbk":1
+  ,"eb":0,"ebk":0
+  ,"rb":8935,"wb":4710
+  ,"acc":[20,-368,15,-245,13,-410,12]
+  ,"fs":[7,8,9,10,11,6,3,4]
+  }
+ ,{"tb":32,"tbk":1
+  ,"tl":337
+  ,"mb":0,"mbk":0
+  ,"gb":0,"gbk":0
+  ,"eb":0,"ebk":0
+  ,"rb":32,"wb":48
+  ,"acc":[-16,2,-16,3]
+  ,"fs":[12,3,4]
+  }
+ ,{"tb":152,"tbk":1
+  ,"tl":284
+  ,"mb":0,"mbk":0
+  ,"gb":0,"gbk":0
+  ,"eb":0,"ebk":0
+  ,"rb":24,"wb":16
+  ,"acc":[-8,3,-8,2,-136,0]
+  ,"fs":[13,14,15,3,4]
+  }
+ ,{"tb":32,"tbk":1
+  ,"tl":204
+  ,"mb":0,"mbk":0
+  ,"gb":0,"gbk":0
+  ,"eb":0,"ebk":0
+  ,"rb":0,"wb":32
+  ,"acc":[-32,1]
+  ,"fs":[16,15,3,4]
+  }
+ ,{"tb":56,"tbk":1
+  ,"tl":30656119
+  ,"mb":0,"mbk":0
+  ,"gb":0,"gbk":0
+  ,"eb":0,"ebk":0
+  ,"rb":44,"wb":68
+  ,"acc":[-16,4,-4,2,-20,1,-8,2,-4,1,-4,0]
+  ,"fs":[17,18,4]
+  }
+ ,{"tb":32,"tbk":1
+  ,"tl":30656029
+  ,"mb":0,"mbk":0
+  ,"gb":0,"gbk":0
+  ,"eb":0,"ebk":0
+  ,"rb":32,"wb":32
+  ,"acc":[-32,2]
+  ,"fs":[19,20,4]
+  }
+ ,{"tb":11,"tbk":1
+  ,"tl":164
+  ,"mb":0,"mbk":0
+  ,"gb":0,"gbk":0
+  ,"eb":0,"ebk":0
+  ,"rb":0,"wb":11
+  ,"acc":[-11,1]
+  ,"fs":[21,22,23,24,25,26,27,4]
+  }
+ ,{"tb":128,"tbk":1
+  ,"tl":30654932
+  ,"mb":0,"mbk":0
+  ,"gb":0,"gbk":0
+  ,"eb":128,"ebk":1
+  ,"rb":0,"wb":16
+  ,"acc":[-16,1,-112,0]
+  ,"fs":[28,29,30,25,26,27,4]
+  }
+ ,{"tb":40,"tbk":1
+  ,"tl":30654838
+  ,"mb":0,"mbk":0
+  ,"gb":0,"gbk":0
+  ,"eb":40,"ebk":1
+  ,"rb":0,"wb":36
+  ,"acc":[-36,1,-4,0]
+  ,"fs":[31,25,26,27,4]
+  }
+ ,{"tb":104,"tbk":1
+  ,"tl":30654776
+  ,"mb":0,"mbk":0
+  ,"gb":0,"gbk":0
+  ,"eb":104,"ebk":1
+  ,"rb":0,"wb":104
+  ,"acc":[-104,1]
+  ,"fs":[32,25,26,27,4]
+  }
+ ,{"tb":24,"tbk":1
+  ,"tl":30649337
+  ,"mb":0,"mbk":0
+  ,"gb":0,"gbk":0
+  ,"eb":0,"ebk":0
+  ,"rb":32,"wb":33
+  ,"acc":[-16,4,1,-7,0]
+  ,"fs":[33,25,26,27,4]
+  }
+ ,{"tb":192,"tbk":2
+  ,"tl":3104
+  ,"mb":0,"mbk":0
+  ,"gb":0,"gbk":0
+  ,"eb":0,"ebk":0
+  ,"rb":160,"wb":160
+  ,"fs":[34,35,25,26,27,4]
+  }
+ ,{"tb":192,"tbk":2
+  ,"tl":1914
+  ,"mb":0,"mbk":0
+  ,"gb":0,"gbk":0
+  ,"eb":0,"ebk":0
+  ,"rb":192,"wb":192
+  ,"fs":[34,36,25,26,27,4]
+  }
+ ,{"tb":1024,"tbk":1
+  ,"tl":1265
+  ,"mb":0,"mbk":0
+  ,"gb":0,"gbk":0
+  ,"eb":0,"ebk":0
+  ,"rb":16,"wb":15
+  ,"acc":[-11,2,3,-3,2,-1009,0]
+  ,"fs":[37,38,39,40,41,25,26,27,4]
+  }
+ ]
+,"ftbl":
+ ["[root]"
+ ,"0x491FE48: __fopen_internal (iofopen.c:65)"
+ ,"0x4936ACE: pthread_getattr_np@@GLIBC_2.32 (pthread_getattr_np.c:85)"
+ ,"0x1F3F95: std::rt::lang_start_internal (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x122403: main (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x4920D4D: getdelim (iogetdelim.c:65)"
+ ,"0x4936C3E: pthread_getattr_np@@GLIBC_2.32 (pthread_getattr_np.c:122)"
+ ,"0x491F2E3: _IO_file_doallocate (filedoalloc.c:101)"
+ ,"0x492E713: _IO_doallocbuf (genops.c:374)"
+ ,"0x492E713: _IO_doallocbuf (genops.c:369)"
+ ,"0x492C3F4: _IO_file_underflow@@GLIBC_2.2.5 (fileops.c:486)"
+ ,"0x4920DDF: getdelim (iogetdelim.c:77)"
+ ,"0x493698A: pthread_getattr_np@@GLIBC_2.32 (pthread_getattr_np.c:180)"
+ ,"0x4932B3B: __pthread_attr_extension (pthread_attr_extension.c:28)"
+ ,"0x4932E7F: pthread_attr_setaffinity_np@@GLIBC_2.32 (pthread_attr_setaffinity.c:45)"
+ ,"0x4936A17: pthread_getattr_np@@GLIBC_2.32 (pthread_getattr_np.c:194)"
+ ,"0x4932E99: pthread_attr_setaffinity_np@@GLIBC_2.32 (pthread_attr_setaffinity.c:51)"
+ ,"0x1F4B52: std::thread::Thread::new_inner (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x1F414F: std::rt::lang_start_internal (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x48E0404: __cxa_thread_atexit_impl (cxa_thread_atexit_impl.c:106)"
+ ,"0x1F41BF: std::rt::lang_start_internal (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x2196FE: std::sys::pal::unix::os::getenv::{{closure}} (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x219567: std::env::_var_os (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x14EFCF: anstream::auto::choice (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x11F00C: shinobi_bin::main (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x11E6F2: std::sys::backtrace::__rust_begin_short_backtrace (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x11E592: std::rt::lang_start::{{closure}} (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x1F41F2: std::rt::lang_start_internal (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x12FAFE: alloc::raw_vec::finish_grow (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x1718BE: alloc::raw_vec::RawVec<T,A>::grow_one (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x11F272: shinobi_bin::main (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x11F3A3: shinobi_bin::main (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x11F45D: shinobi_bin::main (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x11F4EB: shinobi_bin::main (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x1F0DF1: <alloc::vec::Vec<T> as alloc::vec::spec_from_iter::SpecFromIter<T,I>>::from_iter (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x120746: shinobi_bin::main (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x12084E: shinobi_bin::main (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x21A1DD: std::sync::once::Once::call_once_force::{{closure}} (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x11D4FA: std::sys::sync::once::futex::Once::call (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x11E041: std::sync::once_lock::OnceLock<T>::initialize (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x21AF01: std::io::stdio::_print (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ,"0x121EFF: shinobi_bin::main (in /home/kenpachi/Programming/shinobi/target/release/shinobi-bin)"
+ ]
+}

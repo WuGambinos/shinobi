@@ -23,6 +23,7 @@ const LARGE_NUM: i32 = 30000;
 const MATE: i32 = 29000;
 pub const MAX_DEPTH: i32 = 7;
 pub static mut BEST_MOVE: Option<Move> = None;
+pub static mut cutoffs: i32 = 0;
 
 // PIECE SQUARE TABLES
 //
@@ -212,6 +213,9 @@ impl Search {
                 }
             }
             println!();
+            unsafe {
+                println!("CUTOFFS: {}", cutoffs);
+            }
 
             if d == depth {
                 break;
@@ -281,6 +285,9 @@ impl Search {
 
             // Fail-hard beta cutoff
             if score >= beta {
+                unsafe {
+                    cutoffs += 1;
+                }
                 // Store Killer moves
                 if mv.move_type() != MoveType::Capture {
                     self.killer_moves[1][self.ply as usize] =
@@ -346,6 +353,9 @@ impl Search {
 
         // Fail-hard beta cutoff
         if eval >= beta {
+            unsafe {
+                cutoffs += 1;
+            }
             // Move is too "good" (fails high)
             // Opponent will avoid this position
             return beta;
@@ -383,6 +393,9 @@ impl Search {
 
             // Fail-hard beta cutoff
             if eval >= beta {
+                unsafe {
+                    cutoffs += 1;
+                }
                 // Move is too "good" (fails high)
                 // Opponent will avoid this position
                 return beta;

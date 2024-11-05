@@ -15,6 +15,7 @@ const LARGE_NUM: i32 = 99_999_999;
 const MAX_DEPTH: i32 = 4;
 const MATE: i32 = 29000;
 pub static mut nodes: i32 = 0;
+pub static mut cutoffs: i32 = 0;
 
 // MVV_VLA[victim][attacker]
 pub const MVV_LVA: [[u8; 7]; 7] = [
@@ -86,6 +87,10 @@ impl Bot {
             }
             println!();
 
+            unsafe{
+                println!("CUTOFFS: {}", cutoffs);
+            }
+
             if d == depth {
                 break;
             }
@@ -156,6 +161,9 @@ impl Bot {
 
             // Fail-hard beta cutoff
             if score >= beta {
+                unsafe {
+                    cutoffs += 1;
+                }
                 // Store Killer moves
                 if mv.move_type() != MoveType::Capture {
                     self.killer_moves[1][self.ply as usize] =
@@ -221,6 +229,9 @@ impl Bot {
 
         // Fail-hard beta cutoff
         if eval >= beta {
+                unsafe {
+                    cutoffs += 1;
+                }
             // Move is too "good" (fails high)
             // Opponent will avoid this position
             return beta;
@@ -259,6 +270,9 @@ impl Bot {
 
             // Fail-hard beta cutoff
             if eval >= beta {
+                unsafe {
+                    cutoffs += 1;
+                }
                 // Move is too "good" (fails high)
                 // Opponent will avoid this position
                 return beta;

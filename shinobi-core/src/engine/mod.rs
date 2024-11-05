@@ -4,6 +4,7 @@ pub mod search;
 pub mod tt;
 pub mod zobrist;
 
+use crate::HASH_FLAG_BETA;
 use crate::get_time_ms;
 use crate::mov::Move;
 use crate::mov::MoveType;
@@ -83,6 +84,7 @@ pub struct Engine {
     pub mode: EngineMode,
     pub info: SearchInfo,
     pub search: SearcherEnum,
+    pub tt: tt::TT,
     search_thread: Option<JoinHandle<()>>,
 }
 
@@ -110,11 +112,16 @@ impl Engine {
             mode: EngineMode::Waiting,
             info: SearchInfo::new(),
             search: searcher,
+            tt: tt::TT::new(),
             search_thread: None,
         }
     }
 
     pub fn run(&mut self) {
+        self.tt.clear();
+        self.tt.write_hash_entry(self.position.state.zobrist_hash, 1, 45, HASH_FLAG_BETA);
+        self.tt.read_hash_entry(self.position.state.zobrist_hash, 1, 20, 30);
+        /*
         loop {
             let mut input = String::new();
             std::io::stdin()
@@ -124,6 +131,7 @@ impl Engine {
             let command = input.trim();
             self.handle_command(command);
         }
+        */
     }
 
     fn handle_command(&mut self, command: &str) {
